@@ -121,13 +121,9 @@
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
-				                            <div class="row">
-											<div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-					                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="ID number" value="<?php print $customerobj["id_number"]; ?>">
-					                            </div>
-					                        </div><!-- /.col-lg-6 -->
+				                            <div class="input-group">
+				                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
+				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="ID number" value="<?php print $customerobj["id_number"]; ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
@@ -165,7 +161,7 @@
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="estate" id="estate" type="text" class="form-control" placeholder="Provincia" value="<?php print $customerobj["estate"]; ?>">
+					                                <input name="state" id="state" type="text" class="form-control" placeholder="Provincia" value="<?php print $customerobj["state"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>

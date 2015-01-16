@@ -28,9 +28,6 @@ if (!isset($_POST["new_password_2"])) {
 	$validated = 0;
 }
 
-print "Parámetros: \n";
-print_r ($_POST);
-
 if ($validated == 1) {
 	$db = new DbHandler();
 

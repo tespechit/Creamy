@@ -812,7 +812,7 @@ class DbHandler {
 	}
 
 
-	/* -------------- Contactos ---------------------------- */
+	/* -------------- Customers ---------------------------- */
 	
 	/**
 	 * Gets all customers of certain type.
@@ -897,7 +897,7 @@ class DbHandler {
 	 * @param $id_number String passport, dni, nif, VAT number or identifier for the customer
 	 * @param $address String physical address for that customer
 	 * @param $city String City of the customer
-	 * @param $estate String Estate for the customer
+	 * @param $state String state for the customer
 	 * @param $zipcode String ZIP code for the customer
 	 * @param $country String Country for the customer  
 	 * @param $birthdate String Birthdate of the customer, expressed in the proper locale format, with month, days and years separated by '/' or '-'.  
@@ -908,14 +908,21 @@ class DbHandler {
 	 * @param $gender Int gender of the customer (female=0, male=1).  
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $estate, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
+	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
+		// sanity checks
+		error_log("Creando cliente. Customer type: $customerType");
+		if (empty($customerType)) return false;
+		
 		// generate correct, mysql-ready date.
 		$correctDate = NULL;
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
 		
 		// prepare and execute query.
-		$stmt = $this->conn->prepare("INSERT INTO ? (name, email, phone, mobile, id_number, address, city, estate, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
-		$stmt->bind_param("sssssssssssssiii", $customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $estate, $zipcode, $country,  $productType, $correctDate, $maritalstatus,$createdByUser, $donotsendemail, $gender);
+		$stmt = $this->conn->prepare("INSERT INTO $customerType (name, email, phone, mobile, id_number, address, city, state, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
+		error_log("Consulta: \n");
+		error_log("INSERT INTO $customerType (name, email, phone, mobile, id_number, address, city, state, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
+		error_log($this->conn->error);
+		$stmt->bind_param("ssssssssssssiiii", $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country,  $productType, $correctDate, $maritalstatus,$createdByUser, $donotsendemail, $gender);
 		$result = $stmt->execute();
 		$stmt->close();
 		return $result;
@@ -931,7 +938,7 @@ class DbHandler {
 	 * @param $id_number String passport, dni, nif, VAT number or identifier for the customer
 	 * @param $address String physical address for that customer
 	 * @param $city String City of the customer
-	 * @param $estate String Estate for the customer
+	 * @param $state String state for the customer
 	 * @param $zipcode String ZIP code for the customer
 	 * @param $country String Country for the customer  
 	 * @param $birthdate String Birthdate of the customer, expressed in the proper locale format, with month, days and years separated by '/' or '-'.  
@@ -942,14 +949,14 @@ class DbHandler {
 	 * @param $gender Int gender of the customer (female=0, male=1).  
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $estate, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
+	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
 		// determine customer type (target table) and sanity checks.
 		$correctDate = NULL;
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
 		
 		// prepare and execute query
-		$stmt = $this->conn->prepare("UPDATE ? SET name = ?, email = ?, phone = ?, mobile = ?, id_number = ?, address = ?, city = ?, estate = ?, zip_code = ?, country = ?, type = ?, birthdate = ?, estado_civil = ?, do_not_send_email = ?, gender = ? WHERE id = ?");
-		$stmt->bind_param("sssssssssssssiiii", $customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $estate, $zipcode, $country, $productType, $correctDate, $maritalstatus, $donotsendemail, $gender, $customerid);
+		$stmt = $this->conn->prepare("UPDATE ? SET name = ?, email = ?, phone = ?, mobile = ?, id_number = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, type = ?, birthdate = ?, estado_civil = ?, do_not_send_email = ?, gender = ? WHERE id = ?");
+		$stmt->bind_param("sssssssssssssiiii", $customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $productType, $correctDate, $maritalstatus, $donotsendemail, $gender, $customerid);
 		$result = $stmt->execute();
 		$stmt->close();
 		return $result;
@@ -1003,7 +1010,24 @@ class DbHandler {
 		}
 		return $customerTypes;
 	}
-		
+	
+	/**
+	 * Retrieves the customer "human friendly" description name for a customer type.
+	 * @param $customerType String customer type ( = table name).
+	 * @return String a human friendly description of this customer type.
+	 */
+	public function getNameForCustomerType($customerType) {
+		$stmt = $this->conn->prepare("SELECT * FROM customer_types WHERE table_name = ?");
+		$stmt->bind_param("s", $customerType);
+		if ($stmt->execute() === false) return "Customer";
+		else {
+			$result = $stmt->get_result();
+			if ($row = $result->fetch_assoc()) {
+				return $row["description"];
+			} else return "Customer";
+		}
+	}
+	
 	/* ---------------- tareas --------------------------------- */
 
 	/**

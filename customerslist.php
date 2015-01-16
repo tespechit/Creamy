@@ -87,7 +87,7 @@
                                     <h3 class="box-title"><?php print $customerName; ?></h3>
                                 </div><!-- /.box-header -->
 								<div class="box-tools" style="padding-left: 1%;">
-                                   <a id="create-customer-trigger-button" href="Cliente de Seguros" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal">Nuevo <?php print(strtolower($customerName)); ?></a>
+                                   <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal">Añadir a <?php print(strtolower($customerName)); ?></a>
                                 </div>
                                 <div class="box-body table-responsive">
 									<?php print $db->getAllCustomersOfTypeAsTable($customerType); ?>

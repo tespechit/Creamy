@@ -47,7 +47,7 @@
 		$("#create-customer-trigger-button").click(function (e) {
 			e.preventDefault();
 			var customerType = $(this).attr('href');
-			$("#new-customer-header-text").html('<i class="fa fa-user"></i> Nuevo cliente</h4>');
+			$("#new-customer-header-text").html('<i class="fa fa-user"></i> Crear nuevo</h4>');
 			$("#customer_type").val(customerType);
 		});
 		
@@ -123,7 +123,7 @@
 	                        <div class="col-lg-6">
 	                            <div class="input-group">
 	                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-	                                <input name="estate" id="estate" type="text" class="form-control" placeholder="Provincia">
+	                                <input name="state" id="state" type="text" class="form-control" placeholder="Provincia">
 	                            </div>                        
 	                        </div><!-- /.col-lg-6 -->
                             </div>

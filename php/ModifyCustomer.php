@@ -70,11 +70,11 @@ if ($validated == 1) {
 		$city = $db->escape_string($city);
 	}
 	
-	// estate
-	$estate = NULL; if (isset($_POST["estate"])) { 
-		$estate = $_POST["estate"]; 
-		$estate = stripslashes($estate);
-		$estate = $db->escape_string($estate);
+	// state
+	$state = NULL; if (isset($_POST["state"])) { 
+		$state = $_POST["state"]; 
+		$state = stripslashes($state);
+		$state = $db->escape_string($state);
 	}
 	
 	// ZIP code
@@ -126,7 +126,7 @@ if ($validated == 1) {
 		$donotsendemail = 1;
 	}
 
-	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $estate, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender);
+	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender);
 	if ($result === true) { print "success"; }
 	else { print "Ha sido imposible modificar el cliente. Por favor, inténtelo más tarde."; } 
 	
