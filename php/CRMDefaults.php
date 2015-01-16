@@ -10,6 +10,7 @@
 
 // global constants
 define('CRM_SKEL_CONFIG_FILE', 'skel/Config.php');
+define('CRM_INSTALLED_FILE', './installed.txt');
 define('CRM_PHP_CONFIG_FILE', 'php/Config.php');
 define('CRM_PHP_END_TAG', '?>');
 
@@ -56,7 +57,7 @@ define ('CRM_DEFAULTS_USER_ROLE_GUEST', 4);
 define ('CRM_DEFAULTS_USER_DISABLED', 0);
 define ('CRM_DEFAULTS_USER_ENABLED', 1);
 
-define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/defaultAvatar.jpg');
+define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/defaultAvatar.png');
 
 // installation constants.
 define ('CRM_INSTALL_STATE_SUCCESS', 1);

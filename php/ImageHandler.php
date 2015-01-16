@@ -42,7 +42,8 @@ class ImageHandler {
 	
 	public function generateProcessedImageFileFromSourceImage($imgSrc, $imageFileType) {
 		// generate a random image name file (and make sure it's not in use.
-		$filename = $this->randomNameForAvatarImage(AVATAR_IMAGE_FILENAME_LENGTH);
+		if (empty($imageFileType)) $imageFileType = AVATAR_IMAGE_FILENAME_EXTENSION;
+		$filename = $this->randomNameForAvatarImage(AVATAR_IMAGE_FILENAME_LENGTH, $imageFileType);
 		while (file_exists(AVATAR_IMAGE_FILEDIR.$filename)) {
 			$filename = $this->randomNameForAvatarImage(AVATAR_IMAGE_FILENAME_LENGTH);
 		}
@@ -59,7 +60,7 @@ class ImageHandler {
 		return NULL;
 	}
 
-	private function randomNameForAvatarImage($length) {
+	private function randomNameForAvatarImage($length, $imageFileType = AVATAR_IMAGE_FILENAME_EXTENSION) {
 	    $key = '';
 	    $keys = array_merge(range(0, 9), range('a', 'z'));
 	
@@ -67,7 +68,7 @@ class ImageHandler {
 	        $key .= $keys[array_rand($keys)];
 	    }
 	
-	    return AVATAR_IMAGE_FILENAME_PREFIX.$key.AVATAR_IMAGE_FILENAME_EXTENSION;
+	    return AVATAR_IMAGE_FILENAME_PREFIX.$key.$imageFileType;
 	}
 	
 	private function realPathForImagePath($imagePath) {

@@ -1,4 +1,11 @@
 <?php
+	// check if Creamy has been installed.
+	require_once('./php/CRMDefaults.php');
+	if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
+		header("location: ./install.php");
+	}
+	
+	// initialize session and DDBB handler
     require_once('./php/Session.php');
 	include_once('./php/DbHandler.php');
     $db = new DbHandler();

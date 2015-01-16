@@ -255,9 +255,10 @@ class DBInstaller {
 		foreach ($customerIdentifiers as $customerId) {
 			$createStatisticsQuery = $createStatisticsQuery . "`$customerId` int(11) NOT NULL,\n";
 		}
-		$createStatisticsQuery = "`timestamp` date NOT NULL,
+		$createStatisticsQuery = $createStatisticsQuery."`timestamp` date NOT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
+		if (!$this->conn->query($createStatisticsQuery)) return false;
 
 		// create the event for scheduling the statistics retrieval. The event scheduler must be turned on.
 	    $customerFieldsString = "";

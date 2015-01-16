@@ -1,5 +1,5 @@
 <?php
-
+	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbInstaller.php');
 	require_once('./php/RandomStringGenerator.php');
 	
@@ -11,7 +11,7 @@
 	// set initial installation step (if found).
 	if (isset($_SESSION["installationStep"])) { $currentState = $_SESSION["installationStep"]; }
 	
-	if (file_exists("./installed.txt")) { // check if already installed 
+	if (file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
 		$currentState = "already_installed"; 
 	} elseif (isset($_POST["submit_step1"]) && $currentState == "step1") { // first step: get credentials for database access.
 		$dbhost = "localhost";
