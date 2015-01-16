@@ -12,6 +12,6 @@
 		$_SESSION["userrole"] = CRM_DEFAULTS_USER_ROLE_GUEST; // no privileged account by default.
 	}
 	if (!isset($_SESSION["avatar"])) {
-		$_SESSION["avatar"] = "./img/avatars/default/defaultAvatar.png";
+		$_SESSION["avatar"] = CRM_DEFAULTS_USER_AVATAR;
 	}
 ?>

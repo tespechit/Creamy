@@ -691,7 +691,7 @@ body > .header .logo .icon {
 .user-panel:after {
   clear: both;
 }
-.user-panel > .image > img {
+.user-panel > .image  img {
   width: 45px;
   height: 45px;
 }

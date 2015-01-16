@@ -115,7 +115,7 @@ class DBInstaller {
 		
 		$password_hash = PassHash::hash($initialPass);
 		$initializeTableQuery = "INSERT INTO `users` (`name`, `password_hash`, `email`, `avatar`, `creation_date`, `role`, `status`) VALUES
-('$initialUser', '$password_hash.', '$initialEmail', '".CRM_DEFAULTS_USER_AVATAR."', now(), 0, 1) ON DUPLICATE KEY UPDATE password_hash = '$password_hash'";
+('$initialUser', '$password_hash', '$initialEmail', '".CRM_DEFAULTS_USER_AVATAR."', now(), 0, 1) ON DUPLICATE KEY UPDATE password_hash = '$password_hash'";
 		if (!$this->conn->query($initializeTableQuery)) { $this->error = "CRM: Failed to insert the initial admin user."; return false; } 
 		
 		return true;
@@ -174,7 +174,7 @@ class DBInstaller {
 		  `subject` varchar(255) NOT NULL,
 		  `message` varchar(1024) DEFAULT NULL,
 		  `date` datetime NOT NULL,
-		  `read` int(1) NOT NULL,
+		  `message_read` int(1) NOT NULL,
 		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
@@ -188,7 +188,7 @@ class DBInstaller {
 		  `subject` varchar(255) NOT NULL,
 		  `message` varchar(1024) DEFAULT NULL,
 		  `date` datetime NOT NULL,
-		  `read` int(1) NOT NULL,
+		  `message_read` int(1) NOT NULL,
 		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
 		  `origin_folder` varchar(120) NOT NULL COMMENT 'origin folder of the message (for restore purposes)',
 		  PRIMARY KEY (`id`)
@@ -203,7 +203,7 @@ class DBInstaller {
 		  `subject` varchar(255) NOT NULL,
 		  `message` varchar(1024) DEFAULT NULL,
 		  `date` datetime NOT NULL,
-		  `read` int(1) NOT NULL,
+		  `message_read` int(1) NOT NULL,
 		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
@@ -333,10 +333,6 @@ class DBInstaller {
 	}
 	
 	/* ---------------- Utility functions -------------------------- */
-	
-	public function defaultAvatar() {
-		return "./img/avatars/default/defaultAvatar.png";
-	}
 	
 	private function relativeTime($mysqltime, $maxdepth = 2) {
 		$time = strtotime(str_replace('/','-', $mysqltime));

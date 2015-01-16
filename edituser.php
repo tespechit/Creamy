@@ -36,7 +36,7 @@
         <header class="header">
             <a href="./index.php" class="logo">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy Clientes
+                Creamy
             </a>
             <!-- Header Navbar: style can be found in header.less -->
             <nav class="navbar navbar-static-top" role="navigation">
@@ -109,7 +109,7 @@
                                     <div class="box-body">
 	                                    <div class="input-group">
 	                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="Nombre" value="<?php print $userobj["nombre"]; ?>" disabled>
+	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="Nombre" value="<?php print $userobj["name"]; ?>" disabled>
 	                                    </div>
 	                                    <br>
 	                                    <div class="input-group">
@@ -119,12 +119,7 @@
 	                                    <br>
 	                                    <div class="input-group">
 	                                        <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="Teléfono (opcional)" value="<?php print $userobj["telefono"]; ?>">
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-	                                        <input type="text" id="clave_mediador" name="clave_mediador" class="form-control" placeholder="Clave de Mediador" value="<?php print $userobj["clave_mediador"]; ?>">
+	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="Teléfono (opcional)" value="<?php print $userobj["phone"]; ?>">
 	                                    </div>
 	                                    <br>
                                         <div class="form-group">

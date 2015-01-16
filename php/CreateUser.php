@@ -66,11 +66,6 @@ if ($validated == 1) {
 		$phone = stripslashes($phone);
 		$phone = $db->escape_string($phone); 
 	}
-	$clave_mediador = 0; if (isset($_POST["clave_mediador"])) { 
-		$clave_mediador = $_POST["clave_mediador"];
-		$clave_mediador = stripslashes($clave_mediador);
-		$clave_mediador = $db->escape_string($clave_mediador); 
-	}
 	$avatar = NULL;
 	if (!empty($avatarOrigin)) {
 		$imageHandler = new ImageHandler();
@@ -82,7 +77,7 @@ if ($validated == 1) {
 	}
 	
 	$role = CRM_DEFAULTS_USER_ROLE_MANAGER; if (isset($_POST["isAdmin"])) { $role = CRM_DEFAULTS_USER_ROLE_ADMIN; } 	
-	$result = $db->createUser($name, $password1, $email, $phone, $role, $avatar, $clave_mediador);
+	$result = $db->createUser($name, $password1, $email, $phone, $role, $avatar);
 	if ($result === USER_CREATED_SUCCESSFULLY) { print "success"; }
 	else if ($result === USER_ALREADY_EXISTED) { print "El usuario ya existe. Por favor, elija otro nombre de usuario."; } 
 	else if ($result === USER_CREATE_FAILED) { print "Ha sido imposible crear el usuario. Por favor, inténtelo más tarde."; } 

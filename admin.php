@@ -31,7 +31,7 @@
         <header class="header">
             <a href="./index.php" class="logo">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy Clientes
+                Creamy
             </a>
             <!-- Header Navbar: style can be found in header.less -->
             <nav class="navbar navbar-static-top" role="navigation">
@@ -126,13 +126,6 @@
 	                                        <span class="input-group-addon"><i class="fa fa-lock"></i></span>
 	                                        <input type="password" id="password2" name="password2" class="form-control required" placeholder="Repetir Contraseña">
 	                                    </div>
-	                                    <br>
-                                        <div class="form-group">
-		                                    <div class="input-group">
-		                                        <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-		                                        <input type="text" id="clave_mediador" name="clave_mediador" class="form-control" placeholder="Clave de mediador">
-		                                    </div>
-                                        </div>
 	                                    <br>
                                         <div class="form-group">
                                             <label for="exampleInputFile">Avatar del usuario (opcional)</label>

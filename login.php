@@ -1,5 +1,5 @@
 <?php
-
+	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbHandler.php');
 
 	session_start(); // Starting Session
@@ -32,7 +32,7 @@
 				if (!empty($result["avatar"])) {
 					$_SESSION['avatar'] = $result["avatar"];
 				} else { // random avatar.
-					$_SESSION["avatar"] = $db->defaultAvatar();
+					$_SESSION["avatar"] = CRM_DEFAULTS_USER_AVATAR;
 				}
 				header("location: index.php"); // Redirecting To Main Page
 			}

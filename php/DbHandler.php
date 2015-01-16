@@ -101,7 +101,6 @@ class DbHandler {
             // Generating password hash
             $password_hash = PassHash::hash($password);
             if (empty($avatarURL)) $avatarURL = $this->randomAvatar();
-			if (empty($clave_mediador)) $clave_mediador = 0;
 
             // insert query
             $stmt = $this->conn->prepare("INSERT INTO users (name, password_hash, email, phone, role, avatar, creation_date, status) values(?, ?, ?, ?, ?, ?, now(), 1)");
@@ -194,7 +193,7 @@ class DbHandler {
         $result = $stmt->get_result();        
 		if ($userobj = $result->fetch_assoc()) { // get first match.
 			$password_hash = $userobj["password_hash"];
-			$status = $userobj["estado"];
+			$status = $userobj["status"];
 			$result->close();
 			if ($status == 1) { // user is active
 				if (PassHash::check_password($password_hash, $password)) {
@@ -205,7 +204,7 @@ class DbHandler {
 	                $arr["email"] = $userobj["email"];
 	                $arr["role"] = $userobj["role"];
 	                $arr["avatar"] = $userobj["avatar"];
-	                 
+	                
 	                return $arr;
 	            } else {
 	                // user password is incorrect
@@ -452,7 +451,7 @@ class DbHandler {
 			if ($htmlContent !== false) {
 				$subject = "Password reset link for your Creamy account.";
 				$headers = "From: hello@creamycrm.com\r\n";
-				$headers .= "Reply-To: hello@readytheapp.com\r\n";
+				$headers .= "Reply-To: hello@creamycrm.com\r\n";
 				$headers .= "MIME-Version: 1.0\r\n";
 				$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 				
@@ -756,11 +755,10 @@ class DbHandler {
                     <!-- Sidebar user panel -->
                     <div class="user-panel">
                         <div class="pull-left image">
-                            <img src="'.$avatar.'" class="img-circle" alt="User Image" />
+                            <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
                         </div>
                         <div class="pull-left info">
                             <p>Hola, '.$username.'</p>
-
                             <a href="edituser.php"><i class="fa fa-circle text-success"></i> Online</a>
                         </div>
                     </div>
@@ -770,11 +768,10 @@ class DbHandler {
                             <a href="./index.php">
                                 <i class="fa fa-bar-chart-o"></i> <span>Inicio</span>
                             </a>
-                        </li>
-        ';
-        // include a link for every customer type
+                        </li>';
         
-        for ($customerTypes as $customerType) {
+        // include a link for every customer type
+        foreach ($customerTypes as $customerType) {
 	        if (isset($customerType["table_name"]) && isset($customerType["description"])) {
 		        $customerTableName = $customerType["table_name"];
 		        $customerFriendlyName = $customerType["description"];
@@ -823,8 +820,8 @@ class DbHandler {
 	 * @return Array an array containing the objects with the users' data.
 	 */
 	public function getAllCustomersOfType($customerType) {
-        $stmt = $this->conn->prepare("SELECT * FROM ?");
-        $stmt->bind_param("s", $customerType);
+		if (!isset($customerType)) return array();
+        $stmt = $this->conn->prepare("SELECT * FROM $customerType");
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
@@ -857,7 +854,7 @@ class DbHandler {
        $result = $this->contactsTablePrefix;
        
        foreach ($customers as $customer) {
-	       $nameOrNonamed = $customer["nombre"];
+	       $nameOrNonamed = $customer["name"];
 	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(sin nombre)";
 	       
 	       $result = $result."<tr>
@@ -965,8 +962,8 @@ class DbHandler {
      * @return Array an array containing the customer data, or NULL if customer wasn't found.
      */
     public function getDataForCustomer($customerid, $customerType) {
-		$stmt = $this->conn->prepare("SELECT * FROM ? WHERE id = ?");
-		$stmt->bind_param("si", $customerType, $customerid);
+		$stmt = $this->conn->prepare("SELECT * FROM $customerType WHERE id = ?");
+		$stmt->bind_param("i", $customerid);
 		if ($stmt->execute() === false) return NULL;
 		
 		// analyze results
@@ -998,11 +995,13 @@ class DbHandler {
 	 * @return Array the list of customer type structures.
 	 */
 	public function getCustomerTypes() {
-		$stmt = $this->conn->prepare("SELECT * from customer_types");
-		if ($stmt->execute() === false) return array();
-		$result = $stmt->get_result();
-		$stmt->close();
-		return $result->fetch_assoc() or array();
+		$result = $this->conn->query("SELECT * FROM customer_types");
+		if ($result === false) return array();
+		$customerTypes = array();
+		while ($row = $result->fetch_assoc()) {
+			array_push($customerTypes, $row);
+		}
+		return $customerTypes;
 	}
 		
 	/* ---------------- tareas --------------------------------- */
@@ -1013,7 +1012,7 @@ class DbHandler {
 	 * @return Array an array containing all task objects as associative arrays, or NULL if user was not found or an error occurred.
 	 */
 	private function getAllTasks($userid) {
-        $stmt = $this->conn->prepare("SELECT * FROM tareas WHERE usuario = ? ORDER BY creation_date");
+        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY creation_date");
         $stmt->bind_param("i", $userid);
         if ($stmt->execute() === false) return NULL;
         $tasks = $stmt->get_result();
@@ -1294,14 +1293,14 @@ class DbHandler {
 		if (empty($message)) $message = "(Sin mensaje)";
 		
 		// insert the new message in the inbox of the receiving user.
-		$stmt = $this->conn->prepare("INSERT INTO messages_inbox (user_from, user_to, subject, message, date, read, favorite) VALUES (?, ?, ?, ?, now(), 0, 0)");
+		$stmt = $this->conn->prepare("INSERT INTO messages_inbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 0, 0)");
 		$stmt->bind_param("iiss", $fromuserid, $touserid, $subject, $message);
 		$insertInbox = $stmt->execute();
 		$stmt->close();
 		if ($insertInbox === false) return false;
 				
 		// insert the new message in the outbox of the sending user.
-		$stmt = $this->conn->prepare("INSERT INTO messages_outbox (user_from, user_to, subject, message, date, read, favorite) VALUES (?, ?, ?, ?, now(), 1, 0)");
+		$stmt = $this->conn->prepare("INSERT INTO messages_outbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 1, 0)");
 		$stmt->bind_param("iiss", $fromuserid, $touserid, $subject, $message);
 		$insertOutbox = $stmt->execute();
 		$stmt->close();
@@ -1324,7 +1323,7 @@ class DbHandler {
 		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">elige un destinatario</option>\n';
 		while ($obj = $result->fetch_assoc()) {
 			// don't include ourselves.
-			if ($obj["id"] != $myuserid) $response = $response.'\t<option value="'.$obj["id"].'">'.$obj["nombre"].'</option>\n';			
+			if ($obj["id"] != $myuserid) $response = $response.'\t<option value="'.$obj["id"].'">'.$obj["name"].'</option>\n';			
 		}
 		$response = $response.'</select>';
 		return $response;
@@ -1370,7 +1369,7 @@ class DbHandler {
 		if ($type == MESSAGES_GET_INBOX_MESSAGES) { // all inbox messages.
 			$whereClause = "WHERE m.user_to = $userid AND m.user_from = u.id";
 		} else if ($type == MESSAGES_GET_UNREAD_MESSAGES) { // unread messages.
-			$whereClause = "WHERE m.user_to = $userid AND m.read = 0 AND m.user_from = u.id";
+			$whereClause = "WHERE m.user_to = $userid AND m.message_read = 0 AND m.user_from = u.id";
 		} else if ($type == MESSAGES_GET_DELETED_MESSAGES) { // deleted messages.
 			$whereClause = "WHERE (m.user_to = $userid AND m.user_from = u.id) OR (m.user_from = $userid AND m.user_to = u.id)";
 		} else if ($type == MESSAGES_GET_SENT_MESSAGES) { // sent messages.
@@ -1384,7 +1383,7 @@ class DbHandler {
 			return NULL;
 		}
 		// return the messages.
-		$result = $this->conn->query("SELECT u.name, u.avatar, m.id, m.user_from, m.user_to, m.subject, m.message, m.date, m.read, m.favorite FROM ".$tableName." m, users u ".$whereClause." ORDER BY m.date DESC");
+		$result = $this->conn->query("SELECT u.name, u.avatar, m.id, m.user_from, m.user_to, m.subject, m.message, m.date, m.message_read, m.favorite FROM ".$tableName." m, users u ".$whereClause." ORDER BY m.date DESC");
 		if (empty($result) || $result === false) { // sanity check
 			return NULL;
 		}
@@ -1398,7 +1397,7 @@ class DbHandler {
 			$tmp["subject"] = $obj["subject"]; 
 			$tmp["message"] = $obj["message"]; 
 			$tmp["date"] = $obj["date"]; 
-			$tmp["read"] = $obj["read"]; 
+			$tmp["message_read"] = $obj["message_read"]; 
 			$tmp["favorite"] = $obj["favorite"];
 			$tmp["remote_user"] = $obj["name"];
 			$tmp["remote_avatar"] = $obj["avatar"]; 
@@ -1417,7 +1416,7 @@ class DbHandler {
 		// generate the table.
 		$result = $this->messageListPrefix;
 		foreach ($messages as $message) {
-			if ($message["read"] == 0) $result = $result.'<tr class="unread">';
+			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
 			else $result = $result.'<tr>';
 						
 			// variables and html text depending on the message
@@ -1502,8 +1501,9 @@ class DbHandler {
 	 * @param Int $userid id of the user to get the unread messages from.
 	 */
 	 public function getUnreadMessagesNumber($userid) {
+		 if (empty($userid)) return 0;
 		 // prepare query.
-		 $stmt = $this->conn->prepare("SELECT count(*) from messages_inbox where user_to = ? AND read = 0");
+		 $stmt = $this->conn->prepare("SELECT count(*) FROM messages_inbox WHERE user_to = ? AND message_read = 0");
 		 $stmt->bind_param("i", $userid);
 		 if ($stmt->execute() === false) return 0;
 
@@ -1537,7 +1537,7 @@ class DbHandler {
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 		
 		// return result of update 
-		$result = $this->conn->query("UPDATE ".$tableName." SET read = 1 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
+		$result = $this->conn->query("UPDATE ".$tableName." SET message_read = 1 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
 		return $result;
 	}
 		 
@@ -1560,7 +1560,7 @@ class DbHandler {
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 
 		// return result of update 
-		$result = $this->conn->query("UPDATE ".$tableName." SET read = 0 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
+		$result = $this->conn->query("UPDATE ".$tableName." SET message_read = 0 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
 		return $result;
 	}
 
@@ -1633,7 +1633,7 @@ class DbHandler {
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 		
 		foreach ($messageids as $messageid) {
-			$copyresult = $this->conn->query("INSERT INTO messages_junk (user_from, user_to, subject, message, date, read, favorite, origin_folder) SELECT user_from, user_to, subject, message, date, read, favorite, '".$tableName."' as origin_folder FROM ".$tableName." WHERE ".$useridfield." = $userid AND id = ".$messageid);
+			$copyresult = $this->conn->query("INSERT INTO messages_junk (user_from, user_to, subject, message, date, message_read, favorite, origin_folder) SELECT user_from, user_to, subject, message, date, message_read, favorite, '".$tableName."' as origin_folder FROM ".$tableName." WHERE ".$useridfield." = $userid AND id = ".$messageid);
 			if ($copyresult) {
 				$deleteOriginal = $this->conn->query("DELETE FROM ".$tableName." WHERE ".$useridfield." = $userid AND id = ".$messageid);
 				if ($deleteOriginal) { 
@@ -1672,10 +1672,10 @@ class DbHandler {
 					$subject = $junkedObj["subject"];
 					$text = $junkedObj["message"];
 					$messagedate = $junkedObj["date"];
-					$readmail = $junkedObj["read"];
+					$readmail = $junkedObj["message_read"];
 					$favorite = $junkedObj["favorite"];
 					if (!empty($tableName)) {
-						$restore = $this->conn->query("INSERT INTO ".$tableName." (user_from, user_to, subject, message, date, read, favorite) VALUES ($fromuserid, $touserid, '$subject', '$text', '$messagedate', $readmail, $favorite)");
+						$restore = $this->conn->query("INSERT INTO ".$tableName." (user_from, user_to, subject, message, date, message_read, favorite) VALUES ($fromuserid, $touserid, '$subject', '$text', '$messagedate', $readmail, $favorite)");
 						if ($restore) {
 							$deleteOriginal = $this->conn->query("DELETE FROM messages_junk WHERE id = $messageid");
 							if ($deleteOriginal) {
@@ -1712,11 +1712,11 @@ class DbHandler {
 		
 		// calculate query message.
 		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$stmt = $this->conn->prepare("SELECT * FROM ? m, usuarios u WHERE m.id = ? AND ((m.? = ? AND m.? = u.id) OR (m.? = ? AND m.? = u.id)) ");
-			$stmt->bind_param("sisissis", $tableName, $messageid, $useridfield, $userid, $remoteuseridfield, $remoteuseridfield, $userid, $useridfield);		
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, usuarios u WHERE m.id = ? AND ((m.? = ? AND m.? = u.id) OR (m.? = ? AND m.? = u.id)) ");
+			$stmt->bind_param("isissis", $messageid, $useridfield, $userid, $remoteuseridfield, $remoteuseridfield, $userid, $useridfield);		
 		} else {
-			$stmt = $this->conn->prepare("SELECT * FROM ? m, usuarios u WHERE m.? = ? AND m.? = u.id AND m.id = ?");
-			$stmt->bind_param("ssisi", $tableName, $useridfield, $userid, $remoteuseridfield, $messageid);
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, usuarios u WHERE m.? = ? AND m.? = u.id AND m.id = ?");
+			$stmt->bind_param("sisi", $useridfield, $userid, $remoteuseridfield, $messageid);
 				
 		}
 		// execute the query
@@ -1734,7 +1734,7 @@ class DbHandler {
 			$subject = $obj["subject"]; 
 			$text = $obj["message"]; 
 			$messagedate = $obj["date"]; 
-			$remoteusername = $obj["nombre"]; 
+			$remoteusername = $obj["name"]; 
 			$fromortodestination = ($fromuserid == $userid)? " para $remoteusername." : " de $remoteusername.";
 			$relativeTime = $this->relativeTime($messagedate);
 		
@@ -2033,14 +2033,6 @@ class DbHandler {
 	}	
 	
 	/* ---------------- Utility functions -------------------------- */
-	
-	/**
-	 * Returns the default avatar
-	 */
-	 // HACERLO UNA CONSTANTE EN CRMDefauls!!!
-	public function defaultAvatar() {
-		return "./img/avatars/default/defaultAvatar.png";
-	}
 	
 	/**
 	 * Generates a relative time string for a given date, relative to the current time.

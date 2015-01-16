@@ -38,7 +38,7 @@
         <header class="header">
             <a href="./index.php" class="logo">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy Clientes
+                Creamy
             </a>
             <!-- Header Navbar: style can be found in header.less -->
             <nav class="navbar navbar-static-top" role="navigation">
@@ -111,13 +111,13 @@
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["nombre"]; ?>" placeholder="Nombre (obligatorio)">
+				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="Nombre (obligatorio)">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
-				                                <input name="productType" id="nproductTypeame" value="<?php print $customerobj["tipo"]; ?>" type="text" class="form-control" placeholder="Producto/Tipo de Contacto">
+				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="Producto/Tipo de Contacto">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
@@ -125,14 +125,8 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-					                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="ID number" value="<?php print $customerobj["nif"]; ?>">
+					                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="ID number" value="<?php print $customerobj["id_number"]; ?>">
 					                            </div>
-					                        </div><!-- /.col-lg-6 -->
-					                        <div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-					                                <input name="passport" id="passport" type="text" class="form-control" placeholder="Pasaporte" value="<?php print $customerobj["pasaporte"]; ?>">
-					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
 				                        </div>
@@ -145,19 +139,19 @@
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="Teléfono fijo" value="<?php print $customerobj["telefono"]; ?>">
+				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="Teléfono fijo" value="<?php print $customerobj["phone"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-mobile"></i></span>
-				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="Teléfono móvil" value="<?php print $customerobj["movil"]; ?>">
+				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="Teléfono móvil" value="<?php print $customerobj["mobile"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-				                                <input name="address" id="address" type="text" class="form-control" placeholder="Dirección" value="<?php print $customerobj["direccion"]; ?>">
+				                                <input name="address" id="address" type="text" class="form-control" placeholder="Dirección" value="<?php print $customerobj["address"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
@@ -165,13 +159,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="city" id="city" type="text" class="form-control" placeholder="Ciudad" value="<?php print $customerobj["poblacion"]; ?>">
+					                                <input name="city" id="city" type="text" class="form-control" placeholder="Ciudad" value="<?php print $customerobj["city"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="estate" id="estate" type="text" class="form-control" placeholder="Provincia" value="<?php print $customerobj["provincia"]; ?>">
+					                                <input name="estate" id="estate" type="text" class="form-control" placeholder="Provincia" value="<?php print $customerobj["estate"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -181,13 +175,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="Código Postal" value="<?php print $customerobj["cp"]; ?>">
+					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="Código Postal" value="<?php print $customerobj["zip_code"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="country" id="country" type="text" class="form-control" placeholder="País" value="<?php print $customerobj["pais"]; ?>">
+					                                <input name="country" id="country" type="text" class="form-control" placeholder="País" value="<?php print $customerobj["country"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -197,8 +191,8 @@
 				                            <select class="form-control" id="maritalstatus" name="maritalstatus">
 					                        <?php 
 						                        $currentMS = 0;
-						                        if (!empty($customerobj["estado_civil"])) {
-							                        $currentMS = $customerobj["estado_civil"];
+						                        if (!empty($customerobj["marital_status"])) {
+							                        $currentMS = $customerobj["marital_status"];
 							                        if ($currentMS < 1) $currentMS = 0;
 							                        if ($currentMS > 5) $currentMS = 0;
 						                        }
@@ -237,8 +231,8 @@
 				                                </div>
 				                                <?php
 					                                $dateAsDMY = NULL;
-					                                if (!empty($customerobj["fecha_nacimiento"])) { 
-						                                $time = strtotime($customerobj["fecha_nacimiento"]);
+					                                if (!empty($customerobj["birthdate"])) { 
+						                                $time = strtotime($customerobj["birthdate"]);
 						                                $dateAsDMY = date('d/m/Y', $time); 
 						                            }
 					                            ?>
@@ -248,7 +242,7 @@
 				                        <div class="form-group">
 				                            <div class="checkbox">
 				                                <label>
-				                                    <input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["no_enviar_mail"])) print "checked"; ?>/>Esta persona desea que no se le envíen emails
+				                                    <input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/>Esta persona desea que no se le envíen emails
 				                                </label>
 				                            </div>
 				                        </div>
