@@ -156,7 +156,7 @@
 	                            </div>
                                 <div class="box-body" style="display: none;">
 	                                <h3>Welcome to Creamy!</h3>
-									<p>Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. This is a short guide to help you getting started with the main functionality of Creamy. You can close this box at any time by clicking 'x' button at the right or minimize it pressing the '-'. Let's start!</p>
+									<p>Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. This is a short guide to help you getting started with the main functionality of Creamy. Let's start!</p>
 									<p>The top bar will give you quick access to your messages, notifications and tasks.</p>
 	                            </div>
 	                        </div>

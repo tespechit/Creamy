@@ -68,7 +68,7 @@ class ImageHandler {
 	        $key .= $keys[array_rand($keys)];
 	    }
 	
-	    return AVATAR_IMAGE_FILENAME_PREFIX.$key.$imageFileType;
+	    return AVATAR_IMAGE_FILENAME_PREFIX.$key.".".$imageFileType;
 	}
 	
 	private function realPathForImagePath($imagePath) {

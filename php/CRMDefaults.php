@@ -26,7 +26,7 @@ define ('MESSAGES_MAX_FOLDER', 4);
 define ('AVATAR_IMAGE_DEFAULT_SIZE', 300);
 define ('AVATAR_IMAGE_FILENAME_LENGTH', 16);
 define ('AVATAR_IMAGE_FILENAME_PREFIX', 'avatar');
-define ('AVATAR_IMAGE_FILENAME_EXTENSION', '.jpg');
+define ('AVATAR_IMAGE_FILENAME_EXTENSION', 'jpg');
 define ('AVATAR_IMAGE_FILEDIR', '../img/avatars/');
 define ('AVATAR_IMAGE_DEFAULT_FILEDIR', '../img/avatars/default/');
 
