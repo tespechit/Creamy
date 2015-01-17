@@ -132,10 +132,9 @@
                                             <input type="file" id="avatar" name="avatar">
                                             <p class="help-block">Inserta un fichero de imagen .jpg, .gif o .png. Máximo 2MB.</p>
                                         </div>
-                                        <div class="checkbox">Dar permisos de administrador a este usuario
-                                            <label>
-                                                <input id="isAdmin" name="isAdmin" type="checkbox">
-                                            </label>
+                                        <div class="form-group">
+                                            <label for="role">Rol del usuario</label>
+											<?php print $db->getUserRolesAsFormSelect(); ?>
                                         </div>
 	                                    <br>
 	                                    <div  id="resultmessage" name="resultmessage" style="display:none">

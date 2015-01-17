@@ -41,6 +41,7 @@ define ('CRM_DEFAULTS_CUSTOMERS_SCHEMA_DEFAULT', 'default');
 define ('CRM_DEFAULTS_CUSTOMERS_SCHEMA_CUSTOM', 'custom');
 define ('CRM_RECOVERY_EMAIL_FILE', '../skel/recoveryEmail.html');
 define ('CRM_DEFAULT_DB_PORT', 3306);
+define ('CRM_CONTACTS_TABLE_NAME', 'clients_1');
 
 // User constants
 define('USER_CREATED_SUCCESSFULLY', 0);

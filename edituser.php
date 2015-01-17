@@ -134,14 +134,9 @@
                                             <p class="help-block">Inserta un fichero de imagen .jpg, .gif o .png. Máximo 2MB.</p>
                                         </div>
                                         <?php if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) { ?> 
-                                        <div class="checkbox">Dar permisos de administrador a este usuario
-                                            <label>
-                                            	<?php if ($userobj["role"] == CRM_DEFAULTS_USER_ROLE_ADMIN) {?>
-                                                <input id="isAdmin" name="isAdmin" type="checkbox" checked="true">
-                                                <?php } else { ?>
-                                                <input id="isAdmin" name="isAdmin" type="checkbox">
-                                                <?php } ?>
-                                            </label>
+                                        <div class="form-group">
+                                            <label for="role">Rol del usuario</label>
+											<?php print $db->getUserRolesAsFormSelect($userobj["role"]); ?>
                                         </div>
                                         <?php } ?>
 	                                    <br>

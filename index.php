@@ -88,16 +88,16 @@
                             <div class="small-box bg-aqua">
                                 <div class="inner">
                                     <h3>
-                                        150 nuevos
+                                        <?php print $db->getNumberOfNewCustomers(); ?> nuevos
                                     </h3>
                                     <p>
-                                        Clientes de Seguros
+                                        Clientes
                                     </p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-ios7-pulse-strong"></i>
+                                    <i class="ion ion-cube"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">
+                                <a href="" class="small-box-footer">
                                     Ver todos <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
@@ -107,26 +107,7 @@
                             <div class="small-box bg-green">
                                 <div class="inner">
                                     <h3>
-                                        53 nuevos
-                                    </h3>
-                                    <p>
-                                        Clientes de Servicios
-                                    </p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-cube"></i>
-                                </div>
-                                <a href="#" class="small-box-footer">
-                                    Ver todos <i class="fa fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div><!-- ./col -->
-                        <div class="col-lg-3 col-xs-6">
-                            <!-- small box -->
-                            <div class="small-box bg-yellow">
-                                <div class="inner">
-                                    <h3>
-                                        44 nuevos
+                                        <?php print $db->getNumberOfNewContacts(); ?> nuevos
                                     </h3>
                                     <p>
                                         Contactos
@@ -135,7 +116,7 @@
                                 <div class="icon">
                                     <i class="ion ion-person-add"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">
+                                <a href="./customerslist.php?customer_type=clients_1&customer_name=Contactos" class="small-box-footer">
                                     Ver todos <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>

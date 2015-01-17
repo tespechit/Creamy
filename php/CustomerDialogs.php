@@ -183,7 +183,7 @@
 						<div id="createcustomerresult" name="createcustomerresult"></div>
                     </div>
                     <div class="modal-footer clearfix">
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="createCustomerCancelButton"><i class="fa fa-times"></i> Cancelar</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="createCustomerCancelButton"><i class="fa fa-times"></i> Salir</button>
                         <button type="submit" class="btn btn-primary pull-left" id="createCustomerOkButton"><i class="fa fa-check-circle"></i> Crear</button>
                     </div>
                 </form>

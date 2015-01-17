@@ -51,7 +51,7 @@ class DbHandler {
             <th>Nombre</th>
             <th>Email</th>
             <th>Fecha alta</th>
-            <th>¿Administrador?</th>
+            <th>Rol</th>
             <th>Estado</th>
             <th>Acción</th>
         </tr>
@@ -64,7 +64,7 @@ class DbHandler {
             <th>Nombre</th>
             <th>Email</th>
             <th>Fecha alta</th>
-            <th>¿Administrador?</th>
+            <th>Rol</th>
             <th>Estado</th>
             <th>Acción</th>
         </tr>
@@ -100,7 +100,7 @@ class DbHandler {
         if (!$this->userAlreadyExists($name)) {
             // Generating password hash
             $password_hash = PassHash::hash($password);
-            if (empty($avatarURL)) $avatarURL = $this->randomAvatar();
+            if (empty($avatarURL)) $avatarURL = CRM_DEFAULTS_USER_AVATAR;
 
             // insert query
             $stmt = $this->conn->prepare("INSERT INTO users (name, password_hash, email, phone, role, avatar, creation_date, status) values(?, ?, ?, ?, ?, ?, now(), 1)");
@@ -381,14 +381,14 @@ class DbHandler {
 	       // iterate through all contacts
 	       foreach ($users as $userData) {
 	       	   $status = $userData["status"] == 1 ? "Activo" : "Deshabilitado";
-	       	   $userIsAdmin = $userData["role"] == CRM_DEFAULTS_USER_ROLE_ADMIN ? "Si" : "No";	
+	       	   $userRole = $this->getRoleNameForRole($userData["role"]);	
 	       	   $action = $this->getUserActionMenuForUser($userData["id"], $userData["name"], $userData["status"]);       
 		       $result = $result."<tr>
 	                    <td>".$userData["id"]."</td>
 	                    <td><a class=\"edit-action\" href=\"".$userData["id"]."\">".$userData["name"]."</a></td>
 	                    <td>".$userData["email"]."</td>
 	                    <td>".$userData["creation_date"]."</td>
-	                    <td>".$userIsAdmin."</td>
+	                    <td>".$userRole."</td>
 	                    <td>".$status."</td>
 	                    <td>".$action."</td>
 	                </tr>";
@@ -398,7 +398,52 @@ class DbHandler {
 	       $result = $result.$this->usersTableSuffix; 
 	       return $result; 
        }
-	}	
+	}
+	
+	/**
+	 * Retrieves the human friendly descriptive name for a role given its identifier number.
+	 * @param $roleNumber Int number/identifier of the role.
+	 * @return Human friendly descriptive name for the role.
+	 */
+	private function getRoleNameForRole($roleNumber) {
+		switch ($roleNumber) {
+			case CRM_DEFAULTS_USER_ROLE_ADMIN:
+				return "administrator";
+				break;
+			case CRM_DEFAULTS_USER_ROLE_MANAGER:
+				return "manager";
+				break;
+			case CRM_DEFAULTS_USER_ROLE_WRITER:
+				return "writer";
+				break;
+			case CRM_DEFAULTS_USER_ROLE_READER:
+				return "reader";
+				break;
+			case CRM_DEFAULTS_USER_ROLE_GUEST:
+				return "guest";		
+				break;
+		}
+	}
+
+	/**
+	 * Generates the HTML code for a select with the human friendly descriptive names for the user roles.
+	 * @return String the HTML code for a select with the human friendly descriptive names for the user roles.
+	 */
+	public function getUserRolesAsFormSelect($selectedOption = CRM_DEFAULTS_USER_ROLE_MANAGER) {
+		$selectedAdmin = $selectedOption == CRM_DEFAULTS_USER_ROLE_ADMIN ? " selected" : "";
+		$selectedManager = $selectedOption == CRM_DEFAULTS_USER_ROLE_MANAGER ? " selected" : "";
+		$selectedWriter = $selectedOption == CRM_DEFAULTS_USER_ROLE_WRITER ? " selected" : "";
+		$selectedReader = $selectedOption == CRM_DEFAULTS_USER_ROLE_READER ? " selected" : "";
+		$selectedGuest = $selectedOption == CRM_DEFAULTS_USER_ROLE_GUEST ? " selected" : "";
+		
+		return '<select id="role" name="role">
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_ADMIN.'"'.$selectedAdmin.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN).'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_MANAGER.'"'.$selectedManager.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER).'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_WRITER.'"'.$selectedWriter.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER).'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_READER.'"'.$selectedReader.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER).'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_GUEST.'"'.$selectedGuest.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST).'</option>				   
+			    </select>';
+	}
 
     /**
      * Returns a HTML representation of the action associated with a user in the admin panel.
@@ -489,7 +534,6 @@ class DbHandler {
 			$currentTimestamp = time();
 			// check if no more than 24h have passed.
 			$diff = $currentTimestamp - $requestTimestamp;
-			//error_log("Checking if $date ($requestTimestamp) is within 24 hours of $currentTimestamp: diff is $diff");
 			if ($diff > 0 && $diff < (60*60*24)) { return true; }
 		}
 		return false;
@@ -572,7 +616,7 @@ class DbHandler {
                             <ul class="menu">';
         
         foreach ($list as $message) {
-	        if (empty($message["remote_avatar"])) $remoteavatar = $this->randomAvatar();
+	        if (empty($message["remote_avatar"])) $remoteavatar = CRM_DEFAULTS_USER_AVATAR;
 	        else $remoteavatar = $message["remote_avatar"];
 	        $relativeTime = $this->relativeTime($message["date"], 1);
 	        $shortText = $this->substringUpTo($message["message"], 40);
@@ -701,7 +745,7 @@ class DbHandler {
 									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">Cambiar mi contraseña</a>
 									</div>
 									<div class="text-center">
-									    <a href="./messages.php">messages</a>
+									    <a href="./messages.php">Mensajes</a>
 									</div>
 									<div class="text-center">
 									        <a href="./notificationes.php">Notificaciones</a>
@@ -910,7 +954,6 @@ class DbHandler {
 	 */
 	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
 		// sanity checks
-		error_log("Creando cliente. Customer type: $customerType");
 		if (empty($customerType)) return false;
 		
 		// generate correct, mysql-ready date.
@@ -919,9 +962,6 @@ class DbHandler {
 		
 		// prepare and execute query.
 		$stmt = $this->conn->prepare("INSERT INTO $customerType (name, email, phone, mobile, id_number, address, city, state, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
-		error_log("Consulta: \n");
-		error_log("INSERT INTO $customerType (name, email, phone, mobile, id_number, address, city, state, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
-		error_log($this->conn->error);
 		$stmt->bind_param("ssssssssssssiiii", $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country,  $productType, $correctDate, $maritalstatus,$createdByUser, $donotsendemail, $gender);
 		$result = $stmt->execute();
 		$stmt->close();
@@ -947,16 +987,17 @@ class DbHandler {
 	 * @param $donotsendemail Int a integer/boolean to indicate whether the customer doesn't want to receive email (=1) or is just fine receiving them (=0).
 	 * @param $createdByUser Int id of the user that inserted the customer in the system.  
 	 * @param $gender Int gender of the customer (female=0, male=1).  
+	 * @param $notes String notes for the customer 
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
+	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes) {
 		// determine customer type (target table) and sanity checks.
 		$correctDate = NULL;
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
 		
 		// prepare and execute query
-		$stmt = $this->conn->prepare("UPDATE ? SET name = ?, email = ?, phone = ?, mobile = ?, id_number = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, type = ?, birthdate = ?, estado_civil = ?, do_not_send_email = ?, gender = ? WHERE id = ?");
-		$stmt->bind_param("sssssssssssssiiii", $customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $productType, $correctDate, $maritalstatus, $donotsendemail, $gender, $customerid);
+		$stmt = $this->conn->prepare("UPDATE $customerType SET name = ?, email = ?, phone = ?, mobile = ?, id_number = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, type = ?, birthdate = ?, marital_status = ?, do_not_send_email = ?, gender = ?, notes = ? WHERE id = ?");
+		$stmt->bind_param("ssssssssssssiiisi", $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $productType, $correctDate, $maritalstatus, $donotsendemail, $gender, $notes, $customerid);
 		$result = $stmt->execute();
 		$stmt->close();
 		return $result;
@@ -2054,7 +2095,44 @@ class DbHandler {
 			 $result->close();
 			 return $numClients;
 		}
-	}	
+	}
+	
+	/**
+	 * Gets the number of new contacts (last week).
+	 * @return the number of contact entries that were created in the last week.
+	 */
+	public function getNumberOfNewContacts() {
+		$result = $this->conn->query("SELECT count(*) FROM ".CRM_CONTACTS_TABLE_NAME." WHERE (DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE())");
+		if ($result === false) return 0;
+		 else {
+			 $row = $result->fetch_row();
+			 $numClients = $row[0];
+			 $result->close();
+			 return $numClients;
+		}
+	}
+	
+	/**
+	 * Gets the number of new customers (last week), not including contacts.
+	 * @return the number of customer entries that were created in the last week from all customer tables but not including contacts.
+	 */
+	public function getNumberOfNewCustomers() {
+		$customerTypes = $this->getCustomerTypes();
+		if (empty($customerTypes)) return 0;
+		
+		$numClients = 0;
+		foreach ($customerTypes as $customerType) {
+			if ($customerType["table_name"] == CRM_CONTACTS_TABLE_NAME) continue;
+			$result = $this->conn->query("SELECT count(*) FROM ".$customerType["table_name"]." WHERE (DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE())");
+			if ($result !== false) {
+				 $row = $result->fetch_row();
+				 $numClients += $row[0];
+				 $result->close();
+			}
+		}
+		return $numClients;
+	}
+		
 	
 	/* ---------------- Utility functions -------------------------- */
 	

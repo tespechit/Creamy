@@ -60,7 +60,7 @@ if ($validated == 1) {
 			return;
 		}
 	}
-	$userrole = CRM_DEFAULTS_USER_ROLE_MANAGER; if (isset($_POST["isAdmin"])) { $userrole = CRM_DEFAULTS_USER_ROLE_ADMIN; } 	
+	$userrole = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $userrole = $_POST["role"]; } 	
 		
 	$result = $db->modifyUser($modifyid, $email, $phone, $userrole, $avatar);
 	if ($result === true) {

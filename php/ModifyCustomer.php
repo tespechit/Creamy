@@ -121,12 +121,19 @@ if ($validated == 1) {
 		$productType = $db->escape_string($productType);
 	}
 	
+	// notes
+	$notes = NULL; if (isset($_POST["notes"])) { 
+		$notes = $_POST["notes"]; 
+		$notes = stripslashes($notes);
+		$notes = $db->escape_string($notes);
+	}
+	
 	// no enviar email
 	$donotsendemail = 0; if (isset($_POST["donotsendemail"])) { 
 		$donotsendemail = 1;
 	}
 
-	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender);
+	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
 	if ($result === true) { print "success"; }
 	else { print "Ha sido imposible modificar el cliente. Por favor, inténtelo más tarde."; } 
 	

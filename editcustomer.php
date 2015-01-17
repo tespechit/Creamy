@@ -7,8 +7,6 @@
     $customerid = NULL;
     if (isset($_GET["customer_type"])) { $customerType = $_GET["customer_type"]; }
 	if (isset($_GET["customerid"])) { $customerid = $_GET["customerid"]; }
-    
-    
 ?>
 <html>
     <head>
@@ -182,6 +180,12 @@
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
 				                        </div>
+										<div class="form-group">
+				                            <div class="input-group">
+				                                <span class="input-group-addon"><i class="fa fa-file-text-o"></i></span>
+				                                <textarea id="notes" name="notes" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
+				                            </div>                  
+				                        </div>
 				                        <div class="form-group">
 				                            <label>Estado civil</label>
 				                            <select class="form-control" id="maritalstatus" name="maritalstatus">
@@ -214,9 +218,9 @@
 						                        }
 						                        
 					                        ?>
-												<option value="-1" <?php if ($currentGender == 0) print "selected"; ?>>elige una opción</option>
-				                                <option value="0" <?php if ($currentGender == 1) print "selected"; ?>>mujer</option>
-				                                <option value="1" <?php if ($currentGender == 2) print "selected"; ?>>hombre</option>
+												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>>elige una opción</option>
+				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>>mujer</option>
+				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>>hombre</option>
 				                            </select>
 				                        </div>
 				                        <div class="form-group">

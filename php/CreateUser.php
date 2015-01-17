@@ -76,7 +76,7 @@ if ($validated == 1) {
 		}
 	}
 	
-	$role = CRM_DEFAULTS_USER_ROLE_MANAGER; if (isset($_POST["isAdmin"])) { $role = CRM_DEFAULTS_USER_ROLE_ADMIN; } 	
+	$role = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $role = $_POST["role"]; } 	
 	$result = $db->createUser($name, $password1, $email, $phone, $role, $avatar);
 	if ($result === USER_CREATED_SUCCESSFULLY) { print "success"; }
 	else if ($result === USER_ALREADY_EXISTED) { print "El usuario ya existe. Por favor, elija otro nombre de usuario."; } 
