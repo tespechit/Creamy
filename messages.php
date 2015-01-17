@@ -59,10 +59,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"]);
+                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -88,7 +88,9 @@
 
                 <!-- Main content -->
                 <section class="content">
-
+				
+	                <!-- check permissions -->
+	                <?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
 					<!-- hidden message box -->
 					
 					<div class="row" id="messages-message-box" <?php if (empty($message)) { print 'style="display: none;"'; } ?>>
@@ -184,8 +186,9 @@
                         </div><!-- /.col (MAIN) -->
                     </div>
                     <!-- MAILBOX END -->
-
-
+					<!-- user not authorized -->
+					<?php } else { print $db->getUnauthotizedAccessMessage(); } ?>
+					
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->

@@ -52,10 +52,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"]);
+                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -83,7 +83,26 @@
 
                     <!-- Small boxes (Stat box) -->
                     <div class="row">
-                        <div class="col-lg-3 col-xs-6">
+                        <div class="col-xs-4">
+                            <!-- small box -->
+                            <div class="small-box bg-orange">
+                                <div class="inner">
+                                    <h3>
+                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"]) ?> nuevas
+                                    </h3>
+                                    <p>
+                                        Notificaciones
+                                    </p>
+                                </div>
+                                <div class="icon">
+                                    <i class="ion ion-ios7-alarm-outline"></i>
+                                </div>
+                                <a href="notifications.php" class="small-box-footer">
+                                    Ver todas  <i class="fa fa-arrow-circle-right"></i>
+                                </a>
+                            </div>
+                        </div><!-- ./col -->
+                        <div class="col-xs-4">
                             <!-- small box -->
                             <div class="small-box bg-aqua">
                                 <div class="inner">
@@ -95,14 +114,14 @@
                                     </p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-cube"></i>
+                                    <i class="ion ion-person-stalker"></i>
                                 </div>
                                 <a href="" class="small-box-footer">
-                                    Ver todos <i class="fa fa-arrow-circle-right"></i>
+                                    Ver estadísticas  <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
-                        <div class="col-lg-3 col-xs-6">
+                        <div class="col-xs-4">
                             <!-- small box -->
                             <div class="small-box bg-green">
                                 <div class="inner">
@@ -124,6 +143,27 @@
 
                     </div><!-- /.row -->
 
+                    <div class="row">
+                        <div class="col-xs-12">
+							<div class="box box-solid box-primary collapsed-box">
+	                            <div class="box-header">
+		                            <div class="box-tools pull-right">
+                                        <button class="btn btn-primary btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
+                                        <button class="btn btn-primary btn-sm" data-widget="remove"><i class="fa fa-times"></i></button>
+                                    </div>
+	                                <i class="fa fa-warning"></i>
+	                                <h3 class="box-title">First steps (click + to show)</h3>
+	                            </div>
+                                <div class="box-body" style="display: none;">
+	                                <h3>Welcome to Creamy!</h3>
+									<p>Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. This is a short guide to help you getting started with the main functionality of Creamy. You can close this box at any time by clicking 'x' button at the right or minimize it pressing the '-'. Let's start!</p>
+									<p>The top bar will give you quick access to your messages, notifications and tasks.</p>
+	                            </div>
+	                        </div>
+
+                        </div>
+                    </div>
+                    
                     <!-- Main row -->
                     <div class="row">
                         <!-- Left col -->
@@ -138,9 +178,6 @@
                                     <div class="chart" id="revenue-chart" style="position: relative; height: 375px;"></div>
 	                            </div>
 	                        </div>
-
-
-
                         </section><!-- /.Left col -->
                         
                         <!-- right col (We are only adding the ID to make the widgets sortable)-->
@@ -167,7 +204,7 @@
                                         <div id="messagesendingresult" name="messagesendingresult"></div>
 								</div>
                                 <div class="box-footer clearfix">
-                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail">Send <i class="fa fa-arrow-circle-right"></i></button>
+                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail">Send <i class="fa fa-send"></i></button>
                                 </div>
                             </form>
                             </div>

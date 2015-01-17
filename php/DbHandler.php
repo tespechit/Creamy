@@ -480,6 +480,24 @@ class DbHandler {
 		return $result;
 	}
 	
+	/**
+	 * Generates the HTML with a unauthorized access. It must be included inside a <section> section.
+	 */
+	public function getUnauthotizedAccessMessage() {
+		print '<div class="box box-danger">
+				<div class="box-header">
+	                <i class="fa fa-lock"></i>
+	                <h3 class="box-title">Access denied</h3>
+	            </div>
+				<div class="box-body" id="graph-box">
+					<div class="callout callout-danger">
+						<p>You don\'t have permission for accessing this content.</p>
+					</div>
+				</div>
+			   </div>';
+	}
+	
+	
 	/* ------------------ Password recovery ------------------ */
 
 	/** 
@@ -599,7 +617,9 @@ class DbHandler {
 	 * Generates the HTML for the message notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	function getMessageNotifications($userid) {
+	function getMessageNotifications($userid, $userrole) {
+		if (!userHasBasicPermission($userrole)) return '';
+
         $list = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
 		$numMessages = count($list);
 		
@@ -654,7 +674,9 @@ class DbHandler {
 	 * Generates the HTML for the alert notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	public function getAlertNotifications($userid) {
+	public function getAlertNotifications($userid, $userrole) {
+		if (!userHasBasicPermission($userrole)) return '';
+		
 		$notifications = $this->getTodayNotifications($userid);
 		if (empty($notifications)) $notificationNum = 0;
 		else $notificationNum = count($notifications);
@@ -681,7 +703,9 @@ class DbHandler {
         return $result;
 	}
 	
-	public function getTaskNotifications($userid) {
+	public function getTaskNotifications($userid, $userrole) {
+		if (!userHasBasicPermission($userrole)) return '';
+
 		$list = $this->getUnfinishedTasks($userid);
 		$numTasks = count($list);
 		
@@ -723,23 +747,10 @@ class DbHandler {
 	 * Generates the HTML for the user's personal menu as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	public function getUserMenu($userid, $username, $avatar) {		
-		print '<!-- User Account: style can be found in dropdown.less -->
-                        <li class="dropdown user user-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="glyphicon glyphicon-user"></i>
-                                <span>'.$username.' <i class="caret"></i></span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <!-- User image -->
-                                <li class="user-header bg-light-blue">
-                                    <img src="'.$avatar.'" class="img-circle" alt="User Image" />
-                                    <p>
-                                        '.$username.'
-                                        <small>Es un placer verte de nuevo.</small>
-                                    </p>
-                                </li>
-                                <!-- Menu Body -->
+	public function getUserMenu($userid, $username, $avatar, $userrole) {
+		// menu actions (only for users with permissions).
+		$menuActions = '';
+		if (userHasBasicPermission($userrole)) $menuActions = '<!-- Menu Body -->
                                 <li class="user-body">
 									<div class="text-center">
 									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">Cambiar mi contraseña</a>
@@ -753,12 +764,29 @@ class DbHandler {
 									<div class="text-center">
 									        <a href="./tasks.php">Tareas</a>
 								    </div>
-								</li>
+								</li>';
+		
+		// change my data (only for users with permissions).
+		$changeMyData = '';
+		if (userHasBasicPermission($userrole)) $changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">Mis Datos</a></div>';
+		return '<!-- User Account: style can be found in dropdown.less -->
+                        <li class="dropdown user user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <i class="glyphicon glyphicon-user"></i>
+                                <span>'.$username.' <i class="caret"></i></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- User image -->
+                                <li class="user-header bg-light-blue">
+                                    <img src="'.$avatar.'" class="img-circle" alt="User Image" />
+                                    <p>
+                                        '.$username.'
+                                        <small>Es un placer verte de nuevo.</small>
+                                    </p>
+                                </li>'.$menuActions.'
                                 <!-- Menu Footer-->
                                 <li class="user-footer">
-                                    <div class="pull-left">
-                                        <a href="./edituser.php" class="btn btn-default btn-flat">Mis Datos</a>
-                                    </div>
+                                    '.$changeMyData.'
                                     <div class="pull-right">
                                         <a href="./logout.php" class="btn btn-default btn-flat">Salir</a>
                                     </div>

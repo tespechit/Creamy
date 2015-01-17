@@ -45,10 +45,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"]);   
-	                    	print $db->getAlertNotifications($_SESSION["userid"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"]);
+                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
+	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>

@@ -60,6 +60,36 @@ define ('CRM_DEFAULTS_USER_ENABLED', 1);
 
 define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/defaultAvatar.png');
 
+// user access functions
+function userHasAdminPermission($userrole) {
+	if (!isset($userrole)) return false;
+	if ($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) return true;
+	return false;
+}
+
+function userHasManagerPermission($userrole) {
+	if (!isset($userrole)) return false;
+	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER)) return true;
+	return false;
+}
+
+function userHasWritePermission($userrole) {
+	if (!isset($userrole)) return false;
+	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || 
+		($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || 
+		($userrole === CRM_DEFAULTS_USER_ROLE_WRITER)) return true;
+	return false;
+}
+
+function userHasBasicPermission($userrole) {
+	if (!isset($userrole)) return false;
+	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || 
+		($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) ||
+	    ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER) || 
+	    ($userrole === CRM_DEFAULTS_USER_ROLE_READER)) return true;
+	return false;
+}
+
 // installation constants.
 define ('CRM_INSTALL_STATE_SUCCESS', 1);
 define ('CRM_INSTALL_STATE_ERROR', 0);

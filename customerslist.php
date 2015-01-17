@@ -1,5 +1,6 @@
 <?php
-	include_once "./php/DbHandler.php";
+	require_once('./php/CRMDefaults.php');
+	require_once "./php/DbHandler.php";
     $db = new DbHandler();
     include "./php/Session.php";
     
@@ -52,10 +53,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"]);
+                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -80,22 +81,28 @@
 
                 <!-- Main content -->
                 <section class="content">
+	                <!-- check permissions -->
+	                <?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="box">
                                 <div class="box-header">
                                     <h3 class="box-title"><?php print $customerName; ?></h3>
                                 </div><!-- /.box-header -->
+                                <?php 
+	                            if (userHasWritePermission($_SESSION["userrole"])) { ?>
 								<div class="box-tools" style="padding-left: 1%;">
                                    <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal">Añadir a <?php print(strtolower($customerName)); ?></a>
                                 </div>
+								<?php } ?>
                                 <div class="box-body table-responsive">
 									<?php print $db->getAllCustomersOfTypeAsTable($customerType); ?>
                                 </div><!-- /.box-body -->
                             </div><!-- /.box -->
                         </div>
                     </div>
-
+                    <!-- user not authorized -->
+					<?php } else { print $db->getUnauthotizedAccessMessage(); } ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
