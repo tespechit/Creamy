@@ -1,14 +1,54 @@
-@import url(//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic);
 /*! 
- *   AdminLTE v1.2
- *   Author: AlmsaeedStudio.com, modifications by Ignacio Nieto Carvajal http://digitalleaves.com
- *   License: Open source - MIT
- *           Please visit http://opensource.org/licenses/MIT for more information
+ *   CreamyCRM Stylesheet
 !*/
-/*
-    Core: General style
-----------------------------
-*/
+
+/** Local google fonts */
+
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Source Sans Pro Light'), local('SourceSansPro-Light'), url(../fonts/sourceSans300.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Source Sans Pro'), local('SourceSansPro-Regular'), url(../fonts/sourceSans400.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Source Sans Pro Semibold'), local('SourceSansPro-Semibold'), url(../fonts/sourceSans600.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Source Sans Pro Bold'), local('SourceSansPro-Bold'), url(../fonts/sourceSans700.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-weight: 300;
+  src: local('Source Sans Pro Light Italic'), local('SourceSansPro-LightIt'), url(../fonts/sourceSansItalic300.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-weight: 400;
+  src: local('Source Sans Pro Italic'), local('SourceSansPro-It'), url(../fonts/sourceSansItalic400.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-weight: 600;
+  src: local('Source Sans Pro Semibold Italic'), local('SourceSansPro-SemiboldIt'), url(../fonts/sourceSansItalic600.ttf) format('truetype');
+}
+
+/** Style */
+
 html,
 body {
   overflow-x: hidden!important;
@@ -147,6 +187,14 @@ h6,
 /* All images should be responsive */
 img {
   max-width: 100% !important;
+}
+.left-paragraph-image {
+	float: left;
+	margin-right: 10px;
+}
+.right-paragraph-image {
+	float: right;
+	margin-left: 10px;
 }
 .sort-highlight {
   background: #f4f4f4;

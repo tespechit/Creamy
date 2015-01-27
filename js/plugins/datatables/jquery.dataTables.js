@@ -9134,7 +9134,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sSortAscending": ": activar para ordenar columnas por orden ascendente",
+				"sSortAscending": " - click/return to sort ascending",
 	
 				/**
 				 * ARIA label that is added to the table headers when the column may be
@@ -9155,7 +9155,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sSortDescending": ": activar para ordenar columnas por orden descendente"
+				"sSortDescending": " - click/return to sort descending"
 			},
 	
 			/**
@@ -9182,7 +9182,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sFirst": "Primera",
+				"sFirst": "First",
 			
 			
 				/**
@@ -9203,7 +9203,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sLast": "Última",
+				"sLast": "Last",
 			
 			
 				/**
@@ -9224,7 +9224,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sNext": "Siguiente",
+				"sNext": "Next",
 			
 			
 				/**
@@ -9245,7 +9245,7 @@
 				 *      } );
 				 *    } );
 				 */
-				"sPrevious": "Anterior"
+				"sPrevious": "Previous"
 			},
 		
 			/**
@@ -9266,7 +9266,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sEmptyTable": "La tabla está vacía",
+			"sEmptyTable": "No data available in table",
 		
 		
 			/**
@@ -9287,7 +9287,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sInfo": "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+			"sInfo": "Showing _START_ to _END_ of _TOTAL_ entries",
 		
 		
 			/**
@@ -9306,7 +9306,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sInfoEmpty": "No se muestra ninguna entrada",
+			"sInfoEmpty": "The table is empty",
 		
 		
 			/**
@@ -9326,7 +9326,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sInfoFiltered": "(filtrado de _MAX_ entradas totales)",
+			"sInfoFiltered": "(filtered from _MAX_ total entries)",
 		
 		
 			/**
@@ -9481,7 +9481,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sSearch": "Buscar:",
+			"sSearch": "Search:",
 		
 		
 			/**

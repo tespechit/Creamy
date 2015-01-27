@@ -127,7 +127,7 @@
 		    }
    		},
 		submitHandler: function(e) {
-			$.post("./php/ChangePasswordAdmin.php", //post
+			$.post("./php/ChangePasswordadmin-users.php", //post
 			$("#adminpasswordform").serialize(), 
 				function(data){
 					//if message is sent

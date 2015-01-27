@@ -75,18 +75,13 @@ function userHasManagerPermission($userrole) {
 
 function userHasWritePermission($userrole) {
 	if (!isset($userrole)) return false;
-	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || 
-		($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || 
-		($userrole === CRM_DEFAULTS_USER_ROLE_WRITER)) return true;
+	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER)) return true;
 	return false;
 }
 
 function userHasBasicPermission($userrole) {
 	if (!isset($userrole)) return false;
-	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || 
-		($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) ||
-	    ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER) || 
-	    ($userrole === CRM_DEFAULTS_USER_ROLE_READER)) return true;
+	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER) || ($userrole === CRM_DEFAULTS_USER_ROLE_READER)) return true;
 	return false;
 }
 

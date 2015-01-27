@@ -26,10 +26,10 @@ class DbHandler {
 	<thead>
 		<tr>
             <th>Id</th>
-            <th>Nombre</th>
+            <th>Name</th>
             <th>Email</th>
-            <th>Teléfono</th>
-            <th>NIF / Pasaporte</th>
+            <th>Phone</th>
+            <th>ID Number</th>
         </tr>
     </thead>
     <tbody>";
@@ -37,10 +37,10 @@ class DbHandler {
 	<tfoot>
             <tr>
                 <th>Id</th>
-                <th>Nombre</th>
+                <th>Name</th>
                 <th>Email</th>
-                <th>Teléfono</th>
-				<th>NIF / Pasaporte</th>
+                <th>Phone</th>
+				<th>ID Number</th>
             </tr>
         </tfoot>
     </table>";
@@ -48,12 +48,12 @@ class DbHandler {
 	<thead>
 		<tr>
             <th>Id</th>
-            <th>Nombre</th>
+            <th>Name</th>
             <th>Email</th>
-            <th>Fecha alta</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acción</th>
+            <th>Creation Date</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
         </tr>
     </thead>
     <tbody>";
@@ -61,17 +61,17 @@ class DbHandler {
 	<tfoot>
         <tr>
             <th>Id</th>
-            <th>Nombre</th>
+            <th>Name</th>
             <th>Email</th>
-            <th>Fecha alta</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acción</th>
+            <th>Creation Date</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
         </tr>
         </tfoot>
     </table>";
-    private $taskTablePrefix = "<table class=\"table table-condensed\"><thead><tr><th style=\"width: 10px\">#</th><th>Tarea</th><th>Progreso</th><th>Creada</th><th>Acción</th></tr></thead>";
-    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>Selección</td><td>Favorito</td><td>Usuario</td><td>subject</td><td>Fecha</td></tr></thead>';
+    private $taskTablePrefix = "<table class=\"table table-condensed\"><thead><tr><th style=\"width: 10px\">#</th><th>Task</th><th>Progress</th><th>Created</th><th>Action</th></tr></thead>";
+    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>Selection</td><td>Favorite</td><td>User</td><td>Subject</td><td>Date</td></tr></thead>';
     
         
     /* ---------------- Initializers -------------------- */
@@ -688,7 +688,7 @@ class DbHandler {
                     <span class="label label-warning">'.$notificationNum.'</span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="header">Tienes '.$notificationNum.' notificaciones</li><li>
+                    <li class="header">Tienes '.$notificationNum.' notifications</li><li>
                         <!-- inner menu: contains the actual data -->
                         <ul class="menu">';
                         
@@ -729,7 +729,7 @@ class DbHandler {
 	                <h3>'.$shortText.'</h3>
 	                <div class="progress xs">
 	                    <div class="progress-bar progress-bar-'.$color.'" style="width: '.$task["completed"].'%" role="progressbar" aria-valuenow="'.$task["completed"].'" aria-valuemin="0" aria-valuemax="100">
-	                        <span class="sr-only">'.$task["completed"].'% Completado</span>
+	                        <span class="sr-only">'.$task["completed"].'% Completed</span>
 	                    </div>
 	                </div>
 	            </a>
@@ -756,13 +756,13 @@ class DbHandler {
 									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">Cambiar mi contraseña</a>
 									</div>
 									<div class="text-center">
-									    <a href="./messages.php">Mensajes</a>
+									    <a href="./messages.php">Messages</a>
 									</div>
 									<div class="text-center">
-									        <a href="./notificationes.php">Notificaciones</a>
+									        <a href="./notificationes.php">Notifications</a>
 									    </div>
 									<div class="text-center">
-									        <a href="./tasks.php">Tareas</a>
+									        <a href="./tasks.php">Tasks</a>
 								    </div>
 								</li>';
 		
@@ -809,11 +809,16 @@ class DbHandler {
 		
 		$adminArea = "";
 		if ($userrole == CRM_DEFAULTS_USER_ROLE_ADMIN) {
-			$adminArea = '<li>
-                            <a href="./admin.php">
-                                <i class="fa fa-dashboard"></i> <span>Administración</span>
-                            </a>
-                        </li> ';
+			$adminArea = '
+				<li class="treeview">
+                    <a href="#">
+                        <i class="fa fa-dashboard"></i> <span>Admin</span>
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </a>
+                    <ul class="treeview-menu">
+                        <li><a href="./admin-users.php"><i class="fa fa-users"></i> Users</a></li>
+                    </ul>
+                </li>';
 		}
 		
 		// get customer types
@@ -830,7 +835,7 @@ class DbHandler {
                             <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
                         </div>
                         <div class="pull-left info">
-                            <p>Hola, '.$username.'</p>
+                            <p>Hello, '.$username.'</p>
                             <a href="edituser.php"><i class="fa fa-circle text-success"></i> Online</a>
                         </div>
                     </div>
@@ -838,7 +843,7 @@ class DbHandler {
                     <ul class="sidebar-menu">
                         <li>
                             <a href="./index.php">
-                                <i class="fa fa-bar-chart-o"></i> <span>Inicio</span>
+                                <i class="fa fa-bar-chart-o"></i> <span>Home</span>
                             </a>
                         </li>';
         
@@ -859,19 +864,19 @@ class DbHandler {
         // suffix: messages, notifications, tasks
 		print '<li>
                             <a href="./messages.php">
-                                <i class="fa fa-envelope"></i> <span>messages</span>
+                                <i class="fa fa-envelope"></i> <span>Messages</span>
                                 <small class="badge pull-right bg-green">'.$numMessages.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./notifications.php">
-                                <i class="fa fa-exclamation"></i> <span>Notificaciones</span>
+                                <i class="fa fa-exclamation"></i> <span>Notifications</span>
                                 <small class="badge pull-right bg-orange">'.$numNotifications.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./tasks.php">
-                                <i class="fa fa-tasks"></i> <span>Tareas</span>
+                                <i class="fa fa-tasks"></i> <span>Tasks</span>
                                 <small class="badge pull-right bg-red">'.$numTasks.'</small>
                             </a>
                         </li>
@@ -1413,7 +1418,7 @@ class DbHandler {
 		$result = $stmt->get_result();
 
 		// iterate through all users and generate the select
-		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">elige un destinatario</option>\n';
+		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">send message to...</option>\n';
 		while ($obj = $result->fetch_assoc()) {
 			// don't include ourselves.
 			if ($obj["id"] != $myuserid) $response = $response.'\t<option value="'.$obj["id"].'">'.$obj["name"].'</option>\n';			
@@ -1805,11 +1810,11 @@ class DbHandler {
 		
 		// calculate query message.
 		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, usuarios u WHERE m.id = ? AND ((m.? = ? AND m.? = u.id) OR (m.? = ? AND m.? = u.id)) ");
-			$stmt->bind_param("isissis", $messageid, $useridfield, $userid, $remoteuseridfield, $remoteuseridfield, $userid, $useridfield);		
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id)) ");
+			$stmt->bind_param("iii", $messageid, $userid, $userid);		
 		} else {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, usuarios u WHERE m.? = ? AND m.? = u.id AND m.id = ?");
-			$stmt->bind_param("sisi", $useridfield, $userid, $remoteuseridfield, $messageid);
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?");
+			$stmt->bind_param("ii", $userid, $messageid);
 				
 		}
 		// execute the query
@@ -2064,7 +2069,7 @@ class DbHandler {
         		
         $notifications = $this->getNotificationsForPastWeek($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage("No hay notificaciones para la semana pasada.").'</li></div>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage("No hay notificaciones para la semana pasada.").'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);

@@ -15,22 +15,22 @@
         <meta charset="UTF-8">
         <title>Creamy - Inicio</title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
-        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-        <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+        <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+        <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
-        <link href="//code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css" rel="stylesheet" type="text/css" />
+        <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Morris chart -->
         <link href="css/morris/morris.css" rel="stylesheet" type="text/css" />
         <!-- bootstrap wysihtml5 - text editor -->
         <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
         <!-- Theme style -->
-        <link href="css/AdminLTE.css" rel="stylesheet" type="text/css" />
+        <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
         <!--[if lt IE 9]>
-          <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-          <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+          <script src="js/html5shiv.js"></script>
+          <script src="js/respond.min.js"></script>
         <![endif]-->
     </head>
     <body class="skin-blue">
@@ -70,11 +70,11 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        Inicio
-                        <small>Elige una opción</small>
+                        Home
+                        <small>Your Creamy dashboard</small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-bar-chart-o"></i> Inicio</a></li>
+                        <li><a href="./index.php"><i class="fa fa-bar-chart-o"></i> Home</a></li>
                     </ol>
                 </section>
 
@@ -88,17 +88,17 @@
                             <div class="small-box bg-orange">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"]) ?> nuevas
+                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"]) ?> new
                                     </h3>
                                     <p>
-                                        Notificaciones
+                                        Notifications
                                     </p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-ios7-alarm-outline"></i>
+                                    <i class="ion ion-clock"></i>
                                 </div>
                                 <a href="notifications.php" class="small-box-footer">
-                                    Ver todas  <i class="fa fa-arrow-circle-right"></i>
+                                    See more  <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -107,17 +107,17 @@
                             <div class="small-box bg-aqua">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewCustomers(); ?> nuevos
+                                        <?php print $db->getNumberOfNewCustomers(); ?> new
                                     </h3>
                                     <p>
-                                        Clientes
+                                        Customers
                                     </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-person-stalker"></i>
                                 </div>
                                 <a href="" class="small-box-footer">
-                                    Ver estadísticas  <i class="fa fa-arrow-circle-right"></i>
+                                    See stats  <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -126,17 +126,17 @@
                             <div class="small-box bg-green">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewContacts(); ?> nuevos
+                                        <?php print $db->getNumberOfNewContacts(); ?> new
                                     </h3>
                                     <p>
-                                        Contactos
+                                        Contacts
                                     </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-person-add"></i>
                                 </div>
                                 <a href="./customerslist.php?customer_type=clients_1&customer_name=Contactos" class="small-box-footer">
-                                    Ver todos <i class="fa fa-arrow-circle-right"></i>
+                                    See all <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -155,9 +155,31 @@
 	                                <h3 class="box-title">First steps (click + to show)</h3>
 	                            </div>
                                 <div class="box-body" style="display: none;">
-	                                <h3>Welcome to Creamy!</h3>
-									<p>Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. This is a short guide to help you getting started with the main functionality of Creamy. Let's start!</p>
-									<p>The top bar will give you quick access to your messages, notifications and tasks.</p>
+	                                <h2>Welcome to Creamy!</h2>
+									<p>Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. Creamy is a full-fledged CRM framework that allows you to handle your contacts, customers and clients easily, manage the tasks associated with your business, and be notified of important events. This is a short guide to help you getting started with the main functionality of Creamy. Let's start!</p>
+									<img src="img/sidebar.png" class="left-paragraph-image" width="200">
+
+									<h3>Sidebar</h3>
+									<p>The sidebar at the left will get you access to the different sections of Creamy. Let's have a look at what you can find there:</p>
+									<h4 class="fa fa-bar-chart-o"> Home</h4>
+									<p>The home screen is where we are right now. It's the main page of Creamy. Here you can find some statistics about the progress in the number of customers, contacts and clients, along with a quick access to the messaging system and this tutorial. Any module or plugin can also install some views here for you to see if they want to allow you to access some functionality or give you a quick overview of the data they handle.</p>
+									<h4 class="fa fa-users"> Contacts and Customers</h4>
+									<p>These sections contains all the contacts, customers and clients registered in your CRM, grouped by their type. This is the heart of Creamy. If this is the first time you (or someone in your company) is using Creamy, these sections will be empty, so one of the very first things you should do in order to enjoy Creamy is go to these sections and start filling in customers and contacts to feed your database!</p>
+									<h4 class="fa fa-envelope"> Messages</h4>
+									<p>In the messages section you can access a messaging system for the users of the CRM. This is an inner communication tool to give you a quick way of sending messages, questions and meeting appointments to other members of your company or business.</p>
+									<h4 class="fa fa-exclamation"> Notifications</h4>
+									<p>This section will give you a timeline with information about all the important events that happened today or occurred during the past week, warning you of anything that's worth your attention: new customers, calendar events, and issues amongst others. Here, you will be able to react with a proper action to most notifications.</p>
+									<h4 class="fa fa-"
+									<h3>Top bar</h3>
+									<img src="img/topbar.png" class="right-paragraph-image" width="200">
+									<p>The top bar will give you quick access to your messages, notifications and tasks. Each icon has a badge with a number of unread or unattended elements to help you get a quick overview of things that would require your attention.</p>
+									<ul style="float: left;">
+									<li>The messages icon shows you your unread messages, and clicking on it will show you them as a list. Select any of the messages to read it directly.</li>
+									<li>The notifications icon shows you your notifications for today, and clicking on it will show you them as a list.</li>
+									<li>The tasks icon shows you your unfinished tasks, and clicking on it will show you them in a list.</li>
+									<li>The user icon at the right, close to your name, will open a menu where you will be able to access or modify your user data, change your password or logout.</li>
+									</ul>
+									<p>kdjhksjdhfgksjdhfgkjh</p>
 	                            </div>
 	                        </div>
 
@@ -172,7 +194,7 @@
 	                        <div class="box box-success">
 	                            <div class="box-header">
 	                                <i class="fa fa-bar-chart-o"></i>
-	                                <h3 class="box-title">Gráfica de clientes</h3>
+	                                <h3 class="box-title">Customer statistics</h3>
 	                            </div>
                                 <div class="box-body" id="graph-box">
                                     <div class="chart" id="revenue-chart" style="position: relative; height: 375px;"></div>
@@ -187,7 +209,7 @@
                             <div class="box box-info">
                                 <div class="box-header">
                                     <i class="fa fa-envelope"></i>
-                                    <h3 class="box-title">Correo Interno</h3>
+                                    <h3 class="box-title">Messaging System</h3>
                                 </div>
                                 <div class="box-body">
                                     <form action="#" method="post" id="send-message-form" name="send-message-form">
@@ -198,7 +220,7 @@
                                             <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject"/>
                                         </div>
                                         <div>
-                                            <textarea class="textarea" placeholder="Mensaje" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
+                                            <textarea class="textarea" placeholder="Message" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
                                         </div>
                                         <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $_SESSION["userid"] ?>">
                                         <div id="messagesendingresult" name="messagesendingresult"></div>
@@ -215,11 +237,11 @@
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="//code.jquery.com/ui/1.11.1/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
         <!-- Morris.js charts -->
-        <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+        <script src="js/raphael-min.js"></script>
         <script src="js/plugins/morris/morris.min.js" type="text/javascript"></script>
         <!-- Bootstrap WYSIHTML5 -->
         <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
