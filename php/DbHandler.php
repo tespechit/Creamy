@@ -4,6 +4,7 @@ require_once('CRMDefaults.php');
 require_once('PassHash.php');
 require_once('ImageHandler.php');
 require_once('RandomStringGenerator.php');
+require_once('LanguageHandler.php');
 
 /**
  * Class to handle all db operations
@@ -19,6 +20,7 @@ require_once('RandomStringGenerator.php');
 class DbHandler {
 
     private $conn;
+	private $lh;
     
     /* -------------- Variables, predefined text and code ----------------- */
     
@@ -26,34 +28,35 @@ class DbHandler {
 	<thead>
 		<tr>
             <th>Id</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>ID Number</th>
+            <th>name</th>
+            <th>email</th>
+            <th>phone</th>
+            <th>id_number</th>
         </tr>
     </thead>
     <tbody>";
 	private $contactsTableSuffix = "</tbody>
 	<tfoot>
             <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-				<th>ID Number</th>
+	            <th>Id</th>
+	            <th>name</th>
+	            <th>email</th>
+	            <th>phone</th>
+	            <th>id_number</th>
             </tr>
         </tfoot>
     </table>";
+    
 	private $usersTablePrefix = "<table id=\"contacts\" class=\"table table-bordered table-striped\">
 	<thead>
 		<tr>
             <th>Id</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Creation Date</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th>name</th>
+            <th>email</th>
+            <th>creation_date</th>
+            <th>role</th>
+            <th>status</th>
+            <th>action</th>
         </tr>
     </thead>
     <tbody>";
@@ -61,17 +64,20 @@ class DbHandler {
 	<tfoot>
         <tr>
             <th>Id</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Creation Date</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th>name</th>
+            <th>email</th>
+            <th>creation_date</th>
+            <th>role</th>
+            <th>status</th>
+            <th>action</th>
         </tr>
         </tfoot>
     </table>";
-    private $taskTablePrefix = "<table class=\"table table-condensed\"><thead><tr><th style=\"width: 10px\">#</th><th>Task</th><th>Progress</th><th>Created</th><th>Action</th></tr></thead>";
-    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>Selection</td><td>Favorite</td><td>User</td><td>Subject</td><td>Date</td></tr></thead>';
+    private $taskTablePrefix = "<ul class=\"todo-list ui-sortable\">";
+    
+    private $taskTableSuffix = "</ul>";
+    
+    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>selection</td><td>favorite</td><td>user</td><td>subject</td><td>date</td></tr></thead>';
     
         
     /* ---------------- Initializers -------------------- */
@@ -81,6 +87,7 @@ class DbHandler {
         // opening db connection
         $db = new DbConnect();
         $this->conn = $db->connect();
+        $this->lh = LanguageHandler::getInstance();
    		ini_set( 'date.timezone', CRM_TIMEZONE);
 		date_default_timezone_set(CRM_TIMEZONE);
     }
@@ -371,17 +378,17 @@ class DbHandler {
        $users = $this->getAllUsers();
        // is null?
        if (is_null($users)) { // error getting contacts
-	       return $this->getErrorMessage("¡Vaya! Fue imposible obtener lista de usuarios. Por favor, inténtalo de nuevo más tarde. Si el problema persiste, contacta con el administrador.");
+	       return $this->getErrorMessage($this->lh->text("unable_get_user_list"));
        } else if (empty($users)) { // no contacts found
-	       return $this->getWarningMessage("¡Vaya! Parece que la lista de usuarios está vacía. ¿Por qué no creas uno nuevo?");
+	       return $this->getWarningMessage($this->lh->text("no_users_in_list"));
        } else { 
 	       // we have some users, show a table
-		   $result = $this->usersTablePrefix;
+		   $result = $this->lh->translate($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
 	       
 	       // iterate through all contacts
 	       foreach ($users as $userData) {
-	       	   $status = $userData["status"] == 1 ? "Activo" : "Deshabilitado";
-	       	   $userRole = $this->getRoleNameForRole($userData["role"]);	
+	       	   $status = $userData["status"] == 1 ? $this->lh->text("enabled") : $this->lh->text("disabled");
+	       	   $userRole = $this->lh->text($this->getRoleNameForRole($userData["role"]));	
 	       	   $action = $this->getUserActionMenuForUser($userData["id"], $userData["name"], $userData["status"]);       
 		       $result = $result."<tr>
 	                    <td>".$userData["id"]."</td>
@@ -395,7 +402,7 @@ class DbHandler {
 	       }
 	       
 	       // print suffix
-	       $result = $result.$this->usersTableSuffix; 
+	       $result = $result.$this->lh->translate($this->usersTableSuffix, array("name", "email", "creation_date", "role", "status", "action")); 
 	       return $result; 
        }
 	}
@@ -436,12 +443,18 @@ class DbHandler {
 		$selectedReader = $selectedOption == CRM_DEFAULTS_USER_ROLE_READER ? " selected" : "";
 		$selectedGuest = $selectedOption == CRM_DEFAULTS_USER_ROLE_GUEST ? " selected" : "";
 		
+		$adminName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN));
+		$managerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER));
+		$writerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER));
+		$readerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER));
+		$guestName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST));
+		
 		return '<select id="role" name="role">
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_ADMIN.'"'.$selectedAdmin.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN).'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_MANAGER.'"'.$selectedManager.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER).'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_WRITER.'"'.$selectedWriter.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER).'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_READER.'"'.$selectedReader.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER).'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_GUEST.'"'.$selectedGuest.'>'.$this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST).'</option>				   
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_ADMIN.'"'.$selectedAdmin.'>'.$adminName.'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_MANAGER.'"'.$selectedManager.'>'.$managerName.'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_WRITER.'"'.$selectedWriter.'>'.$writerName.'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_READER.'"'.$selectedReader.'>'.$readerName.'</option>
+				   <option value="'.CRM_DEFAULTS_USER_ROLE_GUEST.'"'.$selectedGuest.'>'.$guestName.'</option>				   
 			    </select>';
 	}
 
@@ -453,16 +466,16 @@ class DbHandler {
      * @return String a HTML representation of the action associated with a user in the admin panel.
      */
 	private function getUserActionMenuForUser($userid, $username, $status) {
-		$textForStatus = $status == 1 ? "Deshabilitar" : "Habilitar";
+		$textForStatus = $status == 1 ? $this->lh->text("disable") : $this->lh->text("enable");
 		$actionForStatus = $status == 1 ? "deactivate-user-action" : "activate-user-action";
 		return '<div class="btn-group">
-	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">Elige una acción para '.$username.'</button>
+	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">'.$this->lh->text("choose_action_user").' '.$username.'</button>
 	                <ul class="dropdown-menu" role="menu">
-	                    <li><a class="edit-action" href="'.$userid.'">Editar datos</a></li>
-	                    <li><a class="change-password-action" href="'.$userid.'">Cambiar contraseña</a></li>
+	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->text("edit_data").'</a></li>
+	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->text("change_password").'</a></li>
 	                    <li><a class="'.$actionForStatus.'" href="'.$userid.'">'.$textForStatus.'</a></li>
 	                    <li class="divider"></li>
-	                    <li><a class="delete-action" href="'.$userid.'">Eliminar usuario</a></li>
+	                    <li><a class="delete-action" href="'.$userid.'">'.$this->lh->text("delete_user").'</a></li>
 	                </ul>
 	            </div>';
 	}
@@ -487,11 +500,11 @@ class DbHandler {
 		print '<div class="box box-danger">
 				<div class="box-header">
 	                <i class="fa fa-lock"></i>
-	                <h3 class="box-title">Access denied</h3>
+	                <h3 class="box-title">'.$this->lh->text("access_denied").'</h3>
 	            </div>
 				<div class="box-body" id="graph-box">
 					<div class="callout callout-danger">
-						<p>You don\'t have permission for accessing this content.</p>
+						<p>'.$this->lh->text("you_dont_have_permission").'</p>
 					</div>
 				</div>
 			   </div>';
@@ -578,7 +591,7 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getInfoMessage($message) {
-		return "<div class=\"callout callout-info\">\n\t<h4>message</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-info\">\n\t<h4>".$this->lh->text("message")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 
 	/**
@@ -586,7 +599,7 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getWarningMessage($message) {
-		return "<div class=\"callout callout-warning\">\n\t<h4>¡Atención!</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-warning\">\n\t<h4>".$this->lh->text("warning")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 
 	/**
@@ -594,20 +607,21 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getErrorMessage($message) {
-		return "<div class=\"callout callout-danger\">\n\t<h4>¡Error!</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-danger\">\n\t<h4>".$this->lh->text("error")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 	
 	/**
 	 * Generates a error modal message HTML dialog, with the given message.
 	 * @param message String the message to show.
 	 */
-	function getErrorModalMessage($message) {
+	function getErrorModalMessage($message, $header) {
 		$result = '<div class="modal-dialog"><div class="modal-content"><div class="modal-header">
 		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> Error recuperando message</h4>
+		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$header.'</h4>
 		            </div><div class="modal-body">';
 		$result = $result.$this->getErrorMessage($message);
-		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> Salir</button></div></div></div>';
+		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.
+		$this->lh->text("exit").'</button></div></div></div>';
 		return $result;
 	}
 
@@ -623,16 +637,14 @@ class DbHandler {
         $list = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
 		$numMessages = count($list);
 		
-		$result = '<!-- Messages: style can be found in dropdown.less-->
-            <li class="dropdown messages-menu">
+		$result = '<li class="dropdown messages-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-envelope"></i>
                     <span class="label label-success">'.$numMessages.'</span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="header">Tienes '.$numMessages.' messages sin leer</li>
+                    <li class="header">'.$this->lh->text("you_have").' '.$numMessages.' '.$this->lh->text("unread_messages").'</li>
                     <li>
-                            <!-- inner menu: contains the actual data -->
                             <ul class="menu">';
         
         foreach ($list as $message) {
@@ -642,8 +654,7 @@ class DbHandler {
 	        $shortText = $this->substringUpTo($message["message"], 40);
 	        
 	        $result = $result.'
-	        <li><!-- start message -->
-                <a href="messages.php">
+	        <li><a href="messages.php">
                     <div class="pull-left">
                         <img src="'.$remoteavatar.'" class="img-circle" alt="User Image"/>
                     </div>
@@ -653,9 +664,9 @@ class DbHandler {
                     </h4>
                     <p>'.$shortText.'</p>
                 </a>
-            </li><!-- end message -->';
+            </li>';
         }
-        $result = $result.'</ul></li><li class="footer"><a href="messages.php">Ver todos los messages</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->text("see_all_messages").'</a></li></ul></li>';
         print $result;
 	}
 	
@@ -681,15 +692,13 @@ class DbHandler {
 		if (empty($notifications)) $notificationNum = 0;
 		else $notificationNum = count($notifications);
 		
-		$result = '<!-- Notifications: style can be found in dropdown.less -->
-            <li class="dropdown notifications-menu">
+		$result = '<li class="dropdown notifications-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-warning"></i>
                     <span class="label label-warning">'.$notificationNum.'</span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="header">Tienes '.$notificationNum.' notifications</li><li>
-                        <!-- inner menu: contains the actual data -->
+                    <li class="header">'.$this->lh->text("you_have").' '.$notificationNum.' '.strtolower($this->lh->text("notifications")).'</li><li>
                         <ul class="menu">';
                         
         foreach ($notifications as $notification) {
@@ -699,7 +708,7 @@ class DbHandler {
                                 </a>
                             </li>';
         }                                        
-        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">Ver todas</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">'.$this->lh->text("see_all_notifications").'</a></li></ul></li>';
         return $result;
 	}
 	
@@ -709,34 +718,32 @@ class DbHandler {
 		$list = $this->getUnfinishedTasks($userid);
 		$numTasks = count($list);
 		
-		$result = '<!-- Tasks: style can be found in dropdown.less -->
-                        <li class="dropdown tasks-menu">
+		$result = '<li class="dropdown tasks-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-tasks"></i>
                                 <span class="label label-danger">'.$numTasks.'</span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="header">Tienes '.$numTasks.' tareas pendientes</li>
+                                <li class="header">'.$this->lh->text("you_have").' '.$numTasks.' '.$this->lh->text("pending_tasks").'</li>
                                 <li>
-                                    <!-- inner menu: contains the actual data -->
                                     <ul class="menu">';
                                     
         foreach ($list as $task) {
-	        $color = $this->getTaskColorForCompletion($task["completed"]);
-	        $shortText = $this->substringUpTo($task["description"], 40);
+	        $shortText = $this->substringUpTo($task["description"], 30);
+	        $relativeTime = $this->relativeTime($task["creation_date"], 1);
+	        
+	        
 	        $result = $result.'<li><!-- Task item -->
 	            <a href="tasks.php">
-	                <h3>'.$shortText.'</h3>
-	                <div class="progress xs">
-	                    <div class="progress-bar progress-bar-'.$color.'" style="width: '.$task["completed"].'%" role="progressbar" aria-valuenow="'.$task["completed"].'" aria-valuemin="0" aria-valuemax="100">
-	                        <span class="sr-only">'.$task["completed"].'% Completed</span>
-	                    </div>
-	                </div>
+                    <h3>
+                        <p class="pull-left">'.$shortText.'</p>
+                        <small class="label label-warning"><i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
+                    </h3>
 	            </a>
 	        </li><!-- end task item -->';
         }
                                     
-        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">Ver todas las tareas</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">'.$this->lh->text("see_all_tasks").'</a></li></ul></li>';
         return $result;
 
         return '';
@@ -750,45 +757,43 @@ class DbHandler {
 	public function getUserMenu($userid, $username, $avatar, $userrole) {
 		// menu actions (only for users with permissions).
 		$menuActions = '';
-		if (userHasBasicPermission($userrole)) $menuActions = '<!-- Menu Body -->
-                                <li class="user-body">
+		if (userHasBasicPermission($userrole)) $menuActions = '<li class="user-body">
 									<div class="text-center">
-									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">Cambiar mi contraseña</a>
+									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->text("change_password").'</a>
 									</div>
 									<div class="text-center">
-									    <a href="./messages.php">Messages</a>
+									    <a href="./messages.php">'.$this->lh->text("messages").'</a>
 									</div>
 									<div class="text-center">
-									        <a href="./notificationes.php">Notifications</a>
+									        <a href="./notificationes.php">'.$this->lh->text("notifications").'</a>
 									    </div>
 									<div class="text-center">
-									        <a href="./tasks.php">Tasks</a>
+									        <a href="./tasks.php">'.$this->lh->text("tasks").'</a>
 								    </div>
 								</li>';
 		
 		// change my data (only for users with permissions).
 		$changeMyData = '';
-		if (userHasBasicPermission($userrole)) $changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">Mis Datos</a></div>';
-		return '<!-- User Account: style can be found in dropdown.less -->
-                        <li class="dropdown user user-menu">
+		if (userHasBasicPermission($userrole)) 
+			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->text("my_profile").'</a></div>';
+		
+		return '<li class="dropdown user user-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="glyphicon glyphicon-user"></i>
                                 <span>'.$username.' <i class="caret"></i></span>
                             </a>
                             <ul class="dropdown-menu">
-                                <!-- User image -->
                                 <li class="user-header bg-light-blue">
                                     <img src="'.$avatar.'" class="img-circle" alt="User Image" />
                                     <p>
                                         '.$username.'
-                                        <small>Es un placer verte de nuevo.</small>
+                                        <small>'.$this->lh->text("nice_to_see_you_again").'</small>
                                     </p>
                                 </li>'.$menuActions.'
-                                <!-- Menu Footer-->
                                 <li class="user-footer">
                                     '.$changeMyData.'
                                     <div class="pull-right">
-                                        <a href="./logout.php" class="btn btn-default btn-flat">Salir</a>
+                                        <a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->text("exit").'</a>
                                     </div>
                                 </li>
                             </ul>
@@ -812,11 +817,11 @@ class DbHandler {
 			$adminArea = '
 				<li class="treeview">
                     <a href="#">
-                        <i class="fa fa-dashboard"></i> <span>Admin</span>
+                        <i class="fa fa-dashboard"></i> <span>'.$this->lh->text("administration").'</span>
                         <i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <li><a href="./admin-users.php"><i class="fa fa-users"></i> Users</a></li>
+                        <li><a href="./adminusers.php"><i class="fa fa-users"></i> '.$this->lh->text("users").'</a></li>
                     </ul>
                 </li>';
 		}
@@ -825,25 +830,21 @@ class DbHandler {
 		$customerTypes = $this->getCustomerTypes();
 		
 		// prefix: structure and home link
-		print '<!-- Left side column. contains the logo and sidebar -->
-            <aside class="left-side sidebar-offcanvas">
-                <!-- sidebar: style can be found in sidebar.less -->
+		print '<aside class="left-side sidebar-offcanvas">
                 <section class="sidebar">
-                    <!-- Sidebar user panel -->
                     <div class="user-panel">
                         <div class="pull-left image">
                             <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
                         </div>
                         <div class="pull-left info">
-                            <p>Hello, '.$username.'</p>
-                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> Online</a>
+                            <p>'.$this->lh->text("hello").', '.$username.'</p>
+                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->text("online").'</a>
                         </div>
                     </div>
-                    <!-- sidebar menu: : style can be found in sidebar.less -->
                     <ul class="sidebar-menu">
                         <li>
                             <a href="./index.php">
-                                <i class="fa fa-bar-chart-o"></i> <span>Home</span>
+                                <i class="fa fa-bar-chart-o"></i> <span>'.$this->lh->text("home").'</span>
                             </a>
                         </li>';
         
@@ -864,19 +865,19 @@ class DbHandler {
         // suffix: messages, notifications, tasks
 		print '<li>
                             <a href="./messages.php">
-                                <i class="fa fa-envelope"></i> <span>Messages</span>
+                                <i class="fa fa-envelope"></i> <span>'.$this->lh->text("messages").'</span>
                                 <small class="badge pull-right bg-green">'.$numMessages.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./notifications.php">
-                                <i class="fa fa-exclamation"></i> <span>Notifications</span>
+                                <i class="fa fa-exclamation"></i> <span>'.$this->lh->text("notifications").'</span>
                                 <small class="badge pull-right bg-orange">'.$numNotifications.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./tasks.php">
-                                <i class="fa fa-tasks"></i> <span>Tasks</span>
+                                <i class="fa fa-tasks"></i> <span>'.$this->lh->text("tasks").'</span>
                                 <small class="badge pull-right bg-red">'.$numTasks.'</small>
                             </a>
                         </li>
@@ -928,11 +929,11 @@ class DbHandler {
 	 */
    	private function getCustomerListAsTable($customers, $customerType) {
 	   	// print prefix
-       $result = $this->contactsTablePrefix;
+       $result = $this->lh->translate($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
        
        foreach ($customers as $customer) {
 	       $nameOrNonamed = $customer["name"];
-	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(sin nombre)";
+	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->text("no_name").")";
 	       
 	       $result = $result."<tr>
                     <td>".$customer["id"]."</td>
@@ -944,9 +945,13 @@ class DbHandler {
        }
        
        // print suffix
-       $result = $result.$this->contactsTableSuffix;
+       $result = $result.$this->lh->translate($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
        return $result;
    	}
+
+   	/**
+	 *
+	 */
 
    	/**
 	 * Generates the HTML with the HTML table for an array of contacts or customers.
@@ -957,9 +962,9 @@ class DbHandler {
        $customers = $this->getAllCustomersOfType($customerType);
        // is null?
        if (is_null($customers)) { // error getting customers
-	       return $this->getErrorMessage("¡Vaya! Fue imposible obtener lista de clientes. Por favor, inténtalo de nuevo más tarde. Si el problema persiste, contacta con el administrador.");
+	       return $this->getErrorMessage($this->lh->text("unable_get_customer_list"));
        } else if (empty($customers)) { // no customers found
-	       return $this->getWarningMessage("¡Vaya! Parece que la lista de clientes está vacía. ¿Por qué no creas uno nuevo?");
+	       return $this->getWarningMessage($this->lh->text("no_customers_in_list"));
        } else { // we have some customers, show a table
 		   return $this->getCustomerListAsTable($customers, $customerType);
        }
@@ -1093,7 +1098,7 @@ class DbHandler {
 	public function getNameForCustomerType($customerType) {
 		$stmt = $this->conn->prepare("SELECT * FROM customer_types WHERE table_name = ?");
 		$stmt->bind_param("s", $customerType);
-		if ($stmt->execute() === false) return "Customer";
+		if ($stmt->execute() === false) return $this->lh->text("customer");
 		else {
 			$result = $stmt->get_result();
 			if ($row = $result->fetch_assoc()) {
@@ -1102,15 +1107,15 @@ class DbHandler {
 		}
 	}
 	
-	/* ---------------- tareas --------------------------------- */
+	/* ---------------- tasks --------------------------------- */
 
 	/**
 	 * Gets all tasks belonging to a given user.
 	 * @param $userid Int id of the user.
 	 * @return Array an array containing all task objects as associative arrays, or NULL if user was not found or an error occurred.
 	 */
-	private function getAllTasks($userid) {
-        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY creation_date");
+	private function getCompletedTasks($userid) {
+        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? AND completed = 100 ORDER BY creation_date");
         $stmt->bind_param("i", $userid);
         if ($stmt->execute() === false) return NULL;
         $tasks = $stmt->get_result();
@@ -1123,202 +1128,7 @@ class DbHandler {
         }
 		return $result;
 	}
-	
-	/**
-	 * Generates the HTML for a given task as a table row
-	 * @param $task Array associative array representing the task object.
-	 * @return String the HTML representation of the task as a row.
-	 */
-	private function getTaskAsTableRow($task) {
-		// define progress and bar color
-		$completed = $task["completed"];
-		if ($completed < 0) $completed = 0;
-		else if ($completed > 100) $completed = 100;
-		$color = $this->getTaskColorForCompletion($completed); 
-		$creationdate = $this->relativeTime($task["creation_date"]);
-		
-		return '<tr>
-	            <td>'.$task["id"].'</td>
-	            <td>'.$task["description"].'</td>
-	            <td>
-	                <div class="progress xs progress-striped active" title="'.$completed.'% Completado">
-	                    <div class="progress-bar progress-bar-'.$color.'" style="width: '.$completed.'%"></div>
-	                </div>
-	            </td>
-	            <td>'.$creationdate.'</td>
-	            <td>'.$this->generateTaskActionButton($task["id"], $completed).'</td></tr>';	
-	}
 
-	/**
-	 * Generates the HTML for a all tasks of a given user as a table row
-	 * @param $userid Int id of the user to retrieve the tasks from.
-	 * @return String the HTML representation of the user's tasks as a table.
-	 */
-	public function getAllMyTasksAsTable($userid) { 
-		$tasks = $this->getAllTasks($userid);
-		if (empty($tasks)) { return $this->getWarningMessage("¡Vaya! Parece que no tienes ninguna tarea en estos momentos. ¿Por qué no creas una?"); }
-		else {
-			$list = $this->taskTablePrefix;
-			foreach ($tasks as $task) {
-				// generate row
-				$list = $list.$this->getTaskAsTableRow($task);
-			}
-			$list = $list."</table>";
-	    	return $list;
-		}
-   	}
-   	
-	/**
-	 * Generates the HTML for a the action button associated to a task listed in the user's task list.
-	 * @param $userid Int id of the user to retrieve the tasks from.
-	 * @param $finished Int completion percentage of the task (0-100).
-	 * @return String the HTML representation of the action button associated to the task.
-	 */
-   	private function generateTaskActionButton($taskid, $finished) {
-	   	$classFinished = "";
-	   	if ($finished >= 100) $classFinished = " disabled-link";
-	   	return '<div class="btn-group">
-            <button type="button" class="btn btn-default btn-sm dropdown-toggle"  data-toggle="dropdown">Acción</button>
-            <ul class="dropdown-menu" role="menu">
-                <li><a class="info-task-action" href="'.$taskid.'" data-toggle="modal" data-target="#info-task-dialog-modal" >Información</a></li>
-                <li><a class="complete-task-action'.$classFinished.'" data-toggle="modal" data-target="#complete-task-dialog-modal" href="'.$taskid.'">Completar</a></li>
-                <li class="divider"></li>
-                <li><a class="delete-task-action" href="'.$taskid.'">Eliminar</a></li>
-            </ul>
-        </div>';
-   	}
-	
-	/**
-	 * Creates a new task for a user.
-	 * @param $userid Int id of the user creating the new task.
-	 * @param $taskDescription String description of the new task.
-	 * @param $taskInitialProgress Int initial completion percentage of the task that has been completed (0-100).
-	 * @return boolean true if operation was successful, false otherwise.
-	 */
-	public function createTask($userid, $taskDescription, $taskInitialProgress) {
-		// sanity checks
-		if (empty($userid) || empty($taskDescription)) return false;
-		else if (empty($taskInitialProgress)) $taskInitialProgress = 0;
-		else if ($taskInitialProgress < 0) $taskInitialProgress = 0;
-		else if ($taskInitialProgress > 100) $taskInitialProgress = 100;
-		
-		if ($taskInitialProgress == 100) { // already completed.
-			$stmt = $this->conn->prepare("INSERT INTO tasks(user_id, description, completed, creation_date, completion_date) values(?, ?, ?, now(), now())");
-			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
-		} else {
-			$stmt = $this->conn->prepare("INSERT INTO tareas(user_id, description, completed, creation_date) values(?, ?, ?, now())");
-			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
-		}
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
-	}
-	
-	/**
-	 * Deletes a task
-	 * @param $taskid Int id of the task to be deleted.
-	 * @return boolean true if operation was successful, false otherwise.
-	 */
-	public function deleteTask($taskid) {
-	 	if (empty($taskid)) return false;
-        $stmt = $this->conn->prepare("DELETE FROM tasks where id = ?");
-        $stmt->bind_param("i", $taskid);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-	}
-
-	/**
-	 * Generates the HTML for an individual task as a HTML code, depending on a given format, controlled by the format variable.
-	 * @param $task Array data for the task.
-	 * @param $format Int Either TASK_GENERAL_INFO_FORMAT (generating a general task info table) or TASK_PROGRESS_FORMAT (generating a task progress info msg).
-	 * @return String the HTML representation of the task, depending of a given format.
-	 */
-	private function getTaskAsIndividualTable($task, $format) {
-		$completed = $task["completed"];
-		if ($completed < 0) $completed = 0;
-		else if ($completed > 100) $completed = 100;
-		$color = $this->getTaskColorForCompletion($completed);
-
-		if ($format == TASK_GENERAL_INFO_FORMAT) { // General task info
-			$creationdate = $this->relativeTime($task["creation_date"]);
-			$taskcompletion = "";
-			if ($completed == 100) {
-				$completiondate = $this->relativeTime($task["completion_date"]);
-				$taskcompletion = "<tr><td>Fecha de finalización</td><td>".$completiondate."</td></tr>";
-			}
-			return '<table class="table table-bordered">
-                    <tr>
-                        <td>Descripción</td>
-                        <td>'.$task["description"].'</td>
-                    </tr>
-                    <tr>
-                        <td>Progreso</td>
-                        <td>Completado '.$completed.'% de la tarea
-                            <div class="progress xs">
-                                <div class="progress-bar progress-bar-'.$color.'" style="width: '.$completed.'%"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Fecha de inicio</td>
-                        <td>'.$creationdate.'</td>
-                    </tr>'.$taskcompletion.'
-                </table>';
-		} else if ($format == TASK_PROGRESS_FORMAT) { // Task progress info.
-			return '<div id="new-task-progress-label">Completado: ('.$completed.'%) </div>
-					<input type="text required" value="" id="task-new-progress-slider" name="task-new-progress-slider" class="slider form-control" data-slider-min="'.$completed.'" data-slider-max="100" data-slider-step="5" data-slider-value="'.$completed.'" data-slider-orientation="horizontal">
-';
-		} else {
-			return $this->getErrorMessage("Tipo de formato para mostrar la tarea desconocido. Consulte a su administrador.");
-		}
-	}
-
-	/**
-	 * Generates the HTML for a task as a HTML table.
-	 * @param $taskid Int identifier for the task.
-	 * @param $userid Int identifier for the user.
-	 * @param $format Int Either TASK_GENERAL_INFO_FORMAT (generating a general task info table) or TASK_PROGRESS_FORMAT (generating a task progress info msg).
-	 * @return String the HTML representation of the task, depending of a given format.
-	 */
-	public function getTaskInfoAsTable($taskid, $userid, $format) {
-		// sanity check
-		if (empty($taskid) || empty($userid)) {
-			return $this->getErrorMessage("Ha sido imposible obtener los datos de la tarea. Por favor, inténtalo de nuevo más tarde.");
-		} else if (empty($format)) { $format = TASK_GENERAL_INFO_FORMAT; }
-		
-		// get task data and execute query 
-		$stmt = $this->conn->prepare("SELECT * FROM tasks WHERE id = ?");
-		$stmt->bind_param("i", $taskid);
-		if ($stmt->execute() === false) return false;
-		$result = $stmt->get_result();
-		$stmt->close();
-		
-		// modify task if it actually belongs to the right user.
-		if ($task = $result->fetch_assoc()) {
-			if ($task["user_id"] == $userid) {
-				return $this->getTaskAsIndividualTable($task, $format);
-			} else return $this->getErrorMessage("Lo siento, no tiene permisos para acceder a tareas de otros usuarios.");
-		} else { // return failed to get task error message.
-			return $this->getErrorMessage("Ha sido imposible obtener los datos de la tarea. Por favor, inténtalo de nuevo más tarde.");
-		}
-	}
-	
-	/**
-	 * Modifies a task progress status.
-	 * @param $taskid Int identifier of the task
-	 * @param $progress new progress for the task (0-100).
-	 * @param $userid id of the user the task belongs to.
-	 * @return boolean true if modification was successful, false otherwise.
-	 */
-	public function modifyTask($taskid, $progress, $userid) {
-		if (empty($taskid) || empty($progress) || empty($userid)) return false;
-		$stmt = $this->conn->prepare("UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?");
-		$stmt->bind_param("iii", $progress, $taskid, $userid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
-	}
 	
 	/**
 	 * Retrieves the number of unfinished tasks.
@@ -1347,7 +1157,7 @@ class DbHandler {
 	 */
 	 public function getUnfinishedTasks($userid) {
 		 // prepare query
-		 $stmt = $this->conn->prepare("SELECT * from tasks where user_id = ? AND completed < 100");
+		 $stmt = $this->conn->prepare("SELECT * from tasks where user_id = ? AND completed < 100 ORDER BY creation_date");
 		 $stmt->bind_param("i", $userid);
 		 if ($stmt->execute() === false) return 0;
 		 $result = $stmt->get_result();
@@ -1357,23 +1167,160 @@ class DbHandler {
 		 if ($result === false) return NULL;
 		 else {
 			 $tasks = array();
-			 while ($row = $result->fetch_assoc()) {
-				 $tmp = array();
-				 $tmp["id"] = $row["id"];
-				 $tmp["user_id"] = $row["user_id"];
-				 $tmp["target_customer_id"] = $row["target_customer_id"];
-				 $tmp["description"] = $row["description"];
-				 $tmp["completed"] = $row["completed"];
-				 $tmp["creation_date"] = $row["creation_date"];
-				 $tmp["completion_date"] = $row["completion_date"];
-				 
-				 array_push($tasks, $tmp);
+			 while ($task = $result->fetch_assoc()) {
+				 array_push($tasks, $task);
 			 }
 			 $result->close();
 			 return $tasks;
 		}
 	 }
-	 	
+	 
+	/**
+	 * Creates a new task for a user.
+	 * @param $userid Int id of the user creating the new task.
+	 * @param $taskDescription String description of the new task.
+	 * @param $taskInitialProgress Int initial completion percentage of the task that has been completed (0-100).
+	 * @return boolean true if operation was successful, false otherwise.
+	 */
+	public function createTask($userid, $taskDescription, $taskInitialProgress = 0) {
+		// sanity checks
+		if (empty($userid) || empty($taskDescription)) return false;
+		else if (empty($taskInitialProgress)) $taskInitialProgress = 0;
+		else if ($taskInitialProgress < 0) $taskInitialProgress = 0;
+		else if ($taskInitialProgress > 100) $taskInitialProgress = 100;
+		
+		if ($taskInitialProgress == 100) { // already completed.
+			$stmt = $this->conn->prepare("INSERT INTO tasks(user_id, description, completed, creation_date, completion_date) values(?, ?, ?, now(), now())");
+			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
+		} else {
+			$stmt = $this->conn->prepare("INSERT INTO tasks(user_id, description, completed, creation_date) values(?, ?, ?, now())");
+			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
+		}
+		$result = $stmt->execute();
+		$stmt->close();
+		return $result;
+	}
+	
+	/**
+	 * Deletes a task
+	 * @param $taskid Int id of the task to be deleted.
+	 * @return boolean true if operation was successful, false otherwise.
+	 */
+	public function deleteTask($taskid) {
+	 	if (empty($taskid)) return false;
+        $stmt = $this->conn->prepare("DELETE FROM tasks where id = ?");
+        $stmt->bind_param("i", $taskid);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+	}
+	
+	/**
+	 * Sets the completed status of a task.
+	 * @param $taskid Int identifier of the task
+	 * @param $progress Int new completion status for the task (0-100).
+	 * @param $userid Int id of the user the task belongs to.
+	 * @return boolean true if modification was successful, false otherwise.
+	 */
+	public function setTaskCompletionStatus($taskid, $progress, $userid) {
+		if (empty($taskid) || empty($progress) || empty($userid)) return false;
+		$stmt = $this->conn->prepare("UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?");
+		$stmt->bind_param("iii", $progress, $taskid, $userid);
+		$result = $stmt->execute();
+		$stmt->close();
+		return $result;
+	}
+	
+	/**
+	 * Edits the description of the task
+	 * @param $taskid Int identifier of the task
+	 * @param $description String new progress for the task (0-100).
+	 * @param $userid Int id of the user the task belongs to.
+	 * @return boolean true if modification was successful, false otherwise.
+	 */
+	public function editTaskDescription($taskid, $description, $userid) {
+		if (empty($taskid) || empty($description) || empty($userid)) return false;
+		$stmt = $this->conn->prepare("UPDATE tasks SET description = ? WHERE id = ? AND user_id = ?");
+		$stmt->bind_param("sii", $description, $taskid, $userid);
+		$result = $stmt->execute();
+		$stmt->close();
+		return $result;
+	}
+	
+	
+	/**
+	 * Generates the HTML for a given task as a table row
+	 * @param $task Array associative array representing the task object.
+	 * @return String the HTML representation of the task as a row.
+	 */
+	private function getTaskAsIndividualRow($task) {
+		// define progress and bar color
+		error_log(print_r($task, true));
+		$completed = $task["completed"];
+		if ($completed < 0) $completed = 0;
+		else if ($completed > 100) $completed = 100;
+		$creationdate = $this->relativeTime($task["creation_date"]);
+		// values dependent on completion of the task.
+		$doneOrNot = $completed == 100 ? 'class="done"' : '';
+		$completeActionCheckbox = $completed == 100 ? '' : '<input type="checkbox" value="" name="" style="position: absolute; opacity: 0;">';
+		
+		return '<li id="'.$task["id"].'" '.$doneOrNot.'>
+			  	  '.$completeActionCheckbox.'
+				  <span class="text">'.$task["description"].'</span>
+				  <small class="label label-warning pull-right"><i class="fa fa-clock-o"></i> '.$creationdate.'</small>
+				  <div class="tools">
+						<a class="edit-task-action" href="'.$task["id"].'" data-toggle="modal" data-target="#edit-task-dialog-modal">
+						<i class="fa fa-edit task-item"></i>
+						</a>
+						<a class="delete-task-action" href="'.$task["id"].'">
+							<i class="fa fa-trash-o"></i>
+						</a>
+				  </div>
+			 </li>';
+	}
+
+	/**
+	 * Generates the HTML for a all tasks of a given user as a table row
+	 * @param $userid Int id of the user to retrieve the tasks from.
+	 * @return String the HTML representation of the user's tasks as a table.
+	 */
+	public function getCompletedTasksAsTable($userid, $userrole) { 
+		$tasks = $this->getCompletedTasks($userid);
+		if (empty($tasks)) { return $this->getInfoMessage("You don't have any completed task at the moment"); }
+		else {
+			$list = $this->taskTablePrefix;
+			foreach ($tasks as $task) {
+				// generate row
+				$taskHTML = $this->getTaskAsIndividualRow($task);
+				$list = $list.$taskHTML;
+			}
+			
+			$list = $list.$this->taskTableSuffix;
+	    	return $list;
+		}
+   	}
+
+	/**
+	 * Generates the HTML for a all tasks of a given user as a table row
+	 * @param $userid Int id of the user to retrieve the tasks from.
+	 * @return String the HTML representation of the user's tasks as a table.
+	 */
+	public function getUnfinishedTasksAsTable($userid, $userrole) { 
+		$tasks = $this->getUnfinishedTasks($userid);
+		if (empty($tasks)) { return $this->getInfoMessage("You don't have any pending task at this moment."); }
+		else {
+			$list = $this->taskTablePrefix;
+			foreach ($tasks as $task) {
+				// generate row
+				$taskHTML = $this->getTaskAsIndividualRow($task);
+				$list = $list.$taskHTML;
+			}
+			
+			$list = $list.$this->taskTableSuffix;
+	    	return $list;
+		}
+   	}
+   	
 	/* ------------------- messages --------------------------- */
 	
 	/**
@@ -1387,8 +1334,8 @@ class DbHandler {
 	public function sendMessage($fromuserid, $touserid, $subject, $message) {
 		// sanity checks
 		if (empty($fromuserid) || empty($touserid)) return false;
-		if (empty($subject)) $subject = "(Sin asunto)";
-		if (empty($message)) $message = "(Sin mensaje)";
+		if (empty($subject)) $subject = "(".$this->lh->text("no_subject").")";
+		if (empty($message)) $message = "(".$this->lh->text("no_message").")";
 		
 		// insert the new message in the inbox of the receiving user.
 		$stmt = $this->conn->prepare("INSERT INTO messages_inbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 0, 0)");
@@ -1407,21 +1354,28 @@ class DbHandler {
 	}
 	
 	/**
-	 * Generates the list of users $myuserid can send mail to (all except $myuserid) as a HTML form SELECT.
+	 * Generates the list of users $myuserid can send message to or assign a task to as a HTML form SELECT.
 	 * @param Int $myuserid id of the user that wants to send messages, all other user's ids will be returned.
-	 * @return the list of users $myuserid can send mail to (all except $myuserid) as a HTML form SELECT.
+	 * @param Boolean $includeSelf if true, $myuserid will appear listed in the options. If false (default), $myuserid will not be included in the options. If this parameter is set to true, the default option will be the $myuserid
+	 * @param String $customMessage The custome message to ask for a selection in the SELECT, default is "send this message to...".
+	 * @return the list of users $myuserid can send mail to (all valid users except $myuserid unless $includeSelf==true) as a HTML form SELECT.
 	 */
-	public function generateMailToUserSelect($myuserid) {
+	public function generateSendToUserSelect($myuserid, $includeSelf = false, $customMessage = NULL) {
 		// perform query of users.
+		if (empty($customMessage)) $customMessage = $this->lh->text("send_this_message_to");
 		$stmt = $this->conn->prepare("SELECT * FROM users WHERE status = 1");
-		if ($stmt->execute() === false) return $this->getErrorMessage("¡Vaya! Ha sido imposible obtener la lista de usuarios para enviar el message. Por favor, ponte en contacto con el administrador.");
+		if ($stmt->execute() === false) return $this->getErrorMessage($this->lh->text("unable_get_user_list"));
 		$result = $stmt->get_result();
 
 		// iterate through all users and generate the select
-		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">send message to...</option>\n';
+		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">'.$customMessage.'</option>\n';
 		while ($obj = $result->fetch_assoc()) {
 			// don't include ourselves.
-			if ($obj["id"] != $myuserid) $response = $response.'\t<option value="'.$obj["id"].'">'.$obj["name"].'</option>\n';			
+			if ($obj["id"] != $myuserid) {
+				$response = $response.'\t<option value="'.$obj["id"].'">'.$obj["name"].'</option>\n';
+			} else if ($includeSelf === true) { // assign to myself by default
+				$response = $response.'\t<option value="'.$obj["id"].'" selected="true">myself</option>\n';
+			}	
 		}
 		$response = $response.'</select>';
 		return $response;
@@ -1512,7 +1466,7 @@ class DbHandler {
 	 */
 	private function getMessageListAsTable($messages) {
 		// generate the table.
-		$result = $this->messageListPrefix;
+		$result = $this->lh->translate($this->messageListPrefix, array("selection", "favorite", "user", "date", "subject"));
 		foreach ($messages as $message) {
 			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
 			else $result = $result.'<tr>';
@@ -1539,7 +1493,7 @@ class DbHandler {
 	 */
 	public function getInboxMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_INBOX_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage("¡Vaya! Ha sido imposible obtener los mensajes. Inténtalo más tarde o consulta con el administrador");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("unable_get_messages"));
 		else return $this->getMessageListAsTable($messages);
 	}
 	
@@ -1549,7 +1503,7 @@ class DbHandler {
 	 */
 	public function getUnreadMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage("No hay messages en esta carpeta.");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1559,7 +1513,7 @@ class DbHandler {
 	 */
 	public function getJunkMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_DELETED_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage("No hay messages en esta carpeta.");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1569,7 +1523,7 @@ class DbHandler {
 	 */
 	public function getSentMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_SENT_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage("No hay messages en esta carpeta.");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 				
@@ -1579,7 +1533,7 @@ class DbHandler {
 	 */
 	public function getFavoriteMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_FAVORITE_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage("No hay messages en esta carpeta.");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1590,7 +1544,7 @@ class DbHandler {
 	 */
 	public function getMessagesFromFolderAsTable($userid, $folder) {
 		$messages = $this->getMessagesOfType($userid, $folder);
-		if ($messages == NULL) return $this->getInfoMessage("No hay messages en esta carpeta.");
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 
@@ -1799,7 +1753,7 @@ class DbHandler {
 		// sanity checks
 		$tableName = $this->getTableNameForFolder($folder);
 		if ($tableName == NULL || $userid == NULL || $messageid == NULL) {
-			return $this->getErrorModalMessage("Ha sido imposible obtener el message. Por favor, inténtelo de nuevo más tarde. Si el problema persiste, consulte con el administrador.");
+			return $this->getErrorModalMessage($this->lh->text("unable_get_message"), $this->lh->text("error_getting_message"));
 		}
 		$remoteuseridfield = "user_from";
 		$useridfield = "user_to";
@@ -1833,7 +1787,7 @@ class DbHandler {
 			$text = $obj["message"]; 
 			$messagedate = $obj["date"]; 
 			$remoteusername = $obj["name"]; 
-			$fromortodestination = ($fromuserid == $userid)? " para $remoteusername." : " de $remoteusername.";
+			$fromortodestination = ($fromuserid == $userid)? $this->lh->text("to")." $remoteusername." : $this->lh->text("from")." $remoteusername.";
 			$relativeTime = $this->relativeTime($messagedate);
 		
 			return '
@@ -1841,7 +1795,7 @@ class DbHandler {
 		        <div class="modal-content">
 		            <div class="modal-header">
 		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> message'.$fromortodestination.'</h4>
+		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->text("message").' '.$fromortodestination.'</h4>
 		            </div>
 		            <form action="#" method="post" id="show-message-form" name="show-message-form">
 		                <div class="modal-body">
@@ -1864,20 +1818,20 @@ class DbHandler {
 		                        </div>
 		                    </div> 
 							<div class="form-group">
-		                        <textarea name="message" id="message" class="form-control" placeholder="Message" style="height: 120px;" readonly>'.$text.'
+		                        <textarea name="message" id="message" class="form-control" placeholder="'.$this->lh->text("message").'" style="height: 120px;" readonly>'.$text.'
 		                        </textarea>
 		                    </div>
 		                </div>
 		                <input type="hidden" id="messageid" name="messageid" value="'.$messageid.'">
 		                <div class="modal-footer clearfix">
-		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> Salir</button>
+		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.$this->lh->text("exit").'</button>
 		                </div>
 		            </form>
 		        </div><!-- /.modal-content -->
 			</div><!-- /.modal-dialog -->';
     	} else {
 	    	
-			return $this->getErrorModalMessage("Ha sido imposible obtener el message. Por favor, inténtelo de nuevo más tarde. Si el problema persiste, consulte con el administrador.");
+			return $this->getErrorModalMessage($this->lh->text("unable_get_message"), $this->lh->text("error_getting_message"));
     	}
 
 	} // end function
@@ -1980,9 +1934,9 @@ class DbHandler {
 	 * @return String the string with the action button text for this notification type.
 	 */
 	private function actionButtonTextForNotificationType($type) {
-		if ($type == "contact") return "Ver cliente";
-		else if ($type == "message") return "Leer message";
-		else return "Saber más";
+		if ($type == "contact") return $this->lh->text("see_customer");
+		else if ($type == "message") return $this->lh->text("read_message");
+		else return $this->lh->text("see_more");
 	}
 	
 	/**
@@ -1992,9 +1946,12 @@ class DbHandler {
 	 * @return String the string with the header text for this notification type.
 	 */
 	private function headerTextForNotificationType($type, $action) {
-		if ($type == "contact") return empty($action) ? "Hay un nuevo Contacto" : "Hay un nuevo <a href=".$action.">Contacto</a>";
-		else if ($type == "message") return empty($action) ? "Tienes un nuevo message" : "Tienes un nuevo <a href=".$action.">message</a>";
-		else return empty($action) ? "Nuevo Evento" : "Nuevo <a href=".$action.">Evento</a>";
+		if ($type == "contact") 
+		return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("contact") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("contact")."</a>";
+		else if ($type == "message") 
+			return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("message") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("message")."</a>";
+
+		return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("event") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("event")."</a>";
 	}
 	
 	/**
@@ -2015,8 +1972,7 @@ class DbHandler {
 		$icon = $this->notificationIconForNotificationType($type);
 		$relativetime = $this->relativeTime($date, 1);
 
-		return '<!-- timeline item -->
-                <li>
+		return '<li>
                     <i class="fa '.$icon.' '.$color.'"></i>
                     <div class="timeline-item">
                         <span class="time"><i class="fa fa-clock-o"></i> '.$relativetime.'</span>
@@ -2026,8 +1982,7 @@ class DbHandler {
 						</div>
                         '.$actionHTML.'
                     </div>
-                </li>
-                <!-- END timeline item -->';
+                </li>';
 	}
 	
 	/**
@@ -2036,14 +1991,10 @@ class DbHandler {
 	 * @return String a HTML representation of the notification.
 	 */
 	public function getNotificationsAsTimeLine($userid) {
-		$days = array("Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sábado");
-		$months = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
-		$todayAsText = $days[date('w')].", ".date('d')." de ".$months[date('n')-1]. " del ".date('Y') ;
-		
+		$todayAsText = strftime("%c");
 		
 		// today
 		$timeline = '<ul class="timeline">
-	                    <!-- timeline time label -->
 	                    <li class="time-label">
 	                        <span class="bg-green">
 	                            '.$todayAsText.'
@@ -2052,7 +2003,7 @@ class DbHandler {
 		
 		$notifications = $this->getTodayNotifications($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage("No hay notificaciones para hoy.").'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->text("no_notifications_today")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -2060,16 +2011,15 @@ class DbHandler {
 		}
 		
         // past week
-		$timeline = $timeline.'<!-- timeline time label -->
-	                    <li class="time-label">
+		$timeline = $timeline.'<li class="time-label">
 	                        <span class="bg-yellow">
-	                            La semana pasada
+	                            '.$this->lh->text("past_week").'
 	                        </span>
 	                    </li>';
-        		
+
         $notifications = $this->getNotificationsForPastWeek($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage("No hay notificaciones para la semana pasada.").'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->text("no_notifications_past_week")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -2176,15 +2126,15 @@ class DbHandler {
 	 *        i.e: 3 days, 4 hours, 1 minute and 20 seconds with $maxdepth=2 would be 3 days, 4 hours.
 	 * @return String the string representation of the time relative to the current date.
 	 */
-	private function relativeTime($mysqltime, $maxdepth = 2) {
+	private function relativeTime($mysqltime, $maxdepth = 1) {
 		$time = strtotime(str_replace('/','-', $mysqltime));
-	    $d[0] = array(1,"segundo");
-	    $d[1] = array(60,"minuto");
-	    $d[2] = array(3600,"hora");
-	    $d[3] = array(86400,"día");
-	    $d[4] = array(604800,"semana");
-	    $d[5] = array(2592000,"mes");
-	    $d[6] = array(31104000,"año");
+	    $d[0] = array(1,$this->lh->text("second"));
+	    $d[1] = array(60,$this->lh->text("minute"));
+	    $d[2] = array(3600,$this->lh->text("hour"));
+	    $d[3] = array(86400,$this->lh->text("day"));
+	    $d[4] = array(604800,$this->lh->text("week"));
+	    $d[5] = array(2592000,$this->lh->text("month"));
+	    $d[6] = array(31104000,$this->lh->text("year"));
 	
 	    $w = array();
 	
@@ -2193,6 +2143,8 @@ class DbHandler {
 	    $now = time();
 	    $diff = ($now-$time);
 	    $secondsLeft = $diff;
+	
+		if ($secondsLeft == 0) return "now";
 	
 	    for($i=6;$i>-1;$i--)
 	    {
@@ -2207,7 +2159,7 @@ class DbHandler {
 	
 	    }
 	
-	    $verb = ($diff>0)?"hace ":"quedan ";
+	    $verb = ($diff>0)?"":"in ";
 	    $return = $verb.$return;
 	    return $return;
 	}
@@ -2216,19 +2168,6 @@ class DbHandler {
 		if (empty($maxCharacters)) $maxCharacters = 4;
 		else if ($maxCharacters < 1) $maxCharacters = 4;
 		return (strlen($string) > $maxCharacters) ? substr($string, 0, $maxCharacters-3).'...' : $string;
-	}
-	
-	/**
-	 * Generates the HTML color for tasks given their completion status.
-	 * @param $completion Int a number between 0 and 100 representing the completion status of the task
-	 * @return String the color for the task HTML code.
-	 */
-	private function getTaskColorForCompletion($completion) {
-		$color = "red";
-		if ($completion > 30) $color = "yellow";
-		if ($completion > 60) $color = "blue";
-		if ($completion > 90) $color = "green";
-		return $color;
 	}
 	
 	/**

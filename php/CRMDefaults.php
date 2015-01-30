@@ -11,6 +11,7 @@
 // global constants
 define('CRM_SKEL_CONFIG_FILE', 'skel/Config.php');
 define('CRM_INSTALLED_FILE', './installed.txt');
+define('CRM_GETTING_STARTED_FILE', './help/gettingstarted.html');
 define('CRM_PHP_CONFIG_FILE', 'php/Config.php');
 define('CRM_PHP_END_TAG', '?>');
 

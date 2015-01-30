@@ -499,6 +499,10 @@ Gradient Background colors
 .connectedSortable {
   min-height: 100px;
 }
+.task-item {
+	margin-left: 10px;
+	margin-right: 10px;
+}
 /*---------------------------------------------------
     LESS Elements 0.9
   ---------------------------------------------------
@@ -1727,14 +1731,14 @@ body > .header .logo .icon {
   display: inline-block;
 }
 .box .todo-list > li.done {
-  color: #999;
+  color: #777;
 }
 .box .todo-list > li.done .text {
   text-decoration: line-through;
   font-weight: 500;
 }
 .box .todo-list > li.done .label {
-  background: #eaeaec !important;
+  background: #5bc0de !important;
 }
 .box .todo-list .handle {
   display: inline-block;

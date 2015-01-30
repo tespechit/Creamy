@@ -1,7 +1,11 @@
 <?php
-	include_once "./php/DbHandler.php";
+	require_once('./php/DbHandler.php');
+	include_once('./php/CRMDefaults.php');
+    require('./php/Session.php');
+
     $db = new DbHandler();
-    include "./php/Session.php";
+	$userid = $_SESSION["userid"];
+	$userrole = $_SESSION["userrole"];
 ?>
 <html>
     <head>
@@ -14,8 +18,6 @@
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Theme style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <!-- bootstrap slider -->
-        <link href="css/bootstrap-slider/slider.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -28,6 +30,7 @@
         <!-- header logo: style can be found in header.less -->
         <header class="header">
             <a href="./index.php" class="logo">
+	            <img src="img/logoWhite.png" width="32" height="32">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
                 Creamy
             </a>
@@ -62,12 +65,12 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        Tareas
-                        <small>Gestiona tu tiempo</small>
+                        Tasks
+                        <small>Manage your time</small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="#"><i class="fa fa-tasks"></i> Inicio</a></li>
-                        <li class="active">Tareas</li>
+                        <li><a href="#"><i class="fa fa-tasks"></i> Home</a></li>
+                        <li class="active">Tasks</li>
                     </ol>
                 </section>
 
@@ -75,64 +78,89 @@
                 <section class="content">
 	                
 				<?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
-	                
+
+				<!-- Unfinished tasks row -->
 				<div class="row">
-                        <div class="col-xs-12">
-                            <div class="box">
-                                <div class="box-header">
-                                    <h3 class="box-title">Mis tareas</h3>
-                                </div><!-- /.box-header -->
-                                <div class="box-body table-responsive" id="task-table-container">
-									<?php 
-										$userid = $_SESSION["userid"];
-										print $db->getAllMyTasksAsTable($userid); 
-									?>
+                    <div class="col-xs-12">
+                        <div class="box">
+                            <div class="box-header">
+                                <i class="ion ion-clipboard"></i>
+                                <h3 class="box-title">Unfinished Tasks</h3>
+                            </div><!-- /.box-header -->
+                            <div class="box-body table-responsive" id="task-table-container">
+								<?php 
+									print $db->getUnfinishedTasksAsTable($userid, $userrole); 
+								?>
+                            </div><!-- /.box-body -->
+
+                        </div><!-- /.box -->
+                    </div>
+                </div>
+       
+                <div class="row">
+                    <div class="col-xs-12">
+						<div class="box collapsed-box">
+                            <div class="box-header">
+	                            <div class="box-tools pull-right">
+                                    <button class="btn btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
+                                    <button class="btn btn-sm" data-widget="remove"><i class="fa fa-times"></i></button>
+                                </div>
+                                <i class="ion ion-clipboard"></i>
+                                <h3 class="box-title">Completed Tasks</h3>
+                            </div>
+                            <div class="box-body table-responsive" id="task-table-container" style="display: none;">
+								<?php 
+									print $db->getCompletedTasksAsTable($userid, $userrole); 
+								?>
+                            </div><!-- /.box-body -->
+                        </div>
+
+                    </div>
+                </div>
+                    
+                <!-- Only users with write permission can create new tasks -->
+                <?php if (userHasWritePermission($_SESSION["userrole"])) { ?>
+                
+                <!-- .row -->
+                <div class="row">
+                    <div class="col-xs-12">
+
+                        <div class="box box-primary">
+                            <div class="box-header">
+                                <h3 class="box-title">New task</h3>
+                            </div><!-- /.box-header -->
+                            <!-- form start -->
+                            <form role="form" name="createtask" id="createtask">
+                                <div class="box-body">
+                                    <div class="form-group">
+                                        <label for="taskDescription">Task description</label>
+                                        <input type="text required" class="form-control" id="taskDescription" name="taskDescription" placeholder="Descripción de la tarea">
+                                    </div>
+                                    <!-- assign task to other users only if current user has manager privileges -->
+									<?php if (userHasManagerPermission($userrole)) { ?>
+                                    <div class="form-group">
+                                        <label for="touserid">Assign this task to...</label>
+										<?php print $db->generateSendToUserSelect($_SESSION["userid"], true, "Assign this task to..."); ?>
+                                    </div>
+                                    <?php } ?>
+                                    
+                                    <input type="hidden" id="userid" name="userid" value="<?php print($_SESSION["userid"]); ?>">
+                                    <br>
+                                    <div  id="resultmessage" name="resultmessage" style="display:none">
+                                    </div>
+
                                 </div><!-- /.box-body -->
 
-                            </div><!-- /.box -->
-                        </div>
+                                <div class="box-footer">
+                                    <button type="submit" class="btn btn-primary">Crear tarea</button>
+                                </div>
+                            </form>
+                        </div><!-- /.box -->
+
                     </div>
-                    
-                    <!-- Only users with write permission can create new tasks -->
-                    <?php if (userHasWritePermission($_SESSION["userrole"])) { ?>
-                    
-                    <!-- .row -->
-                    <div class="row">
-                        <div class="col-xs-12">
+                </div> <!-- /.row -->
 
-                            <div class="box box-primary">
-                                <div class="box-header">
-                                    <h3 class="box-title">Nueva tarea</h3>
-                                </div><!-- /.box-header -->
-                                <!-- form start -->
-                                <form role="form" name="createtask" id="createtask">
-                                    <div class="box-body">
-                                        <div class="form-group">
-                                            <label for="taskDescription">Descripción de la tarea</label>
-                                            <input type="text required" class="form-control" id="taskDescription" name="taskDescription" placeholder="Descripción de la tarea">
-                                        </div>
-                                        <div class="form-group">
-                                            <div id="taskInitialProgressLabel"><label for="taskInitialProgress">Porcentaje inicial completado: (0%)</label></div>
-											<input type="text required" value="" id="taskInitialProgress" name="taskInitialProgress" class="slider form-control" data-slider-min="0" data-slider-max="100" data-slider-step="5" data-slider-value="0" data-slider-orientation="horizontal">
-                                        </div>
-                                        <input type="hidden" id="userid" name="userid" value="<?php print($_SESSION["userid"]); ?>">
-                                        <br>
-	                                    <div  id="resultmessage" name="resultmessage" style="display:none">
-	                                    </div>
-
-                                    </div><!-- /.box-body -->
-
-                                    <div class="box-footer">
-                                        <button type="submit" class="btn btn-primary">Crear tarea</button>
-                                    </div>
-                                </form>
-                            </div><!-- /.box -->
-
-                        </div>
-                    </div> <!-- /.row -->
-
-                    <?php } ?>
-
+                <?php } ?>
 
                 </section><!-- /.content -->
 				
@@ -141,30 +169,28 @@
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
 
-	<!-- TASK DIALOGS -->
-		
 	<!-- CHANGE TASK MODAL -->
 
-    <div class="modal fade" id="complete-task-dialog-modal" name="complete-task-dialog-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal fade" id="edit-task-dialog-modal" name="edit-task-dialog-modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title"><i class="fa fa-tasks"></i> Progreso de la tarea</h4>
-                    <p>Inserta el nuevo progreso para la tarea. Si desplazas el indicador totalmente a la derecha (100%), significará que la tarea se ha completado completamente, y se considerará finalizada.</p>
+                    <h4 class="modal-title"><i class="fa fa-edit"></i> Modify task description</h4>
+                    <p>Insert the new description for the task and push the "modify task" button.</p>
                 </div>
-                <form action="" method="post" name="modify-task-form" id="modify-task-form">
+                <form action="" method="post" name="edit-task-form" id="edit-task-form">
                     <div class="modal-body">
                         <div class="form-group">
-                            <div class="input-group" id="task-progress-properties-content">
-                            </div>
+                            <label for="edit-task-description">New description</label>
+                            <input type="text required" class="form-control" id="edit-task-description" name="edit-task-description" placeholder="New description">
                         </div>
-						<input type="hidden" id="complete-task-taskid" name="complete-task-taskid" value="">
+						<input type="hidden" id="edit-task-taskid" name="edit-task-taskid" value="">
 						<div id="changetaskresult" name="changetaskresult"></div>
                     </div>
                     <div class="modal-footer clearfix">
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> Cancelar</button>
-                        <button type="submit" class="btn btn-primary pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> Modificar tarea</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> Cancel</button>
+                        <button type="submit" class="btn btn-primary pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> Modify task</button>
                     </div>
                 </form>
             </div><!-- /.modal-content -->
@@ -172,33 +198,10 @@
     </div><!-- /.modal -->		
 
 	<!-- /CHANGE TASK MODAL -->
-
-	<!-- TASK INFO MODAL -->
-
-    <div class="modal fade" id="info-task-dialog-modal" name="info-task-dialog-modal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title"><i class="fa fa-tasks"></i> Datos sobre la tarea</h4>
-                </div>
-	            <div class="box">
-	                <div class="box-body" id="task-info-content" name="task-info-content">
-					
-	                </div><!-- /.box-body -->
-	            </div><!-- /.box -->
-
-
-            </div><!-- /.modal-content -->
-        </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->		
-
-	<!-- /TASK INFO MODAL -->
-
+	
+	<!-- TASK DIALOGS -->
 
 	<!-- END TASK DIALOGS -->
-
-
 
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js" type="text/javascript"></script>
@@ -206,25 +209,12 @@
         <script src="js/AdminLTE/app.js" type="text/javascript"></script>
         <!-- Bootstrap slider -->
         <script src="js/plugins/bootstrap-slider/bootstrap-slider.js" type="text/javascript"></script>
+        <!-- iCheck -->
+        <script src="js/plugins/iCheck/icheck.min.js" type="text/javascript"></script>
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
 		<script src="js/messages_es.min.js" type="text/javascript"></script>
 		<script src="js/tasksforms.js" type="text/javascript"></script>
-
-        <script type="text/javascript">
-            $(function() {
-                /* BOOTSTRAP SLIDER */
-                $('#taskInitialProgress').slider({
-	                tooltip: "hide"
-                }).on('slide', function(ev) {
-	                var newValue = ev.value;
-	                if (!newValue) newValue = 0;
-	                $('#taskInitialProgress').value = newValue;
-	                $('#taskInitialProgressLabel').html("<label for=\"taskInitialProgress\">Porcentaje inicial completado: ("+ newValue +"%)</label>");
-                });
-				
-			});
-        </script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 

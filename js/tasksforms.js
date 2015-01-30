@@ -12,10 +12,6 @@ $(document).ready(function() {
 	$("#createtask").validate({
 		rules: {
 			taskDescription: "required",
-			taskInitialProgress: {
-			  required: true,
-			  range: [0, 100]
-			}
 		},
 		submitHandler: function() {
 			//submit the form
@@ -36,71 +32,7 @@ $(document).ready(function() {
 			return false; //don't let the form refresh the page...
 		}					
 	});
-	
-	/**
-	 * Info from task.
-	 */
-	 $(".info-task-action").click(function(e) {
-		var task_id = $(this).attr('href');
-		e.preventDefault();
-		$.post("./php/TaskInfo.php", {"taskid": task_id, "format": "task-general-info" }, 
-			function(data){
-				$("#task-info-content").html(data);
-			});
-	 });
-	 
-	/**
-	 * Complete progress from task.
-	 */
-	 $(".complete-task-action").click(function(e) {
-		var task_id = $(this).attr('href');
-		$("#changetaskresult").hide();
-		e.preventDefault();
-		$.post("./php/TaskInfo.php", {"taskid": task_id, "format": "task-progress-info" }, 
-			function(data){
-				$("#task-progress-properties-content").html(data);
-				$("#complete-task-taskid").val(task_id);
-				$('#task-new-progress-slider').slider({
-	                tooltip: "hide"
-                }).on('slide', function(ev) {
-	                var newValue = ev.value;
-	                if (!newValue) newValue = 0;
-	                $('#task-new-progress-slider').value = newValue;
-	                $('#new-task-progress-label').html("Completado: ("+newValue+") ");
-                });
-			});
-	 });
-	 
-	 /**
-	  * Modify the completion status of a task.
-	  */
-	 $("#modify-task-form").submit(function(e) {
-		//submit the form
-		e.preventDefault();
-		$.post("./php/ModifyTask.php", //post
-		$("#modify-task-form").serialize(), 
-			function(data){
-				//if message is sent
-				if (data == 'success') {
-					$("#changetaskresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b>¡Éxito!</b> La tarea fue modificada correctamente.');
-					$("#changetaskresult").fadeIn(); //show confirmation message
-					$("#changetaskOkButton").fadeOut();
-					$("#changetaskCancelButton").html('<i class="fa fa-check-circle"></i> Salir');
-				$("#task-progress-properties-content").html('');
-				} else {
-					$("#changetaskresult").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b>¡Vaya!</b> Parece que hubo un error modificando la tarea: '+ data);
-					$("#changetaskresult").fadeIn(); //show confirmation message
-				}
-			});
-	});
-	
-	/**
-	 * Reload the page if we exit a task modification.
-	 */
-	$("#changetaskCancelButton").click(function(e) {
-		setTimeout(location.reload(), 0.5);
-	});
-	
+
 	/**
 	 * Delete a task
 	 */
@@ -115,6 +47,73 @@ $(document).ready(function() {
 			});
 		}
 	 });
+	 
+	/**
+	 * Show the edit task dialog, filling the edit fields properly.
+	 */
+	$(".edit-task-action").click(function(e) {
+		// Set ID of the task to edit
+        var ele = $(this).parents("li").first();
+		var task_id = ele[0].id; // task ID is contained in the ID element of the li object.
+		$('#edit-task-taskid').val(task_id);
+		
+		// set the previous description of task.
+		var current_text = $('.text', ele);
+		$('#edit-task-description').val(current_text.text());
+	});
 
+	/**
+	 * Edit the description of a task
+	 */
+	$("#edit-task-form").validate({
+		submitHandler: function() {
+			//submit the form
+				$("#resultmessage").html();
+				$("#resultmessage").fadeOut();
+				$.post("./php/ModifyTask.php", //post
+				$("#edit-task-form").serialize(), 
+					function(data){
+						//if message is sent
+						if (data == 'success') {
+							location.reload();
+						} else {
+							$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b>¡Vaya!</b> Parece que hubo un error creando la nueva tarea: '+ data);
+							$("#resultmessage").fadeIn(); //show confirmation message
+						}
+						//
+					});
+			return false; //don't let the form refresh the page...
+		}					
+	});
+
+
+	/**
+	 * React to checking and unchecking of boxes -- Mark tasks as completed.
+	 */
+    $('input', this).on('ifChecked', function(event) {
+        var ele = $(this).parents("li").first();
+		// task ID is contained in the ID element of the li object.
+		var task_id = ele[0].id;
+		
+		// clear current result field
+		$("#changetaskresult").html();
+		$("#changetaskresult").fadeOut();
+		
+		// mark item as "done" and call ModifyTask. 
+        ele.toggleClass("done");
+		$.post("./php/CompleteTask.php", {"complete-task-taskid": task_id, "complete-task-progress": "100" }, 
+		function(data){
+			if (data == "success") { location.reload(); }
+			else {
+				$("#changetaskresult").html(data);
+				$("#changetaskresult").fadeIn();
+			}
+		});
+    });
+
+    $('input', this).on('ifUnchecked', function(event) {
+        var ele = $(this).parents("li").first();
+        ele.toggleClass("done");
+    });
 	
 });

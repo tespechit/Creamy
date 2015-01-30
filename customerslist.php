@@ -1,8 +1,11 @@
 <?php
-	require_once('./php/CRMDefaults.php');
-	require_once "./php/DbHandler.php";
+	require_once ('./php/CRMDefaults.php');
+	require_once ('./php/DbHandler.php');
+	require_once ('./php/LanguageHandler.php');
+    include ('./php/Session.php');
+
     $db = new DbHandler();
-    include "./php/Session.php";
+	$lh = LanguageHandler::getInstance();
     
     // get the type of customers.
     $customerType = NULL;
@@ -16,7 +19,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Creamy - <?php print $customerName; ?></title>
+        <title>Creamy</title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -38,6 +41,7 @@
         <!-- header logo: style can be found in header.less -->
         <header class="header">
             <a href="./index.php" class="logo">
+	            <img src="img/logoWhite.png" width="32" height="32">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
                 Creamy
             </a>
@@ -71,10 +75,10 @@
                 <section class="content-header">
                     <h1>
                         <?php print $customerName; ?>
-                        <small>Lista de entradas</small>
+                        <small><?php print $lh->text("customer_list"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-users"></i> Inicio</a></li>
+                        <li><a href="./index.php"><i class="fa fa-users"></i> <?php print $lh->text("home"); ?></a></li>
                         <li class="active"><?php print $customerName; ?></li>
                     </ol>
                 </section>
@@ -92,7 +96,7 @@
                                 <?php 
 	                            if (userHasWritePermission($_SESSION["userrole"])) { ?>
 								<div class="box-tools" style="padding-left: 1%;">
-                                   <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal">Añadir a <?php print(strtolower($customerName)); ?></a>
+                                   <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal"><?php print($lh->text("add_to")." ".strtolower($customerName)); ?></a>
                                 </div>
 								<?php } ?>
                                 <div class="box-body table-responsive">

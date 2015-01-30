@@ -1,7 +1,11 @@
 <?php
 	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbInstaller.php');
+	require_once('./php/LanguageHandler.php');
 	require_once('./php/RandomStringGenerator.php');
+	
+	// language handler
+	$lh = LanguageHandler::getInstance();
 	
 	session_start(); // Starting Session
 
@@ -19,6 +23,7 @@
 		$dbuser = NULL;
 		$dbpass = NULL;
 		$timezone = NULL;
+		$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']); if ($locale == NULL) $locale = "en_US";
 		if (isset($_POST["dbhost"])) { $dbhost = $_POST["dbhost"]; }
 		if (isset($_POST["dbname"])) { $dbname = $_POST["dbname"]; }
 		if (isset($_POST["dbuser"])) { $dbuser = $_POST["dbuser"]; }
@@ -44,6 +49,7 @@ define('DB_PORT', '3306');
 		
 // General configuration
 define('CRM_TIMEZONE', '$timezone');
+define('CRM_LOCALE', '$locale');
 define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 
 ".CRM_PHP_END_TAG;
@@ -76,7 +82,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		if (isset($_POST["adminEmail"])) { $adminEmail = $_POST["adminEmail"]; }
 		
 		if (empty($adminName) || empty($adminPassword) || empty($adminPasswordCheck) || empty($adminEmail)) { // unable get admin name or password
-			$error = "Unable to get admin name and password. Please try again.";
+			$error = $lh->text("unable_get_admin_credentials");
 			$currentState = "step2";
 			$_SESSION["installationStep"] = "step2";
 		} else { // setup basic database tables.
@@ -88,7 +94,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 				$dbpass = $_SESSION["dbpass"];
 				
 				if (empty($dbhost) || empty($dbname) || empty($dbuser) || empty($dbpass)) {
-					$error = "Unable to get database connection credentials. Installation will not continue.";
+					$error = $lh->text("unable_get_database_credentials");
 					$currentState = "step2";
 					$_SESSION["installationStep"] = "step2";
 				} else {
@@ -98,7 +104,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						$currentState = "step3";			
 						$_SESSION["installationStep"] = "step3";
 					} else {
-						$error = "There was an error setting up the basic database tables: ". $dbInstaller->getLastErrorMessage() or "database not set." ;
+						$error = $lh->text("error_setting_db_tables")." ". $dbInstaller->getLastErrorMessage() or $lh->text("database_not_set");
 						$currentState = "step2";
 						$_SESSION["installationStep"] = "step2";
 					}
@@ -127,7 +133,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		$dbpass = $_SESSION["dbpass"];
 
 		if (empty($dbhost) || empty($dbname) || empty($dbuser) || empty($dbpass)) {
-			$error = "Unable to get database connection credentials. Installation will not continue.";
+			$error = $lh->text("unable_get_database_credentials");
 			$currentState = "step3";
 			$_SESSION["installationStep"] = "step3";
 		} else {
@@ -154,7 +160,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 					$success = true;
 				} else { 
 					$success = false;
-					$error = "Warning: I was unable to set the customers statistics process for the CRM. Please make sure that you can create and schedule events in the database and make sure the CRM user can start the event scheduler (usually requires super user privileges).";
+					$error = $lh->text("unable_set_statistics");
 				}
 				$currentState = "final_step";
 				$_SESSION["installationStep"] = "final_step";
@@ -200,7 +206,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 				<img src="img/logo.png" width="64" height="64">
 			</div>
 	<?php if ($currentState == "already_installed") { ?>
-            <div class="header"><strong>Creamy</strong> ya está instalado</div>
+            <div class="header"><strong>Creamy</strong> <?php print $lh->text("is_already_installed"); ?></div>
             <div class="body bg-gray">
 	            <h3>¡Vaya!</h3>
 	            Parece que ya hay una instalación de <strong>Creamy</strong> en marcha en este directorio. Si quieres borrar la instalación y comenzar una nueva, elimina primero la base de datos asociada y todos los datos, y luego borra el fichero installed.txt. 

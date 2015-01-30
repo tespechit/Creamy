@@ -5,10 +5,10 @@ require('Session.php');
 
 // check required fields
 $validated = 1;
-if (!isset($_POST["complete-task-taskid"])) {
+if (!isset($_POST["edit-task-taskid"])) {
 	$validated = 0;
 }
-if (!isset($_POST["task-new-progress-slider"])) {
+if (!isset($_POST["edit-task-description"])) {
 	$validated = 0;
 }
 
@@ -16,14 +16,14 @@ if ($validated == 1) {
 	$db = new DbHandler();
 
 	// check password	
-	$taskid = $_POST["complete-task-taskid"];
-	$progress = $_POST["task-new-progress-slider"];
+	$taskid = $_POST["edit-task-taskid"];
+	$description = $_POST["edit-task-description"];
 	$userid = $_SESSION["userid"];
 	
-	$result = $db->modifyTask($taskid, $progress, $userid);
+	$result = $db->editTaskDescription($taskid, $description, $userid);
 	if ($result === true) {
 		print "success";
-	} else print "Imposible modificar la información de la tarea. Póngase en contacto con el administrador.";	
-} else { print "Imposible modificar la información de la tarea. Póngase en contacto con el administrador."; }
+	} else print "I was unable to modify the description of the task. Please contact the administrator.";	
+} else { print "I was unable to modify the description of the task. Please contact the administrator."; }
 
 ?>

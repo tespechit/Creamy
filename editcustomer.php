@@ -1,7 +1,11 @@
 <?php
+	require_once('./php/DbHandler.php');
+	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
-	include_once('./php/DbHandler.php');
+
+	// initialize structures
     $db = new DbHandler();
+    $lh = LanguageHandler::getInstance();
 
     $customerType = NULL;
     $customerid = NULL;
@@ -11,7 +15,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Creamy - Inicio</title>
+        <title>Creamy</title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -35,6 +39,7 @@
         <!-- header logo: style can be found in header.less -->
         <header class="header">
             <a href="./index.php" class="logo">
+	            <img src="img/logoWhite.png" width="32" height="32">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
                 Creamy
             </a>
@@ -68,17 +73,17 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        Gestión de Clientes y contactos
-                        <small>Edición de los datos de cliente</small>
+                        <?php print $lh->text("customers_and_contacts_management"); ?>
+                        <small><?php print $lh->text("personal_data_edition"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-edit"></i> Inicio</a></li>
+                        <li><a href="./index.php"><i class="fa fa-edit"></i> <?php print $lh->text("home"); ?></a></li>
                         <?php 
 	                        if (isset($customerType)) {
-	                        	print ('<li><a href="customerslist.php?customer_type='.$customerType.'"> Lista de clientes</a></li>');
+	                        	print ('<li><a href="customerslist.php?customer_type='.$customerType.'"> '.$lh->text("customer_list").'</a></li>');
 	                        }
                         ?>
-                        <li class="active">Modificar</li>
+                        <li class="active"><?php print $lh->text("modify"); ?></li>
                     </ol>
                 </section>
 
@@ -109,43 +114,43 @@
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="Nombre (obligatorio)">
+				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="<?php print $lh->text("name")." (".$lh->text("mandatory").")"; ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
-				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="Producto/Tipo de Contacto">
+				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="<?php print $lh->text("customer_or_service_type"); ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="ID number" value="<?php print $customerobj["id_number"]; ?>">
+				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="<?php print $lh->text("id_number"); ?>" value="<?php print $customerobj["id_number"]; ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-				                                <input name="email" id="email" type="text" class="form-control" placeholder="Email" value="<?php print $customerobj["email"]; ?>">
+				                                <input name="email" id="email" type="text" class="form-control" placeholder="<?php print $lh->text("email"); ?>" value="<?php print $customerobj["email"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="Teléfono fijo" value="<?php print $customerobj["phone"]; ?>">
+				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="<?php print $lh->text("home_phone"); ?>" value="<?php print $customerobj["phone"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-mobile"></i></span>
-				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="Teléfono móvil" value="<?php print $customerobj["mobile"]; ?>">
+				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="<?php print $lh->text("mobile_phone"); ?>" value="<?php print $customerobj["mobile"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-				                                <input name="address" id="address" type="text" class="form-control" placeholder="Dirección" value="<?php print $customerobj["address"]; ?>">
+				                                <input name="address" id="address" type="text" class="form-control" placeholder="<?php print $lh->text("address"); ?>" value="<?php print $customerobj["address"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
@@ -153,13 +158,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="city" id="city" type="text" class="form-control" placeholder="Ciudad" value="<?php print $customerobj["city"]; ?>">
+					                                <input name="city" id="city" type="text" class="form-control" placeholder="<?php print $lh->text("city"); ?>" value="<?php print $customerobj["city"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="state" id="state" type="text" class="form-control" placeholder="Provincia" value="<?php print $customerobj["state"]; ?>">
+					                                <input name="state" id="state" type="text" class="form-control" placeholder="<?php print $lh->text("estate"); ?>" value="<?php print $customerobj["state"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -169,13 +174,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="Código Postal" value="<?php print $customerobj["zip_code"]; ?>">
+					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="<?php print $lh->text("zip_code"); ?>" value="<?php print $customerobj["zip_code"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="country" id="country" type="text" class="form-control" placeholder="País" value="<?php print $customerobj["country"]; ?>">
+					                                <input name="country" id="country" type="text" class="form-control" placeholder="<?php print $lh->text("country"); ?>" value="<?php print $customerobj["country"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -183,11 +188,11 @@
 										<div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-file-text-o"></i></span>
-				                                <textarea id="notes" name="notes" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
+				                                <textarea id="notes" name="notes" placeholder="<?php print $lh->text("notes"); ?>" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
-				                            <label>Estado civil</label>
+				                            <label><?php print $lh->text("marital_status"); ?></label>
 				                            <select class="form-control" id="maritalstatus" name="maritalstatus">
 					                        <?php 
 						                        $currentMS = 0;
@@ -198,12 +203,12 @@
 						                        }
 						                        
 					                        ?>
-												<option value="0" <?php if ($currentMS == 0) print "selected"; ?>>elige una opción</option>
-				                                <option value="1" <?php if ($currentMS == 1) print "selected"; ?>>soltero/a</option>
-				                                <option value="2" <?php if ($currentMS == 2) print "selected"; ?>>casado/a</option>
-				                                <option value="3" <?php if ($currentMS == 3) print "selected"; ?>>divorciado/a</option>
-				                                <option value="4" <?php if ($currentMS == 4) print "selected"; ?>>separado/a</option>
-				                                <option value="5" <?php if ($currentMS == 5) print "selected"; ?>>viudo/a</option>
+												<option value="0" <?php if ($currentMS == 0) print "selected"; ?>><?php print $lh->text("choose_an_option"); ?></option>
+				                                <option value="1" <?php if ($currentMS == 1) print "selected"; ?>><?php print $lh->text("single"); ?></option>
+				                                <option value="2" <?php if ($currentMS == 2) print "selected"; ?>><?php print $lh->text("married"); ?></option>
+				                                <option value="3" <?php if ($currentMS == 3) print "selected"; ?>><?php print $lh->text("divorced"); ?></option>
+				                                <option value="4" <?php if ($currentMS == 4) print "selected"; ?>><?php print $lh->text("separated"); ?></option>
+				                                <option value="5" <?php if ($currentMS == 5) print "selected"; ?>><?php print $lh->text("widow"); ?></option>
 				                            </select>
 				                        </div>
 										<div class="form-group">
@@ -218,13 +223,13 @@
 						                        }
 						                        
 					                        ?>
-												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>>elige una opción</option>
-				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>>mujer</option>
-				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>>hombre</option>
+												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>><?php print $lh->text("choose_an_option"); ?></option>
+				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>><?php print $lh->text("female"); ?></option>
+				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>><?php print $lh->text("male"); ?></option>
 				                            </select>
 				                        </div>
 				                        <div class="form-group">
-				                            <label>Fecha de nacimiento:</label>
+				                            <label><?php print $lh->text("birthdate"); ?>:</label>
 				                            <div class="input-group">
 				                                <div class="input-group-addon">
 				                                    <i class="fa fa-calendar"></i>
@@ -241,9 +246,7 @@
 				                        </div><!-- /.form group -->                        
 				                        <div class="form-group">
 				                            <div class="checkbox">
-				                                <label>
-				                                    <input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/>Esta persona desea que no se le envíen emails
-				                                </label>
+				                                <label><input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/> <?php print $lh->text("do_not_send_email"); ?></label>
 				                            </div>
 				                        </div>
 										<input type="hidden" id="customer_type" name="customer_type" value="<?php print $customerType; ?>">
@@ -251,8 +254,8 @@
 										<div id="modifycustomerresult" name="modifycustomerresult"></div>
 				                    </div>
 				                    <div class="modal-footer clearfix">
-				                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="<?php print $customerid ?>"><i class="fa fa-times"></i> Borrar</button>
-				                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> Modificar</button>
+				                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="<?php print $customerid ?>"><i class="fa fa-times"></i> <?php print $lh->text("delete"); ?></button>
+				                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> <?php print $lh->text("modify"); ?></button>
 				                    </div>
 				                </form>
 

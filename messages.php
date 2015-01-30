@@ -18,7 +18,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Creamy - Mensajes</title>
+        <title>Creamy</title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -44,6 +44,7 @@
         <!-- header logo: style can be found in header.less -->
         <header class="header">
             <a href="./index.php" class="logo">
+	            <img src="img/logoWhite.png" width="32" height="32">
                 <!-- Add the class icon to your logo image or logo icon to add the margining -->
                 Creamy
             </a>

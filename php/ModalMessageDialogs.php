@@ -13,7 +13,7 @@
             <form action="#" method="post" id="send-message-form" name="send-message-form">
                 <div class="modal-body">
                     <div class="form-group">
-						<?php print $db->generateMailToUserSelect($_SESSION["userid"]); ?>
+						<?php print $db->generateSendToUserSelect($_SESSION["userid"]); ?>
                     </div>
                     <div class="form-group">
                         <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject"/>

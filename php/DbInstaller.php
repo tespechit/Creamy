@@ -337,13 +337,13 @@ class DBInstaller {
 	
 	private function relativeTime($mysqltime, $maxdepth = 2) {
 		$time = strtotime(str_replace('/','-', $mysqltime));
-	    $d[0] = array(1,"segundo");
-	    $d[1] = array(60,"minuto");
-	    $d[2] = array(3600,"hora");
-	    $d[3] = array(86400,"día");
-	    $d[4] = array(604800,"semana");
-	    $d[5] = array(2592000,"mes");
-	    $d[6] = array(31104000,"año");
+	    $d[0] = array(1,"sec");
+	    $d[1] = array(60,"min");
+	    $d[2] = array(3600,"hour");
+	    $d[3] = array(86400,"day");
+	    $d[4] = array(604800,"week");
+	    $d[5] = array(2592000,"month");
+	    $d[6] = array(31104000,"year");
 	
 	    $w = array();
 	
@@ -375,14 +375,6 @@ class DBInstaller {
 		if (empty($maxCharacters)) $maxCharacters = 4;
 		else if ($maxCharacters < 1) $maxCharacters = 4;
 		return (strlen($string) > $maxCharacters) ? substr($string, 0, $maxCharacters-3).'...' : $string;
-	}
-	
-	private function getTaskColorForCompletion($completion) {
-		$color = "red";
-		if ($completion > 30) $color = "yellow";
-		if ($completion > 60) $color = "blue";
-		if ($completion > 90) $color = "green";
-		return $color;
 	}
 	
 	public function escape_string($string) {

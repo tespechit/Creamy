@@ -7,10 +7,7 @@ $validated = 1;
 if (!isset($_POST["taskDescription"])) {
 	$validated = 0;
 }
-if (!isset($_POST["taskInitialProgress"])) {
-	$validated = 0;
-}
-if (!isset($_POST["userid"])) {
+if (!isset($_POST["userid"]) && (!isset($_POST["touserid"]))) {
 	$validated = 0;
 }
 
@@ -18,11 +15,11 @@ if ($validated == 1) {
 	$db = new DbHandler();
 
 	// check password	
-	$userid = $_POST["userid"];
+	$userid = (isset($_POST["touserid"])) ? $_POST["touserid"] : $_POST["userid"];
 	$taskDescription = $_POST["taskDescription"];
 	$taskDescription = stripslashes($taskDescription);
 	$taskDescription = $db->escape_string($taskDescription);
-	$taskInitialProgress = $_POST["taskInitialProgress"];
+	$taskInitialProgress = 0;
 
 	$result = $db->createTask($userid, $taskDescription, $taskInitialProgress);
 	if ($result === true) { print "success"; }
