@@ -2,10 +2,13 @@
 require_once('CRMDefaults.php');
 require_once('DbHandler.php');
 require_once('ImageHandler.php');
+require_once('LanguageHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
-$reason = "Por favor, introduzca todos los campos obligatorios (nombre y contraseña)";
+$reason = $lh->translationFor("some_fields_missing");
 if (!isset($_POST["name"])) {
 	$validated = 0;
 }
@@ -23,19 +26,19 @@ if ((!empty($_FILES["avatar"])) && (!empty($_FILES["avatar"]["name"]))) {
 	$check = getimagesize($_FILES["avatar"]["tmp_name"]);
     if($check !== false) { // check file size.
 		if ($_FILES["avatar"]["size"] > 2097152) { // max file size 2Mb.
-			$reason = "El tamaño del fichero de imagen es demasiado grande. El máximo son 2Mb.";
+			$reason = $lh->translationFor("image_file_too_large");
 			$validated = 0;
 		} else { // check file type
 			$imageFileType = strtolower(pathinfo($_FILES["avatar"]["name"], PATHINFO_EXTENSION));
 			if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif" ) {
-			    $reason = "Lo siento, solo se aceptan imágenes jpg, png o gif para la imagen de avatar.";
+			    $reason = $lh->translationFor("image_file_wrong_type");
 			    $validated = 0;
 			} else {
 				$avatarOrigin = $_FILES["avatar"]["tmp_name"];
 			}
 		}
     } else {
-        $reason = "El fichero para la imagen de avatar suministrado no es una imagen";
+        $reason = $lh->translationFor("image_file_is_not_image");
         $validated = 0;
     }
 	
@@ -52,7 +55,7 @@ if ($validated == 1) {
 	$password1 = $_POST["password1"];
 	$password2 = $_POST["password2"];
 	if ($password1 !== $password2) {
-		print "Las contraseñas no coinciden, inténtelo de nuevo";
+		$lh->translateText("passwords_dont_match");
 		exit;
 	}
 	
@@ -71,17 +74,17 @@ if ($validated == 1) {
 		$imageHandler = new ImageHandler();
 		$avatar = $imageHandler->generateProcessedImageFileFromSourceImage($avatarOrigin, $imageFileType);
 		if (empty($avatar)) {
-			print "Hubo un error creando el usuario: ha sido imposible generar la imagen de avatar del usuario. Por favor, inténtelo más tarde.";
-			return;
+			$lh->translateText("unable_generate_user_image");
+			exit;
 		}
 	}
 	
 	$role = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $role = $_POST["role"]; } 	
 	$result = $db->createUser($name, $password1, $email, $phone, $role, $avatar);
 	if ($result === USER_CREATED_SUCCESSFULLY) { print "success"; }
-	else if ($result === USER_ALREADY_EXISTED) { print "El usuario ya existe. Por favor, elija otro nombre de usuario."; } 
-	else if ($result === USER_CREATE_FAILED) { print "Ha sido imposible crear el usuario. Por favor, inténtelo más tarde."; } 
-	
+	else if ($result === USER_ALREADY_EXISTED) { $lh->translateText("user_already_exists"); } 
+	else if ($result === USER_CREATE_FAILED) { $lh->translateText("unable_create_user"); } 
+	exit;
 } else {
 	print $reason;
 }

@@ -75,10 +75,10 @@
                 <section class="content-header">
                     <h1>
                         <?php print $customerName; ?>
-                        <small><?php print $lh->text("customer_list"); ?></small>
+                        <small><?php $lh->translateText("customer_list"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-users"></i> <?php print $lh->text("home"); ?></a></li>
+                        <li><a href="./index.php"><i class="fa fa-users"></i> <?php $lh->translateText("home"); ?></a></li>
                         <li class="active"><?php print $customerName; ?></li>
                     </ol>
                 </section>
@@ -96,7 +96,7 @@
                                 <?php 
 	                            if (userHasWritePermission($_SESSION["userrole"])) { ?>
 								<div class="box-tools" style="padding-left: 1%;">
-                                   <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal"><?php print($lh->text("add_to")." ".strtolower($customerName)); ?></a>
+                                   <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal"><?php print($lh->translationFor("add_to")." ".strtolower($customerName)); ?></a>
                                 </div>
 								<?php } ?>
                                 <div class="box-body table-responsive">

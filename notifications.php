@@ -1,7 +1,10 @@
 <?php
-	include_once "./php/DbHandler.php";
-    $db = new DbHandler();
+	require_once "./php/DbHandler.php";
+	require_once "./php/LanguageHandler.php";
     include "./php/Session.php";
+
+    $db = new DbHandler();
+    $lh = LanguageHandler::getInstance();
 ?>
 <html>
     <head>
@@ -63,12 +66,12 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        Notificaciones
-                        <small>Últimos eventos y novedades</small>
+                        <?php $lh->translateText("notifications"); ?>
+                        <small><?php $lh->translateText("latest_events_news"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="index.php"><i class="fa fa-exclamation"></i> Inicio</a></li>
-                        <li class="active">Notificaciones</li>
+                        <li><a href="index.php"><i class="fa fa-exclamation"></i> <?php $lh->translateText("home"); ?></a></li>
+                        <li class="active"><?php $lh->translateText("notifications"); ?></li>
                     </ol>
                 </section>
 

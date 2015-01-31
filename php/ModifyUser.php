@@ -1,10 +1,12 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
 
+$lh = LanguageHandler::getInstance();
+
 // check required fields
-$reason = "Imposible modificar los datos de usuario. Póngase en contacto con el administrador.";
+$reason = $lh->translationFor("unable_modify_user");
 $validated = 1;
 if (!isset($_POST["modifyid"])) {
 	$validated = 0;
@@ -17,19 +19,19 @@ if ((!empty($_FILES["avatar"])) && (!empty($_FILES["avatar"]["name"]))) {
 	$check = getimagesize($_FILES["avatar"]["tmp_name"]);
     if($check !== false) { // check file size.
 		if ($_FILES["avatar"]["size"] > 2097152) { // max file size 2Mb.
-			$reason = "El tamaño del fichero de imagen es demasiado grande. El máximo son 2Mb.";
+			$reason = $lh->translationFor("image_file_too_large");
 			$validated = 0;
 		} else { // check file type
 			$imageFileType = strtolower(pathinfo($_FILES["avatar"]["name"], PATHINFO_EXTENSION));
 			if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif" ) {
-			    $reason = "Lo siento, solo se aceptan imágenes jpg, png o gif para la imagen de avatar.";
+			    $reason = $lh->translationFor("image_file_wrong_type");
 			    $validated = 0;
 			} else {
 				$avatarOrigin = $_FILES["avatar"]["tmp_name"];
 			}
 		}
     } else {
-        $reason = "El fichero para la imagen de avatar suministrado no es una imagen";
+        $reason = $lh->translationFor("image_file_is_not_image");
         $validated = 0;
     }
 	
@@ -56,7 +58,7 @@ if ($validated == 1) {
 		$imageHandler = new ImageHandler();
 		$avatar = $imageHandler->generateProcessedImageFileFromSourceImage($avatarOrigin, $imageFileType);
 		if (empty($avatar)) {
-			print "Hubo un error creando el usuario: ha sido imposible generar la imagen de avatar del usuario. Por favor, inténtelo más tarde.";
+			$lh->translateText("unable_generate_user_image");
 			return;
 		}
 	}
@@ -69,7 +71,7 @@ if ($validated == 1) {
 			if (!empty($avatar)) { $_SESSION["avatar"] = $avatar; }
 		}
 		print "success"; 
-	} else print "Imposible modificar los datos de usuario. Póngase en contacto con el administrador.";	
+	} else { $lh->translateText("unable_modify_user"); };	
 } else { print $reason; }
 
 ?>

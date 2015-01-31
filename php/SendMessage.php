@@ -1,6 +1,8 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -23,10 +25,10 @@ if ($validated == 1) {
 	// send message and analyze results
 	$result = $db->sendMessage($fromuserid, $touserid, $subject, $message);
 	if ($result === false) {
-		print "¡Vaya! Ha sido imposible enviar el mensaje. Por favor, inténtelo de nuevo más tarde.";
+		$lh->translateText("unable_send_message");
 	} else print "success";
 	
 	return;
-} else { print "Imposible enviar mensaje. No se ha especificado el usuario de destino o de origen."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

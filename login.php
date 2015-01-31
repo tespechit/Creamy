@@ -1,13 +1,15 @@
 <?php
 	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbHandler.php');
+	require_once('./php/LanguageHandler.php');
 
 	session_start(); // Starting Session
+	$lh = LanguageHandler::getInstance();
 	
 	$error=''; // Variable To Store Error Message
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['username']) || empty($_POST['password'])) {
-			$_SESSION["errorMessage"] = "Por favor, introduce un nombre y contraseña válidos.";
+			$_SESSION["errorMessage"] = $lh->translationFor("insert_valid_login_password");
 		} else {
 			$db = new DbHandler();
 
@@ -24,7 +26,7 @@
 			// Check password and redirect accordingly
 			$result = $db->checkLogin($username, $password);
 			if ($result == NULL) { // login failed
-				$_SESSION["errorMessage"] = "Usuario o contraseña inválidos. Inténtalo de nuevo.";
+				$_SESSION["errorMessage"] = $lh->translationFor("invalid_login_password");
 			} else {
 				$_SESSION["userid"] = $result["id"]; 
 				$_SESSION["username"] = $result["name"]; 
@@ -42,7 +44,7 @@
 <html class="lockscreen">
     <head>
         <meta charset="UTF-8">
-        <title>Acceso al sistema</title>
+        <title><?php $lh->translateText("system_access"); ?> </title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -61,20 +63,15 @@
 			<div class="margin text-center">
 				<img src="img/logo.png" width="64" height="64">
 			</div>
-            <div class="header">Bienvenido a <strong>Creamy</strong></div>
+            <div class="header"><?php $lh->translateText("welcome_to_creamy"); ?></div>
             <form action="" method="post">
                 <div class="body bg-gray">
                     <div class="form-group">
-                        <input type="text" name="username" class="form-control" placeholder="Nombre"/>
+                        <input type="text" name="username" class="form-control" placeholder="<?php $lh->translateText("name"); ?>"/>
                     </div>
                     <div class="form-group">
-                        <input type="password" name="password" class="form-control" placeholder="Contraseña"/>
+                        <input type="password" name="password" class="form-control" placeholder="<?php $lh->translateText("password"); ?>"/>
                     </div>          
-               <!--     
-                    <div class="form-group">
-                        <input type="checkbox" name="remember_me"/> Remember me
-                    </div>
-                -->
                 	<div name="error-message" style="color: red;">
                 	<?php
                 		if (isset($_SESSION["errorMessage"])) {
@@ -84,14 +81,14 @@
                 	</div>
                 </div>
                 <div class="footer text-center">                                                               
-                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block">Acceder</button>  
+                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block"><?php $lh->translateText("access"); ?></button>  
                     
-                    <p>¿Has olvidado tu contraseña? <a href="lostpassword.php">Pulsa aquí.</a></p>
+                    <p><?php $lh->translateText("forgotten_password"); ?> <a href="lostpassword.php"><?php $lh->translateText("click_here"); ?>.</a></p>
                 </div>
                 <?php unset($_SESSION['errorMessage']); ?>
             </form>
             <div class="margin text-center">
-                <span>¿No has oído hablar de Creamy? Aprende un poco más aquí:</span>
+                <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
                 <br/>
                 <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
                 <button class="btn bg-light-blue btn-circle" onclick="window.location.href='https://www.facebook.com/creamycrm'"><i class="fa fa-facebook"></i></button>

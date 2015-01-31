@@ -1,7 +1,9 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -24,6 +26,6 @@ if ($validated == 1) {
 	$result = $db->getMessageModalDialogAsHTML($userid, $messageid, $folder);
 	print($result);
 	return;
-} else { print $db->getErrorMessage("Imposible obtener datos mensaje, no pude identificar el origen del mismo."); }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

@@ -1,6 +1,8 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -20,10 +22,10 @@ if ($validated == 1) {
 
 	$result = $db->deleteCustomer($customerid, $customerType);
 	if ($result === false) {
-		print "¡Vaya! Ha sido imposible borrar al cliente. Por favor, inténtelo de nuevo más tarde.";
+		$lh->translateText("unable_delete_customer");
 	} else print "success";
 	
 	return;
-} else { print "Imposible borrar cliente. No se ha especificado el usuario a eliminar o el tipo de cliente."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

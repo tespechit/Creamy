@@ -1,11 +1,13 @@
 <?php
-
+	require_once('./php/LanguageHandler.php');
 	require_once('./php/DbHandler.php');
 	
 	$error=''; // Variable To Store Error Message
+	$lh = LanguageHandler::getInstance();
+	
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['email'])) {
-			$error = "Por favor, introduce una dirección válida.";
+			$error = $lh->translationFor("insert_valid_address");
 		} else {
 			$db = new DbHandler();
 
@@ -18,9 +20,9 @@
 			// Check password and redirect accordingly
 			$result = $db->sendPasswordRecoveryEmail($email);
 			if ($result === false) { // login failed
-				$error = "Ha habido un error enviando el email de cambio de contraseña. Es posible que la dirección email introducida no pertenezca a un usuario. Inténtalo de nuevo.";
+				$error = $lh->translationFor("error_sending_recovery_email");
 			} else {
-				$error = "Hemos enviado un email de recuperación de contraseña a $email. Por favor, comprueba que ha llegado y pulsa en el enlace.";
+				$error = $lh->translationFor("recovery_email_sent")." $email. ".$lh->translateText("please_check_email");
 			}
 		}
 	}
@@ -28,7 +30,7 @@
 <html class="lockscreen">
     <head>
         <meta charset="UTF-8">
-        <title>Regenerar contraseña</title>
+        <title><?php $lh->translateText("reset_password"); ?></title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -47,12 +49,12 @@
 			<div class="margin text-center">
 				<img src="img/logo.png" width="64" height="64">
 			</div>
-            <div class="header">Recuperar contraseña</div>
+            <div class="header"><?php $lh->translateText("reset_password"); ?></div>
             <form method="post">
                 <div class="body bg-gray">
-				¿Has perdido tu contraseña? Introduce el email de tu usuario y te enviaremos un enlace para que generes una nueva.
+				<?php $lh->translateText("have_you_lost_your_password"); ?>
                     <div class="form-group">
-                        <input type="text" name="email" id="email" class="form-control" placeholder="Dirección de email"/>
+                        <input type="text" name="email" id="email" class="form-control" placeholder="<?php $lh->translateText("email"); ?>"/>
                     </div>
                 	<div name="error-message" class="text-center" style="color: red;">
                 	<?php
@@ -63,11 +65,11 @@
                 	</div>
                 </div>
                 <div class="footer text-center">                                                               
-                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block">Enviar</button>  
+                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block"><?php $lh->translateText("send"); ?></button>  
                 </div>
             </form>
             <div class="margin text-center">
-                <span>¿No has oído hablar de Creamy? Aprende un poco más aquí:</span>
+                <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
                 <br/>
                 <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
                 <button class="btn bg-light-blue btn-circle" onclick="window.location.href='https://www.facebook.com/creamycrm'"><i class="fa fa-facebook"></i></button>

@@ -1,4 +1,7 @@
 <?php
+	require_once('./php/LanguageHandler.php');
+	$lh = LanguageHandler::getInstance();
+	
 	$result = NULL;
 	$error = NULL;
 	
@@ -21,18 +24,18 @@
 			$db = new DbHandler();
 			if ($db->checkPasswordResetValidity($email, $date, $nonce, $code)) {
 				if ($db->changePasswordForUserIdentifiedByEmail($email, $password1)) {
-					$result = "Tu contraseña ha sido restablecida con éxito. Ahora puedes entrar en Creamy con tu nueva contraseña.";
-				} else $result = "¡Vaya! Parece que hubo un error que impidió cambiar tu contraseña. Por favor, ponte en contacto con el administrador.";
+					$result = $lh->translationFor("password_reset_successfully");
+				} else $result = $lh->translationFor("password_reset_error");
 			}
 		} else {
-			$error = "Las contraseñas no coinciden, o alguna de ellas está vacía. Por favor, inténtalo de nuevo.";
+			$error = $lh->translationFor("passwords_dont_match");
 		}
 	}
 ?>
 <html class="lockscreen">
     <head>
         <meta charset="UTF-8">
-        <title>Regenerar contraseña</title>
+        <title><?php $lh->translateText("reset_password"); ?></title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
@@ -51,15 +54,15 @@
 			<div class="margin text-center">
 				<img src="img/logo.png" width="64" height="64">
 			</div>
-            <div class="header">Restablecer contraseña</div>
+            <div class="header"><?php $lh->translateText("reset_password"); ?></div>
    			<?php if ($result == NULL) { ?>
 
             <form method="post">
                 <div class="body bg-gray">
-				Introduce tu nueva contraseña y pulsa el botón de 'Restablecer'.
+	            <?php $lh->translateText("insert_new_password"); ?>
                     <div class="form-group">
-						<input class="form-control" type="password" placeholder="Nueva contraseña" id="password1" name="password1"><br>
-						<input class="form-control" type="password" placeholder="Nueva contraseña (de nuevo)" id="password2" name="password2"><br>
+						<input class="form-control" type="password" placeholder="<?php $lh->translateText("insert_new_password"); ?>" id="password1" name="password1"><br>
+						<input class="form-control" type="password" placeholder="<?php $lh->translateText("insert_new_password_again"); ?>" id="password2" name="password2"><br>
                     </div>
                     <input type="hidden" name="code" id="code" value="<?php echo $_GET['code']; ?>">
 					<input type="hidden" name="date" id="date" value="<?php echo $_GET['date']; ?>">
@@ -74,7 +77,7 @@
                 	</div>
                 </div>
                 <div class="footer text-center">                                                               
-                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block">Restablecer</button>  
+                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block"><?php $lh->translateText("reset_password"); ?></button>  
                 </div>
             </form>
 			
@@ -86,7 +89,7 @@
 			
             
             <div class="margin text-center">
-                <span>¿No has oído hablar de Creamy? Aprende un poco más aquí:</span>
+                <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
                 <br/>
                 <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
                 <button class="btn bg-light-blue btn-circle" onclick="window.location.href='https://www.facebook.com/creamycrm'"><i class="fa fa-facebook"></i></button>

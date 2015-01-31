@@ -2,6 +2,7 @@
 
 require_once('CRMDefaults.php');
 require_once('PassHash.php');
+require_once('LanguageHandler.php');
 
 /**
  * Class to handle DB Installation
@@ -14,10 +15,12 @@ class DBInstaller {
     private $conn;
     private $state;
     private $error;
+    private $lh;
     
     /* ---------------- Initializers -------------------- */
     
     public function __construct($dbhost, $dbname, $dbuser, $dbpass, $dbport = CRM_DEFAULT_DB_PORT) {
+        $this->lh = LanguageHandler::getInstance();
         $this->conn = @ new mysqli($dbhost, $dbuser, $dbpass, $dbname, $dbport);
 		
         // Check for database connection error
@@ -331,54 +334,6 @@ class DBInstaller {
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
 		
 		return $this->conn->query($createTableQuery);
-	}
-	
-	/* ---------------- Utility functions -------------------------- */
-	
-	private function relativeTime($mysqltime, $maxdepth = 2) {
-		$time = strtotime(str_replace('/','-', $mysqltime));
-	    $d[0] = array(1,"sec");
-	    $d[1] = array(60,"min");
-	    $d[2] = array(3600,"hour");
-	    $d[3] = array(86400,"day");
-	    $d[4] = array(604800,"week");
-	    $d[5] = array(2592000,"month");
-	    $d[6] = array(31104000,"year");
-	
-	    $w = array();
-	
-		$depth = 0;
-	    $return = "";
-	    $now = time();
-	    $diff = ($now-$time);
-	    $secondsLeft = $diff;
-	
-	    for($i=6;$i>-1;$i--)
-	    {
-	         $w[$i] = intval($secondsLeft/$d[$i][0]);
-	         $secondsLeft -= ($w[$i]*$d[$i][0]);
-	         if($w[$i]!=0)
-	         {
-	            $return.= abs($w[$i]) . " " . $d[$i][1] . (($w[$i]>1)?'s':'') ." ";
-	            $depth += 1;
-	            if ($depth >= $maxdepth) break;
-	         }
-	
-	    }
-	
-	    $verb = ($diff>0)?"hace ":"quedan ";
-	    $return = $verb.$return;
-	    return $return;
-	}
-	
-	private function substringUpTo($string, $maxCharacters) {
-		if (empty($maxCharacters)) $maxCharacters = 4;
-		else if ($maxCharacters < 1) $maxCharacters = 4;
-		return (strlen($string) > $maxCharacters) ? substr($string, 0, $maxCharacters-3).'...' : $string;
-	}
-	
-	public function escape_string($string) {
-		return $this->conn->real_escape_string($string);
 	}
 }
 

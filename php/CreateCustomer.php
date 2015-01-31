@@ -1,7 +1,10 @@
 <?php
 
 require_once('DbHandler.php');
+require_once('LanguageHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -122,8 +125,8 @@ if ($validated == 1) {
 
 	$result = $db->createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender);
 	if ($result === true) { print "success"; }
-	else { print "Ha sido imposible crear el registro. Por favor, inténtelo más tarde."; } 
+	else { $lh->translateText("unable_create_customer"); } 
 	
-} else { print "Por favor, introduzca el nombre y tipo de cliente."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

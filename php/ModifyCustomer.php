@@ -1,7 +1,9 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -135,8 +137,8 @@ if ($validated == 1) {
 
 	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
 	if ($result === true) { print "success"; }
-	else { print "Ha sido imposible modificar el cliente. Por favor, inténtelo más tarde."; } 
+	else { $lh->translateText("unable_modify_customer"); } 
 	
-} else { print "Error modificando el cliente. No se han recibido correctamente todos los datos necesarios."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

@@ -82,7 +82,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		if (isset($_POST["adminEmail"])) { $adminEmail = $_POST["adminEmail"]; }
 		
 		if (empty($adminName) || empty($adminPassword) || empty($adminPasswordCheck) || empty($adminEmail)) { // unable get admin name or password
-			$error = $lh->text("unable_get_admin_credentials");
+			$error = $lh->translationFor("unable_get_admin_credentials");
 			$currentState = "step2";
 			$_SESSION["installationStep"] = "step2";
 		} else { // setup basic database tables.
@@ -94,7 +94,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 				$dbpass = $_SESSION["dbpass"];
 				
 				if (empty($dbhost) || empty($dbname) || empty($dbuser) || empty($dbpass)) {
-					$error = $lh->text("unable_get_database_credentials");
+					$error = $lh->translationFor("unable_get_database_credentials");
 					$currentState = "step2";
 					$_SESSION["installationStep"] = "step2";
 				} else {
@@ -104,7 +104,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						$currentState = "step3";			
 						$_SESSION["installationStep"] = "step3";
 					} else {
-						$error = $lh->text("error_setting_db_tables")." ". $dbInstaller->getLastErrorMessage() or $lh->text("database_not_set");
+						$error = $lh->translationFor("error_setting_db_tables")." ". $dbInstaller->getLastErrorMessage() or $lh->translationFor("database_not_set");
 						$currentState = "step2";
 						$_SESSION["installationStep"] = "step2";
 					}
@@ -133,7 +133,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		$dbpass = $_SESSION["dbpass"];
 
 		if (empty($dbhost) || empty($dbname) || empty($dbuser) || empty($dbpass)) {
-			$error = $lh->text("unable_get_database_credentials");
+			$error = $lh->translationFor("unable_get_database_credentials");
 			$currentState = "step3";
 			$_SESSION["installationStep"] = "step3";
 		} else {
@@ -160,7 +160,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 					$success = true;
 				} else { 
 					$success = false;
-					$error = $lh->text("unable_set_statistics");
+					$error = $lh->translationFor("unable_set_statistics");
 				}
 				$currentState = "final_step";
 				$_SESSION["installationStep"] = "final_step";
@@ -192,13 +192,6 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Theme style -->
         <link href="./css/creamycrm.css" rel="stylesheet" type="text/css" />
-
-        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-          <script src="js/html5shiv.js"></script>
-          <script src="js/respond.min.js"></script>
-        <![endif]-->
     </head>
     <body>
         <div class="form-box form-box-install" id="login-box">
@@ -206,33 +199,33 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 				<img src="img/logo.png" width="64" height="64">
 			</div>
 	<?php if ($currentState == "already_installed") { ?>
-            <div class="header"><strong>Creamy</strong> <?php print $lh->text("is_already_installed"); ?></div>
+            <div class="header"><strong>Creamy</strong> <?php $lh->translateText("is_already_installed"); ?></div>
             <div class="body bg-gray">
-	            <h3>¡Vaya!</h3>
-	            Parece que ya hay una instalación de <strong>Creamy</strong> en marcha en este directorio. Si quieres borrar la instalación y comenzar una nueva, elimina primero la base de datos asociada y todos los datos, y luego borra el fichero installed.txt. 
+	            <h3><?php $lh->translateText("oups"); ?></h3>
+	            <?php $lh->translateText("another_installation_creamy"); ?>
 			</div>
             <div class="footer text-center">                                                               
-                <button type="submit" onclick="window.location.href='index.php';" class="btn bg-light-blue btn-block">Volver a Creamy</button>  
+                <button type="submit" onclick="window.location.href='index.php';" class="btn bg-light-blue btn-block"><?php $lh->translateText("back_to_creamy"); ?></button>  
             </div>
 	<?php } elseif ($currentState == "step1") { ?>
-            <div class="header">Paso 1. Acceso a la base de datos.</div>
+            <div class="header"><?php $lh->translateText("installation_step_1_title"); ?></div>
             <div class="body bg-gray">
-	            <h3>¡Bienvenido!</h3>
-	            El proceso de instalación te guiará a través de unos sencillos pasos para completar la puesta en marcha y personalización de tu CRM. <strong>¡Comencemos!</strong>
-	            <h3>Base de datos</h3>
-	            <p>El CRM necesita una conexión con una base de datos. Para ello, primero crea una base de datos MySQL y un usuario que tenga acceso a dicha base de datos, y después rellena los siguientes campos:</p>
-	            <p style="color: red; margin-bottom: -20px;">ATENCIÓN: El proceso de instalación borrará cualquier instalación previa del CRM. Asegúrate de guardar cualquier información previa que pudiera existir en la base de datos.</p>
+	            <h3><?php $lh->translateText("welcome"); ?></h3>
+	            <p><?php $lh->translateText("installation_process_steps"); ?></p>
+	            <h3><?php $lh->translateText("database"); ?></h3>
+	            <p><?php $lh->translateText("your_crm_needs_a_database"); ?></p>
+	            <p style="color: red; margin-bottom: -20px;"><?php $lh->translateText("installation_warning"); ?></p>
             </div>
             <form method="post">				
                 <div class="body bg-gray">
                     <div class="form-group">
-                        <input type="text" name="dbhost" class="form-control" placeholder="Host de la base de datos (o localhost)"/>
-                        <input type="text" name="dbname" class="form-control" placeholder="Nombre de la base de datos"/>
-                        <input type="text" name="dbuser" class="form-control" placeholder="Usuario de la base de datos"/>
-                        <input type="password" name="dbpass" class="form-control" placeholder="Contraseña del usuario en la base de datos"/>
+                        <input type="text" name="dbhost" class="form-control" placeholder="<?php $lh->translateText("database_host"); ?>"/>
+                        <input type="text" name="dbname" class="form-control" placeholder="<?php $lh->translateText("database_name"); ?>"/>
+                        <input type="text" name="dbuser" class="form-control" placeholder="<?php $lh->translateText("database_user"); ?>"/>
+                        <input type="password" name="dbpass" class="form-control" placeholder="<?php $lh->translateText("database_password"); ?>"/>
                    	</div>
 					<div class="form-group">
-						<p>Hemos detectado tu zona horaria como:</p>
+						<p><?php $lh->translateText("detected_timezone"); ?></p>
                         <?php
 		                    // Timezones
 		                    $utc = new DateTimeZone('UTC');
@@ -263,18 +256,18 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
             </form>
         
 	<?php } elseif ($currentState == "step2") { ?>
-            <div class="header">Paso 2. Cuenta de administrador.</div>
+            <div class="header"><?php $lh->translateText("installation_step_2_title") ?></div>
             <div class="body bg-gray">
-	            <h3>¡Correcto!</h3>
-	            Hemos comprobado el acceso a la base de datos. Ahora necesitamos que nos especifiques los datos para la cuenta del administrador principal del CRM. Podrás crear más usuarios más tarde y cambiar los del usuario que introduzcas aquí.
+	            <h3><?php $lh->translateText("awesome"); ?></h3>
+	            <?php $lh->translateText("database_access_checked") ?>
             </div>
             <form method="post">				
                 <div class="body bg-gray">
                     <div class="form-group">
-                        <input type="text" name="adminName" class="form-control" placeholder="Nombre de usuario del administrador"/>
-                        <input type="password" name="adminPassword" class="form-control" placeholder="Contraseña del administrador"/>
-                        <input type="password" name="adminPasswordCheck" class="form-control" placeholder="Contraseña del administrador otra vez"/>
-                        <input type="text" name="adminEmail" class="form-control" placeholder="Email del administrador"/>
+                        <input type="text" name="adminName" class="form-control" placeholder="<?php $lh->translateText("admin_user_name") ?>"/>
+                        <input type="password" name="adminPassword" class="form-control" placeholder="<?php $lh->translateText("admin_user_password") ?>"/>
+                        <input type="password" name="adminPasswordCheck" class="form-control" placeholder="<?php $lh->translateText("admin_user_password_again") ?>"/>
+                        <input type="text" name="adminEmail" class="form-control" placeholder="<?php $lh->translateText("admin_user_email") ?>"/>
                     </div>          
                 	<div name="error-message" style="color: red;">
                 	<?php 
@@ -283,33 +276,33 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
                 	</div>
                 </div>
                 <div class="footer">                                                               
-                    <button type="submit" name="submit_step2" id="submit_step2" class="btn bg-light-blue btn-block">Crear</button>  
+                    <button type="submit" name="submit_step2" id="submit_step2" class="btn bg-light-blue btn-block"><?php $lh->translateText("create_user") ?></button>  
                 </div>
             </form>
 
           
     <?php } elseif ($currentState == "step3") { ?>  
-            <div class="header">Paso 3. Definir clientes.</div>
+            <div class="header"><?php $lh->translateText("installation_step_3_title"); ?></div>
             <div class="body bg-gray">
-	            <h3>¡Perfecto!</h3>
-	            A continuación vamos a definir los diferentes grupos de personas que gestionará el CRM. Hemos hecho una estructura por defecto para ti: <strong>contactos</strong> y <strong>clientes</strong>. Los contactos son los clientes potenciales, aquellos que podrían en el futuro convertirse en clientes, mientras que clientes son aquellos que ya son clientes tuyos. Si necesitas establecer tus clientes en grupos, puedes hacerlo marcando la casilla correspondiente e introduciendo el nombre de cada grupo.
+	            <h3><?php $lh->translateText("perfect"); ?></h3>
+	            <?php $lh->translateText("lets_define_customers"); ?>
             </div>
             <form method="post">				
                 <div class="body bg-gray">
 	                <input type="hidden" name="count" value="1" />
                     <div class="form-group">
-                        <input type="radio" name="setup_customers" value="default" checked/> Contactos y clientes está bien para mi.
+                        <input type="radio" name="setup_customers" value="default" checked/> <?php $lh->translateText("contacts_and_clients_ok"); ?>
                     </div>
                     <div class="form-group">
-                        <input type="radio" name="setup_customers" value="custom" /> Quiero elegir mis grupos de clientes yo mismo.
+                        <input type="radio" name="setup_customers" value="custom" /> <?php $lh->translateText("i_want_to_define_groups"); ?>
                     </div>
 	                
 	                <div name="custom-customers-selection" id="custom-customers-selection" style="display: none;">
 	                    <div class="form-group">
-	                        <input type="text" name="customCustomerGroupContacts" class="form-control" value="contactos (predeterminado)" disabled/>
+	                        <input type="text" name="customCustomerGroupContacts" class="form-control" value="<?php $lh->translateText("contacts_predefined"); ?>" disabled/>
 	                    </div>
 	                    <div class="form-group" id="customCustomerGroup">
-	                        <input type="text" autocomplete="off" name="customCustomerGroup1" id="customCustomerGroup1" class="form-control" placeholder="Grupo de clientes 1"/><button id="b1" class="btn add-more" type="button">+</button>
+	                        <input type="text" autocomplete="off" name="customCustomerGroup1" id="customCustomerGroup1" class="form-control" placeholder="<?php $lh->translateText("customer_group"); ?> 1"/><button id="b1" class="btn add-more" type="button">+</button>
 	                    </div>
 	                </div>
                 	<div name="error-message" style="color: red;">
@@ -326,8 +319,8 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
     <?php } elseif ($currentState == "final_step") { ?>  
             <div class="header">Finalizado</div>
             <div class="body bg-gray">
-	            <h3>¡Todo está listo!</h3>
-	            <p>Todo está listo para que empieces a usar tu CRM. Al pulsar sobre "Comenzar" entrarás a la página de acceso donde debes introducir las credenciales que diste de alta antes para empezar a usar tu CRM. ¡Esperamos que lo disfrutes!.</p>
+	            <h3><?php $lh->translateText("everythings_ready"); ?></h3>
+	            <p><?php $lh->translateText("ready_to_start_creamy"); ?></p>
 	        	<div name="error-message" style="color: red;">
 		        	<?php 
 		            	if (isset($error)) print ($error); 
@@ -335,14 +328,14 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 	        	</div>
 				<form method="post">				
 	                <div class="body bg-gray">
-	                    <button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block">Empezar a usar Creamy</button>  
+	                    <button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></button>  
 	                </div>
 	            </form>
             </div>
         	
 	<?php } ?>
             <div class="margin text-center">
-                <span>¿No has oído hablar de Creamy? Aprende un poco más aquí:</span>
+                <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
                 <br/>
                 <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
                 <button class="btn bg-light-blue btn-circle" onclick="window.location.href='https://www.facebook.com/creamycrm'"><i class="fa fa-facebook"></i></button>
@@ -375,7 +368,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		        var addto = "#customCustomerGroup" + next;
 		        var addRemove = "#customCustomerGroup" + (next);
 		        next = next + 1;
-		        var newIn = '<input autocomplete="off" type="text" name="customCustomerGroup'+next+'" id="customCustomerGroup'+next+'" class="input form-control" placeholder="Grupo de clientes '+next+'"/>';
+		        var newIn = '<input autocomplete="off" type="text" name="customCustomerGroup'+next+'" id="customCustomerGroup'+next+'" class="input form-control" placeholder="<?php $lh->translateText("customer_group"); ?> '+next+'"/>';
 		        var newInput = $(newIn);
 		        var removeBtn = '<button id="remove' + (next - 1) + '" class="btn btn-danger remove-me" >-</button></div><div id="field">';
 		        var removeButton = $(removeBtn);

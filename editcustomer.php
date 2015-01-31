@@ -73,17 +73,17 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        <?php print $lh->text("customers_and_contacts_management"); ?>
-                        <small><?php print $lh->text("personal_data_edition"); ?></small>
+                        <?php $lh->translateText("customers_and_contacts_management"); ?>
+                        <small><?php $lh->translateText("personal_data_edition"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-edit"></i> <?php print $lh->text("home"); ?></a></li>
+                        <li><a href="./index.php"><i class="fa fa-edit"></i> <?php $lh->translateText("home"); ?></a></li>
                         <?php 
 	                        if (isset($customerType)) {
-	                        	print ('<li><a href="customerslist.php?customer_type='.$customerType.'"> '.$lh->text("customer_list").'</a></li>');
+	                        	print ('<li><a href="customerslist.php?customer_type='.$customerType.'"> '.$lh->translationFor("customer_list").'</a></li>');
 	                        }
                         ?>
-                        <li class="active"><?php print $lh->text("modify"); ?></li>
+                        <li class="active"><?php $lh->translateText("modify"); ?></li>
                     </ol>
                 </section>
 
@@ -114,43 +114,43 @@
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="<?php print $lh->text("name")." (".$lh->text("mandatory").")"; ?>">
+				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="<?php print $lh->translationFor("name")." (".$lh->translationFor("mandatory").")"; ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
-				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="<?php print $lh->text("customer_or_service_type"); ?>">
+				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="<?php $lh->translateText("customer_or_service_type"); ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="<?php print $lh->text("id_number"); ?>" value="<?php print $customerobj["id_number"]; ?>">
+				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="<?php $lh->translateText("id_number"); ?>" value="<?php print $customerobj["id_number"]; ?>">
 				                            </div>
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-				                                <input name="email" id="email" type="text" class="form-control" placeholder="<?php print $lh->text("email"); ?>" value="<?php print $customerobj["email"]; ?>">
+				                                <input name="email" id="email" type="text" class="form-control" placeholder="<?php $lh->translateText("email"); ?>" value="<?php print $customerobj["email"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="<?php print $lh->text("home_phone"); ?>" value="<?php print $customerobj["phone"]; ?>">
+				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="<?php $lh->translateText("home_phone"); ?>" value="<?php print $customerobj["phone"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-mobile"></i></span>
-				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="<?php print $lh->text("mobile_phone"); ?>" value="<?php print $customerobj["mobile"]; ?>">
+				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="<?php $lh->translateText("mobile_phone"); ?>" value="<?php print $customerobj["mobile"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-				                                <input name="address" id="address" type="text" class="form-control" placeholder="<?php print $lh->text("address"); ?>" value="<?php print $customerobj["address"]; ?>">
+				                                <input name="address" id="address" type="text" class="form-control" placeholder="<?php $lh->translateText("address"); ?>" value="<?php print $customerobj["address"]; ?>">
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
@@ -158,13 +158,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="city" id="city" type="text" class="form-control" placeholder="<?php print $lh->text("city"); ?>" value="<?php print $customerobj["city"]; ?>">
+					                                <input name="city" id="city" type="text" class="form-control" placeholder="<?php $lh->translateText("city"); ?>" value="<?php print $customerobj["city"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="state" id="state" type="text" class="form-control" placeholder="<?php print $lh->text("estate"); ?>" value="<?php print $customerobj["state"]; ?>">
+					                                <input name="state" id="state" type="text" class="form-control" placeholder="<?php $lh->translateText("estate"); ?>" value="<?php print $customerobj["state"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -174,13 +174,13 @@
 											<div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="<?php print $lh->text("zip_code"); ?>" value="<?php print $customerobj["zip_code"]; ?>">
+					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="<?php $lh->translateText("zip_code"); ?>" value="<?php print $customerobj["zip_code"]; ?>">
 					                            </div>
 					                        </div><!-- /.col-lg-6 -->
 					                        <div class="col-lg-6">
 					                            <div class="input-group">
 					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="country" id="country" type="text" class="form-control" placeholder="<?php print $lh->text("country"); ?>" value="<?php print $customerobj["country"]; ?>">
+					                                <input name="country" id="country" type="text" class="form-control" placeholder="<?php $lh->translateText("country"); ?>" value="<?php print $customerobj["country"]; ?>">
 					                            </div>                        
 					                        </div><!-- /.col-lg-6 -->
 				                            </div>
@@ -188,11 +188,11 @@
 										<div class="form-group">
 				                            <div class="input-group">
 				                                <span class="input-group-addon"><i class="fa fa-file-text-o"></i></span>
-				                                <textarea id="notes" name="notes" placeholder="<?php print $lh->text("notes"); ?>" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
+				                                <textarea id="notes" name="notes" placeholder="<?php $lh->translateText("notes"); ?>" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
 				                            </div>                  
 				                        </div>
 				                        <div class="form-group">
-				                            <label><?php print $lh->text("marital_status"); ?></label>
+				                            <label><?php $lh->translateText("marital_status"); ?></label>
 				                            <select class="form-control" id="maritalstatus" name="maritalstatus">
 					                        <?php 
 						                        $currentMS = 0;
@@ -203,12 +203,12 @@
 						                        }
 						                        
 					                        ?>
-												<option value="0" <?php if ($currentMS == 0) print "selected"; ?>><?php print $lh->text("choose_an_option"); ?></option>
-				                                <option value="1" <?php if ($currentMS == 1) print "selected"; ?>><?php print $lh->text("single"); ?></option>
-				                                <option value="2" <?php if ($currentMS == 2) print "selected"; ?>><?php print $lh->text("married"); ?></option>
-				                                <option value="3" <?php if ($currentMS == 3) print "selected"; ?>><?php print $lh->text("divorced"); ?></option>
-				                                <option value="4" <?php if ($currentMS == 4) print "selected"; ?>><?php print $lh->text("separated"); ?></option>
-				                                <option value="5" <?php if ($currentMS == 5) print "selected"; ?>><?php print $lh->text("widow"); ?></option>
+												<option value="0" <?php if ($currentMS == 0) print "selected"; ?>><?php $lh->translateText("choose_an_option"); ?></option>
+				                                <option value="1" <?php if ($currentMS == 1) print "selected"; ?>><?php $lh->translateText("single"); ?></option>
+				                                <option value="2" <?php if ($currentMS == 2) print "selected"; ?>><?php $lh->translateText("married"); ?></option>
+				                                <option value="3" <?php if ($currentMS == 3) print "selected"; ?>><?php $lh->translateText("divorced"); ?></option>
+				                                <option value="4" <?php if ($currentMS == 4) print "selected"; ?>><?php $lh->translateText("separated"); ?></option>
+				                                <option value="5" <?php if ($currentMS == 5) print "selected"; ?>><?php $lh->translateText("widow"); ?></option>
 				                            </select>
 				                        </div>
 										<div class="form-group">
@@ -223,13 +223,13 @@
 						                        }
 						                        
 					                        ?>
-												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>><?php print $lh->text("choose_an_option"); ?></option>
-				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>><?php print $lh->text("female"); ?></option>
-				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>><?php print $lh->text("male"); ?></option>
+												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>><?php $lh->translateText("choose_an_option"); ?></option>
+				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>><?php $lh->translateText("female"); ?></option>
+				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>><?php $lh->translateText("male"); ?></option>
 				                            </select>
 				                        </div>
 				                        <div class="form-group">
-				                            <label><?php print $lh->text("birthdate"); ?>:</label>
+				                            <label><?php $lh->translateText("birthdate"); ?>:</label>
 				                            <div class="input-group">
 				                                <div class="input-group-addon">
 				                                    <i class="fa fa-calendar"></i>
@@ -246,7 +246,7 @@
 				                        </div><!-- /.form group -->                        
 				                        <div class="form-group">
 				                            <div class="checkbox">
-				                                <label><input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/> <?php print $lh->text("do_not_send_email"); ?></label>
+				                                <label><input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/> <?php $lh->translateText("do_not_send_email"); ?></label>
 				                            </div>
 				                        </div>
 										<input type="hidden" id="customer_type" name="customer_type" value="<?php print $customerType; ?>">
@@ -254,8 +254,8 @@
 										<div id="modifycustomerresult" name="modifycustomerresult"></div>
 				                    </div>
 				                    <div class="modal-footer clearfix">
-				                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="<?php print $customerid ?>"><i class="fa fa-times"></i> <?php print $lh->text("delete"); ?></button>
-				                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> <?php print $lh->text("modify"); ?></button>
+				                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="<?php print $customerid ?>"><i class="fa fa-times"></i> <?php $lh->translateText("delete"); ?></button>
+				                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify"); ?></button>
 				                    </div>
 				                </form>
 
@@ -284,14 +284,63 @@
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 
-		<!-- Forms and actions -->
-		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
-		<script src="js/messages_es.min.js" type="text/javascript"></script>
-		<script src="js/modifycustomer.js" type="text/javascript"></script>
 		<!-- InputMask -->
 	    <script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
 	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
 	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>
+		<!-- Forms and actions -->
+		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {	
+				//Datemask dd/mm/yyyy
+			    $("#birthdate").inputmask("dd/mm/yyyy", {"placeholder": "dd/mm/yyyy"});
+			
+				/** 
+				 * Modifies a customer
+			 	 */
+				$("#modifycustomerform").validate({
+					submitHandler: function() {
+						//submit the form
+							$("#resultmessage").html();
+							$("#resultmessage").fadeOut();
+							$.post("./php/ModifyCustomer.php", //post
+							$("#modifycustomerform").serialize(), 
+								function(data){
+									//if message is sent
+									if (data == 'success') {
+										$("#modifycustomerresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("data_successfully_modified"); ?>');
+										$("#modifycustomerresult").fadeIn(); //show confirmation message
+				
+									} else {
+										$("#modifycustomerresult").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("error_modifying_data"); ?>: '+ data);
+										$("#modifycustomerresult").fadeIn(); //show confirmation message
+									}
+									//
+								});
+						return false; //don't let the form refresh the page...
+					}					
+				});
+				
+				/**
+				 * Deletes a customer
+				 */
+				 $("#modifyCustomerDeleteButton").click(function (e) {
+					var r = confirm("<?php $lh->translateText("are_you_sure"); ?>");
+					e.preventDefault();
+					if (r == true) {
+						var customerid = $(this).attr('href');
+						$.post("./php/DeleteCustomer.php", $("#modifycustomerform").serialize() ,function(data){
+							if (data == "success") { 
+								alert("<?php $lh->translateText("customer_successfully_deleted"); ?>");
+								window.location = "index.php";
+							}
+							else { alert ("<?php $lh->translateText("unable_delete_customer"); ?>: "+data); }
+						});
+					}
+				 });
+				 
+			});
+		</script>
 
 
         <script>

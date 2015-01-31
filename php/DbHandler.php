@@ -179,7 +179,7 @@ class DbHandler {
 	 	// then remove the entry at the database
 	 	$stmt = $this->conn->prepare("DELETE FROM users where id = ?");
 	 	$stmt->bind_param("i", $userid);
-	 	$result = $stmt->execut();
+	 	$result = $stmt->execute();
 	 	$stmt->close();
         return $result;
 	 }
@@ -378,17 +378,17 @@ class DbHandler {
        $users = $this->getAllUsers();
        // is null?
        if (is_null($users)) { // error getting contacts
-	       return $this->getErrorMessage($this->lh->text("unable_get_user_list"));
+	       return $this->getErrorMessage($this->lh->translationFor("unable_get_user_list"));
        } else if (empty($users)) { // no contacts found
-	       return $this->getWarningMessage($this->lh->text("no_users_in_list"));
+	       return $this->getWarningMessage($this->lh->translationFor("no_users_in_list"));
        } else { 
 	       // we have some users, show a table
-		   $result = $this->lh->translate($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
+		   $result = $this->lh->translationForTerms($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
 	       
 	       // iterate through all contacts
 	       foreach ($users as $userData) {
-	       	   $status = $userData["status"] == 1 ? $this->lh->text("enabled") : $this->lh->text("disabled");
-	       	   $userRole = $this->lh->text($this->getRoleNameForRole($userData["role"]));	
+	       	   $status = $userData["status"] == 1 ? $this->lh->translationFor("enabled") : $this->lh->translationFor("disabled");
+	       	   $userRole = $this->lh->translationFor($this->getRoleNameForRole($userData["role"]));	
 	       	   $action = $this->getUserActionMenuForUser($userData["id"], $userData["name"], $userData["status"]);       
 		       $result = $result."<tr>
 	                    <td>".$userData["id"]."</td>
@@ -402,7 +402,7 @@ class DbHandler {
 	       }
 	       
 	       // print suffix
-	       $result = $result.$this->lh->translate($this->usersTableSuffix, array("name", "email", "creation_date", "role", "status", "action")); 
+	       $result = $result.$this->lh->translationForTerms($this->usersTableSuffix, array("name", "email", "creation_date", "role", "status", "action")); 
 	       return $result; 
        }
 	}
@@ -443,11 +443,11 @@ class DbHandler {
 		$selectedReader = $selectedOption == CRM_DEFAULTS_USER_ROLE_READER ? " selected" : "";
 		$selectedGuest = $selectedOption == CRM_DEFAULTS_USER_ROLE_GUEST ? " selected" : "";
 		
-		$adminName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN));
-		$managerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER));
-		$writerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER));
-		$readerName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER));
-		$guestName = $this->lh->text($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST));
+		$adminName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN));
+		$managerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER));
+		$writerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER));
+		$readerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER));
+		$guestName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST));
 		
 		return '<select id="role" name="role">
 				   <option value="'.CRM_DEFAULTS_USER_ROLE_ADMIN.'"'.$selectedAdmin.'>'.$adminName.'</option>
@@ -466,16 +466,16 @@ class DbHandler {
      * @return String a HTML representation of the action associated with a user in the admin panel.
      */
 	private function getUserActionMenuForUser($userid, $username, $status) {
-		$textForStatus = $status == 1 ? $this->lh->text("disable") : $this->lh->text("enable");
+		$textForStatus = $status == 1 ? $this->lh->translationFor("disable") : $this->lh->translationFor("enable");
 		$actionForStatus = $status == 1 ? "deactivate-user-action" : "activate-user-action";
 		return '<div class="btn-group">
-	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">'.$this->lh->text("choose_action_user").' '.$username.'</button>
+	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">'.$this->lh->translationFor("choose_action_user").' '.$username.'</button>
 	                <ul class="dropdown-menu" role="menu">
-	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->text("edit_data").'</a></li>
-	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->text("change_password").'</a></li>
+	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->translationFor("edit_data").'</a></li>
+	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->translationFor("change_password").'</a></li>
 	                    <li><a class="'.$actionForStatus.'" href="'.$userid.'">'.$textForStatus.'</a></li>
 	                    <li class="divider"></li>
-	                    <li><a class="delete-action" href="'.$userid.'">'.$this->lh->text("delete_user").'</a></li>
+	                    <li><a class="delete-action" href="'.$userid.'">'.$this->lh->translationFor("delete_user").'</a></li>
 	                </ul>
 	            </div>';
 	}
@@ -500,11 +500,11 @@ class DbHandler {
 		print '<div class="box box-danger">
 				<div class="box-header">
 	                <i class="fa fa-lock"></i>
-	                <h3 class="box-title">'.$this->lh->text("access_denied").'</h3>
+	                <h3 class="box-title">'.$this->lh->translationFor("access_denied").'</h3>
 	            </div>
 				<div class="box-body" id="graph-box">
 					<div class="callout callout-danger">
-						<p>'.$this->lh->text("you_dont_have_permission").'</p>
+						<p>'.$this->lh->translationFor("you_dont_have_permission").'</p>
 					</div>
 				</div>
 			   </div>';
@@ -591,7 +591,7 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getInfoMessage($message) {
-		return "<div class=\"callout callout-info\">\n\t<h4>".$this->lh->text("message")."</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-info\">\n\t<h4>".$this->lh->translationFor("message")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 
 	/**
@@ -599,7 +599,7 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getWarningMessage($message) {
-		return "<div class=\"callout callout-warning\">\n\t<h4>".$this->lh->text("warning")."</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-warning\">\n\t<h4>".$this->lh->translationFor("warning")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 
 	/**
@@ -607,7 +607,7 @@ class DbHandler {
 	 * @param message String the message to show.
 	 */
 	function getErrorMessage($message) {
-		return "<div class=\"callout callout-danger\">\n\t<h4>".$this->lh->text("error")."</h4>\n\t<p>$message</p>\n</div>\n";	
+		return "<div class=\"callout callout-danger\">\n\t<h4>".$this->lh->translationFor("error")."</h4>\n\t<p>$message</p>\n</div>\n";	
 	}
 	
 	/**
@@ -621,7 +621,7 @@ class DbHandler {
 		            </div><div class="modal-body">';
 		$result = $result.$this->getErrorMessage($message);
 		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.
-		$this->lh->text("exit").'</button></div></div></div>';
+		$this->lh->translationFor("exit").'</button></div></div></div>';
 		return $result;
 	}
 
@@ -643,7 +643,7 @@ class DbHandler {
                     <span class="label label-success">'.$numMessages.'</span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->text("you_have").' '.$numMessages.' '.$this->lh->text("unread_messages").'</li>
+                    <li class="header">'.$this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages").'</li>
                     <li>
                             <ul class="menu">';
         
@@ -659,14 +659,14 @@ class DbHandler {
                         <img src="'.$remoteavatar.'" class="img-circle" alt="User Image"/>
                     </div>
                     <h4>
-                        '.$message["remote_user"].'
-                        <small><i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
+                    <small class="label"> <i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
+                        '.$message["remote_user"].' 
                     </h4>
                     <p>'.$shortText.'</p>
                 </a>
             </li>';
         }
-        $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->text("see_all_messages").'</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->translationFor("see_all_messages").'</a></li></ul></li>';
         print $result;
 	}
 	
@@ -698,7 +698,7 @@ class DbHandler {
                     <span class="label label-warning">'.$notificationNum.'</span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->text("you_have").' '.$notificationNum.' '.strtolower($this->lh->text("notifications")).'</li><li>
+                    <li class="header">'.$this->lh->translationFor("you_have").' '.$notificationNum.' '.strtolower($this->lh->translationFor("notifications")).'</li><li>
                         <ul class="menu">';
                         
         foreach ($notifications as $notification) {
@@ -708,7 +708,7 @@ class DbHandler {
                                 </a>
                             </li>';
         }                                        
-        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">'.$this->lh->text("see_all_notifications").'</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">'.$this->lh->translationFor("see_all_notifications").'</a></li></ul></li>';
         return $result;
 	}
 	
@@ -724,12 +724,12 @@ class DbHandler {
                                 <span class="label label-danger">'.$numTasks.'</span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="header">'.$this->lh->text("you_have").' '.$numTasks.' '.$this->lh->text("pending_tasks").'</li>
+                                <li class="header">'.$this->lh->translationFor("you_have").' '.$numTasks.' '.$this->lh->translationFor("pending_tasks").'</li>
                                 <li>
                                     <ul class="menu">';
                                     
         foreach ($list as $task) {
-	        $shortText = $this->substringUpTo($task["description"], 30);
+	        $shortText = $this->substringUpTo($task["description"], 35);
 	        $relativeTime = $this->relativeTime($task["creation_date"], 1);
 	        
 	        
@@ -743,7 +743,7 @@ class DbHandler {
 	        </li><!-- end task item -->';
         }
                                     
-        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">'.$this->lh->text("see_all_tasks").'</a></li></ul></li>';
+        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">'.$this->lh->translationFor("see_all_tasks").'</a></li></ul></li>';
         return $result;
 
         return '';
@@ -759,23 +759,23 @@ class DbHandler {
 		$menuActions = '';
 		if (userHasBasicPermission($userrole)) $menuActions = '<li class="user-body">
 									<div class="text-center">
-									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->text("change_password").'</a>
+									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a>
 									</div>
 									<div class="text-center">
-									    <a href="./messages.php">'.$this->lh->text("messages").'</a>
+									    <a href="./messages.php">'.$this->lh->translationFor("messages").'</a>
 									</div>
 									<div class="text-center">
-									        <a href="./notificationes.php">'.$this->lh->text("notifications").'</a>
+									        <a href="./notificationes.php">'.$this->lh->translationFor("notifications").'</a>
 									    </div>
 									<div class="text-center">
-									        <a href="./tasks.php">'.$this->lh->text("tasks").'</a>
+									        <a href="./tasks.php">'.$this->lh->translationFor("tasks").'</a>
 								    </div>
 								</li>';
 		
 		// change my data (only for users with permissions).
 		$changeMyData = '';
 		if (userHasBasicPermission($userrole)) 
-			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->text("my_profile").'</a></div>';
+			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("my_profile").'</a></div>';
 		
 		return '<li class="dropdown user user-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -787,13 +787,13 @@ class DbHandler {
                                     <img src="'.$avatar.'" class="img-circle" alt="User Image" />
                                     <p>
                                         '.$username.'
-                                        <small>'.$this->lh->text("nice_to_see_you_again").'</small>
+                                        <small>'.$this->lh->translationFor("nice_to_see_you_again").'</small>
                                     </p>
                                 </li>'.$menuActions.'
                                 <li class="user-footer">
                                     '.$changeMyData.'
                                     <div class="pull-right">
-                                        <a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->text("exit").'</a>
+                                        <a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("exit").'</a>
                                     </div>
                                 </li>
                             </ul>
@@ -817,11 +817,11 @@ class DbHandler {
 			$adminArea = '
 				<li class="treeview">
                     <a href="#">
-                        <i class="fa fa-dashboard"></i> <span>'.$this->lh->text("administration").'</span>
+                        <i class="fa fa-dashboard"></i> <span>'.$this->lh->translationFor("administration").'</span>
                         <i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <li><a href="./adminusers.php"><i class="fa fa-users"></i> '.$this->lh->text("users").'</a></li>
+                        <li><a href="./adminusers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("users").'</a></li>
                     </ul>
                 </li>';
 		}
@@ -837,14 +837,14 @@ class DbHandler {
                             <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
                         </div>
                         <div class="pull-left info">
-                            <p>'.$this->lh->text("hello").', '.$username.'</p>
-                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->text("online").'</a>
+                            <p>'.$this->lh->translationFor("hello").', '.$username.'</p>
+                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->translationFor("online").'</a>
                         </div>
                     </div>
                     <ul class="sidebar-menu">
                         <li>
                             <a href="./index.php">
-                                <i class="fa fa-bar-chart-o"></i> <span>'.$this->lh->text("home").'</span>
+                                <i class="fa fa-bar-chart-o"></i> <span>'.$this->lh->translationFor("home").'</span>
                             </a>
                         </li>';
         
@@ -865,19 +865,19 @@ class DbHandler {
         // suffix: messages, notifications, tasks
 		print '<li>
                             <a href="./messages.php">
-                                <i class="fa fa-envelope"></i> <span>'.$this->lh->text("messages").'</span>
+                                <i class="fa fa-envelope"></i> <span>'.$this->lh->translationFor("messages").'</span>
                                 <small class="badge pull-right bg-green">'.$numMessages.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./notifications.php">
-                                <i class="fa fa-exclamation"></i> <span>'.$this->lh->text("notifications").'</span>
+                                <i class="fa fa-exclamation"></i> <span>'.$this->lh->translationFor("notifications").'</span>
                                 <small class="badge pull-right bg-orange">'.$numNotifications.'</small>
                             </a>
                         </li>
 						<li>
                             <a href="./tasks.php">
-                                <i class="fa fa-tasks"></i> <span>'.$this->lh->text("tasks").'</span>
+                                <i class="fa fa-tasks"></i> <span>'.$this->lh->translationFor("tasks").'</span>
                                 <small class="badge pull-right bg-red">'.$numTasks.'</small>
                             </a>
                         </li>
@@ -929,11 +929,11 @@ class DbHandler {
 	 */
    	private function getCustomerListAsTable($customers, $customerType) {
 	   	// print prefix
-       $result = $this->lh->translate($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
+       $result = $this->lh->translationForTerms($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
        
        foreach ($customers as $customer) {
 	       $nameOrNonamed = $customer["name"];
-	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->text("no_name").")";
+	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->translationFor("no_name").")";
 	       
 	       $result = $result."<tr>
                     <td>".$customer["id"]."</td>
@@ -945,7 +945,7 @@ class DbHandler {
        }
        
        // print suffix
-       $result = $result.$this->lh->translate($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
+       $result = $result.$this->lh->translationForTerms($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
        return $result;
    	}
 
@@ -962,9 +962,9 @@ class DbHandler {
        $customers = $this->getAllCustomersOfType($customerType);
        // is null?
        if (is_null($customers)) { // error getting customers
-	       return $this->getErrorMessage($this->lh->text("unable_get_customer_list"));
+	       return $this->getErrorMessage($this->lh->translationFor("unable_get_customer_list"));
        } else if (empty($customers)) { // no customers found
-	       return $this->getWarningMessage($this->lh->text("no_customers_in_list"));
+	       return $this->getWarningMessage($this->lh->translationFor("no_customers_in_list"));
        } else { // we have some customers, show a table
 		   return $this->getCustomerListAsTable($customers, $customerType);
        }
@@ -1098,7 +1098,7 @@ class DbHandler {
 	public function getNameForCustomerType($customerType) {
 		$stmt = $this->conn->prepare("SELECT * FROM customer_types WHERE table_name = ?");
 		$stmt->bind_param("s", $customerType);
-		if ($stmt->execute() === false) return $this->lh->text("customer");
+		if ($stmt->execute() === false) return $this->lh->translationFor("customer");
 		else {
 			$result = $stmt->get_result();
 			if ($row = $result->fetch_assoc()) {
@@ -1334,8 +1334,8 @@ class DbHandler {
 	public function sendMessage($fromuserid, $touserid, $subject, $message) {
 		// sanity checks
 		if (empty($fromuserid) || empty($touserid)) return false;
-		if (empty($subject)) $subject = "(".$this->lh->text("no_subject").")";
-		if (empty($message)) $message = "(".$this->lh->text("no_message").")";
+		if (empty($subject)) $subject = "(".$this->lh->translationFor("no_subject").")";
+		if (empty($message)) $message = "(".$this->lh->translationFor("no_message").")";
 		
 		// insert the new message in the inbox of the receiving user.
 		$stmt = $this->conn->prepare("INSERT INTO messages_inbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 0, 0)");
@@ -1362,9 +1362,9 @@ class DbHandler {
 	 */
 	public function generateSendToUserSelect($myuserid, $includeSelf = false, $customMessage = NULL) {
 		// perform query of users.
-		if (empty($customMessage)) $customMessage = $this->lh->text("send_this_message_to");
+		if (empty($customMessage)) $customMessage = $this->lh->translationFor("send_this_message_to");
 		$stmt = $this->conn->prepare("SELECT * FROM users WHERE status = 1");
-		if ($stmt->execute() === false) return $this->getErrorMessage($this->lh->text("unable_get_user_list"));
+		if ($stmt->execute() === false) return $this->getErrorMessage($this->lh->translationFor("unable_get_user_list"));
 		$result = $stmt->get_result();
 
 		// iterate through all users and generate the select
@@ -1466,7 +1466,7 @@ class DbHandler {
 	 */
 	private function getMessageListAsTable($messages) {
 		// generate the table.
-		$result = $this->lh->translate($this->messageListPrefix, array("selection", "favorite", "user", "date", "subject"));
+		$result = $this->lh->translationForTerms($this->messageListPrefix, array("selection", "favorite", "user", "date", "subject"));
 		foreach ($messages as $message) {
 			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
 			else $result = $result.'<tr>';
@@ -1493,7 +1493,7 @@ class DbHandler {
 	 */
 	public function getInboxMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_INBOX_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("unable_get_messages"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("unable_get_messages"));
 		else return $this->getMessageListAsTable($messages);
 	}
 	
@@ -1503,7 +1503,7 @@ class DbHandler {
 	 */
 	public function getUnreadMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1513,7 +1513,7 @@ class DbHandler {
 	 */
 	public function getJunkMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_DELETED_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1523,7 +1523,7 @@ class DbHandler {
 	 */
 	public function getSentMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_SENT_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 				
@@ -1533,7 +1533,7 @@ class DbHandler {
 	 */
 	public function getFavoriteMessagesAsTable($userid) {
 		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_FAVORITE_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1544,7 +1544,7 @@ class DbHandler {
 	 */
 	public function getMessagesFromFolderAsTable($userid, $folder) {
 		$messages = $this->getMessagesOfType($userid, $folder);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->text("no_messages_in_list"));
+		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 
@@ -1753,7 +1753,7 @@ class DbHandler {
 		// sanity checks
 		$tableName = $this->getTableNameForFolder($folder);
 		if ($tableName == NULL || $userid == NULL || $messageid == NULL) {
-			return $this->getErrorModalMessage($this->lh->text("unable_get_message"), $this->lh->text("error_getting_message"));
+			return $this->getErrorModalMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
 		}
 		$remoteuseridfield = "user_from";
 		$useridfield = "user_to";
@@ -1787,7 +1787,7 @@ class DbHandler {
 			$text = $obj["message"]; 
 			$messagedate = $obj["date"]; 
 			$remoteusername = $obj["name"]; 
-			$fromortodestination = ($fromuserid == $userid)? $this->lh->text("to")." $remoteusername." : $this->lh->text("from")." $remoteusername.";
+			$fromortodestination = ($fromuserid == $userid)? $this->lh->translationFor("to")." $remoteusername." : $this->lh->translationFor("from")." $remoteusername.";
 			$relativeTime = $this->relativeTime($messagedate);
 		
 			return '
@@ -1795,7 +1795,7 @@ class DbHandler {
 		        <div class="modal-content">
 		            <div class="modal-header">
 		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->text("message").' '.$fromortodestination.'</h4>
+		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->translationFor("message").' '.$fromortodestination.'</h4>
 		            </div>
 		            <form action="#" method="post" id="show-message-form" name="show-message-form">
 		                <div class="modal-body">
@@ -1818,20 +1818,20 @@ class DbHandler {
 		                        </div>
 		                    </div> 
 							<div class="form-group">
-		                        <textarea name="message" id="message" class="form-control" placeholder="'.$this->lh->text("message").'" style="height: 120px;" readonly>'.$text.'
+		                        <textarea name="message" id="message" class="form-control" placeholder="'.$this->lh->translationFor("message").'" style="height: 120px;" readonly>'.$text.'
 		                        </textarea>
 		                    </div>
 		                </div>
 		                <input type="hidden" id="messageid" name="messageid" value="'.$messageid.'">
 		                <div class="modal-footer clearfix">
-		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.$this->lh->text("exit").'</button>
+		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.$this->lh->translationFor("exit").'</button>
 		                </div>
 		            </form>
 		        </div><!-- /.modal-content -->
 			</div><!-- /.modal-dialog -->';
     	} else {
 	    	
-			return $this->getErrorModalMessage($this->lh->text("unable_get_message"), $this->lh->text("error_getting_message"));
+			return $this->getErrorModalMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
     	}
 
 	} // end function
@@ -1934,9 +1934,9 @@ class DbHandler {
 	 * @return String the string with the action button text for this notification type.
 	 */
 	private function actionButtonTextForNotificationType($type) {
-		if ($type == "contact") return $this->lh->text("see_customer");
-		else if ($type == "message") return $this->lh->text("read_message");
-		else return $this->lh->text("see_more");
+		if ($type == "contact") return $this->lh->translationFor("see_customer");
+		else if ($type == "message") return $this->lh->translationFor("read_message");
+		else return $this->lh->translationFor("see_more");
 	}
 	
 	/**
@@ -1947,11 +1947,11 @@ class DbHandler {
 	 */
 	private function headerTextForNotificationType($type, $action) {
 		if ($type == "contact") 
-		return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("contact") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("contact")."</a>";
+		return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("contact") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("contact")."</a>";
 		else if ($type == "message") 
-			return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("message") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("message")."</a>";
+			return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("message") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("message")."</a>";
 
-		return empty($action) ? $this->lh->text("you_have_a_new")." ".$this->lh->text("event") : $this->lh->text("you_have_a_new")." <a href=".$action.">".$this->lh->text("event")."</a>";
+		return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("event") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("event")."</a>";
 	}
 	
 	/**
@@ -2003,7 +2003,7 @@ class DbHandler {
 		
 		$notifications = $this->getTodayNotifications($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->text("no_notifications_today")).'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_today")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -2013,13 +2013,13 @@ class DbHandler {
         // past week
 		$timeline = $timeline.'<li class="time-label">
 	                        <span class="bg-yellow">
-	                            '.$this->lh->text("past_week").'
+	                            '.$this->lh->translationFor("past_week").'
 	                        </span>
 	                    </li>';
 
         $notifications = $this->getNotificationsForPastWeek($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->text("no_notifications_past_week")).'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_past_week")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -2128,13 +2128,13 @@ class DbHandler {
 	 */
 	private function relativeTime($mysqltime, $maxdepth = 1) {
 		$time = strtotime(str_replace('/','-', $mysqltime));
-	    $d[0] = array(1,$this->lh->text("second"));
-	    $d[1] = array(60,$this->lh->text("minute"));
-	    $d[2] = array(3600,$this->lh->text("hour"));
-	    $d[3] = array(86400,$this->lh->text("day"));
-	    $d[4] = array(604800,$this->lh->text("week"));
-	    $d[5] = array(2592000,$this->lh->text("month"));
-	    $d[6] = array(31104000,$this->lh->text("year"));
+	    $d[0] = array(1,$this->lh->translationFor("second"));
+	    $d[1] = array(60,$this->lh->translationFor("minute"));
+	    $d[2] = array(3600,$this->lh->translationFor("hour"));
+	    $d[3] = array(86400,$this->lh->translationFor("day"));
+	    $d[4] = array(604800,$this->lh->translationFor("week"));
+	    $d[5] = array(2592000,$this->lh->translationFor("month"));
+	    $d[6] = array(31104000,$this->lh->translationFor("year"));
 	
 	    $w = array();
 	

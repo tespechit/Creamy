@@ -73,11 +73,11 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        <?php print $lh->text("home"); ?>
-                        <small><?php print $lh->text("your_creamy_dashboard"); ?></small>
+                        <?php $lh->translateText("home"); ?>
+                        <small><?php $lh->translateText("your_creamy_dashboard"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-bar-chart-o"></i> <?php print $lh->text("home"); ?></a></li>
+                        <li><a href="./index.php"><i class="fa fa-bar-chart-o"></i> <?php $lh->translateText("home"); ?></a></li>
                     </ol>
                 </section>
 
@@ -91,17 +91,17 @@
                             <div class="small-box bg-orange">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"])." ".$lh->text("new");  ?>
+                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"])." ".$lh->translationFor("new");  ?>
                                     </h3>
                                     <p>
-                                        <?php print $lh->text("notifications"); ?>
+                                        <?php $lh->translateText("notifications"); ?>
                                     </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-clock"></i>
                                 </div>
                                 <a href="notifications.php" class="small-box-footer">
-                                    <?php print $lh->text("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
+                                    <?php $lh->translateText("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -110,17 +110,17 @@
                             <div class="small-box bg-aqua">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewCustomers()." ".$lh->text("new"); ?>
+                                        <?php print $db->getNumberOfNewCustomers()." ".$lh->translationFor("new"); ?>
                                     </h3>
                                     <p>
-                                        <?php print $lh->text("customers"); ?>
+                                        <?php $lh->translateText("customers"); ?>
                                     </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-person-stalker"></i>
                                 </div>
                                 <a href="./customerslist.php?customer_type=clients_2" class="small-box-footer">
-                                    <?php print $lh->text("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
+                                    <?php $lh->translateText("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -129,17 +129,17 @@
                             <div class="small-box bg-green">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewContacts()." ".$lh->text("new"); ?>
+                                        <?php print $db->getNumberOfNewContacts()." ".$lh->translationFor("new"); ?>
                                     </h3>
                                     <p>
-                                        <?php print $lh->text("contacts"); ?>
+                                        <?php $lh->translateText("contacts"); ?>
                                     </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-person-add"></i>
                                 </div>
                                 <a href="./customerslist.php?customer_type=clients_1&customer_name=Contactos" class="small-box-footer">
-                                    <?php print $lh->text("see_all"); ?> <i class="fa fa-arrow-circle-right"></i>
+                                    <?php $lh->translateText("see_all"); ?> <i class="fa fa-arrow-circle-right"></i>
                                 </a>
                             </div>
                         </div><!-- ./col -->
@@ -155,7 +155,7 @@
                                         <button class="btn btn-primary btn-sm" data-widget="remove"><i class="fa fa-times"></i></button>
                                     </div>
 	                                <i class="fa fa-info"></i>
-	                                <h3 class="box-title"><?php print $lh->text("getting_started"); ?></h3>
+	                                <h3 class="box-title"><?php $lh->translateText("getting_started"); ?></h3>
 	                            </div>
                                 <div class="box-body" style="display: none;">
 								<?php
@@ -178,7 +178,7 @@
 	                        <div class="box box-info">
 	                            <div class="box-header">
 	                                <i class="fa fa-bar-chart-o"></i>
-	                                <h3 class="box-title"><?php print $lh->text("customer_statistics"); ?></h3>
+	                                <h3 class="box-title"><?php $lh->translateText("customer_statistics"); ?></h3>
 	                            </div>
                                 <div class="box-body" id="graph-box">
                                     <div class="chart" id="revenue-chart" style="position: relative; height: 375px;"></div>
@@ -193,7 +193,7 @@
                             <div class="box box-info">
                                 <div class="box-header">
                                     <i class="fa fa-envelope"></i>
-                                    <h3 class="box-title"><?php print $lh->text("messaging_system"); ?></h3>
+                                    <h3 class="box-title"><?php $lh->translateText("messaging_system"); ?></h3>
                                 </div>
                                 <div class="box-body">
                                     <form action="#" method="post" id="send-message-form" name="send-message-form">
@@ -201,16 +201,16 @@
 											<?php print $db->generateSendToUserSelect($_SESSION["userid"]); ?>
                                         </div>
                                         <div class="form-group">
-                                            <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php print $lh->text("subject"); ?>"/>
+                                            <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
                                         </div>
                                         <div>
-                                            <textarea class="textarea" placeholder="<?php print $lh->text("message"); ?>" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
+                                            <textarea class="textarea" placeholder="<?php $lh->translateText("message"); ?>" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
                                         </div>
                                         <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $_SESSION["userid"] ?>">
                                         <div id="messagesendingresult" name="messagesendingresult"></div>
 								</div>
                                 <div class="box-footer clearfix">
-                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail"><?php print $lh->text("send"); ?> <i class="fa fa-send"></i></button>
+                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail"><?php $lh->translateText("send"); ?> <i class="fa fa-send"></i></button>
                                 </div>
                             </form>
                             </div>
@@ -234,7 +234,50 @@
         <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
-		<script src="js/sendmessageform.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+
+			/** 
+			 * Sends a message
+		 	 */
+			$("#send-message-form").validate({
+				rules: {
+					subject: "required",
+					message: "required",
+					touserid: {
+					  	required: true,
+					  	min: 1,
+		        		number: true
+					}
+				},
+			    messages: {
+			        touserid: "You must choose a user to send the message to",
+				},
+				submitHandler: function() {
+					//submit the form
+						$("#messagesendingresult").html();
+						$("#messagesendingresult").hide();
+						$.post("./php/SendMessage.php", //post
+						$("#send-message-form").serialize(), 
+							function(data){
+								//if message is sent
+								if (data == 'success') {
+									$("#messagesendingresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("message_successfully_sent"); ?>');
+									$("#messagesendingresult").fadeIn(); //show confirmation message
+									$("#send-message-form")[0].reset();
+			
+								} else {
+									$("#messagesendingresult").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_send_message"); ?>: '+ data);
+									$("#messagesendingresult").fadeIn(); //show confirmation message
+								}
+								//
+							});
+					return false; //don't let the form refresh the page...
+				}					
+			});
+			 
+		});
+		</script>
 
         <script>
         	// load data.
@@ -257,7 +300,7 @@
         ],
         xkey: 'y',
         ykeys: ['item1', 'item2'],
-        labels: ['<?php print $lh->text("contacts"); ?>', '<?php print $lh->text("customers"); ?>'],
+        labels: ['<?php $lh->translateText("contacts"); ?>', '<?php $lh->translateText("customers"); ?>'],
         lineColors: ['#a0d0e0', '#3c8dbc'],
         hideHover: 'auto'
     });

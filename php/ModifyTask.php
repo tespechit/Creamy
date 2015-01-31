@@ -1,7 +1,9 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -23,7 +25,7 @@ if ($validated == 1) {
 	$result = $db->editTaskDescription($taskid, $description, $userid);
 	if ($result === true) {
 		print "success";
-	} else print "I was unable to modify the description of the task. Please contact the administrator.";	
-} else { print "I was unable to modify the description of the task. Please contact the administrator."; }
+	} else { $lh->translateText("unable_modify_task"); };	
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

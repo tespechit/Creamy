@@ -1,7 +1,10 @@
 <?php
 
 require_once('DbHandler.php');
+require_once('LanguageHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check admin privileges.
 $privileges = 0;
@@ -11,7 +14,7 @@ if (isset($_SESSION["userrole"])) {
 	}
 }
 if ($privileges == 0) {
-	print "No dispone de los permisos suficientes para cambiar las contraseñas de un usuario.";
+	$lh->translateText("not_permission_edit_user_information");
 	exit;
 }
 
@@ -29,21 +32,21 @@ if (!isset($_POST["new_password_2"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
 
 	// check password	
 	$userid = $_POST["usertochangepasswordid"];
 	$password1 = $_POST["new_password_1"];
 	$password2 = $_POST["new_password_2"];
 	if ($password1 !== $password2) {
-		print "Las nuevas contraseñas no coinciden, inténtelo de nuevo";
+		$lh->translateText("passwords_dont_match");
 		exit;
 	}
 	
+	$db = new DbHandler();
 	$result = $db->changePasswordAdmin($userid, $password1);
 	if ($result === true) { print "success"; }
-	else { print "Ha sido imposible cambiar la contraseña. Por favor, inténtelo de nuevo."; } 
+	else { $lh->translateText("error_changing_password"); } 
 	
-} else { print "Por favor, introduzca todos los campos obligatorios (nuevas contraseñas e id del usuario a cambiar la contraseña)"; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

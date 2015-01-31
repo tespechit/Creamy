@@ -1,6 +1,9 @@
 <?php
 
 require_once('DbHandler.php');
+require_once('LanguageHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -23,8 +26,8 @@ if ($validated == 1) {
 
 	$result = $db->createTask($userid, $taskDescription, $taskInitialProgress);
 	if ($result === true) { print "success"; }
-	else { print "Ha sido imposible crear la tarea. Por favor, inténtelo más tarde. ($result)"; } 
+	else { print $lh->translationFor("unable_create_task")." ($result)"; } 
 	
-} else { print "Por favor, introduzca todos los campos obligatorios (progreso y descripción)"; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

@@ -72,12 +72,12 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
-                        <?php print $lh->text("users_management"); ?>
-                        <small><?php print $lh->text("edit_user_data"); ?></small>
+                        <?php $lh->translateText("users_management"); ?>
+                        <small><?php $lh->translateText("edit_user_data"); ?></small>
                     </h1>
                     <ol class="breadcrumb">
-                        <li><a href="./index.php"><i class="fa fa-edit"></i> <?php print $lh->text("home"); ?></a></li>
-                        <li class="active"><?php print $lh->text("edit_user"); ?></li>
+                        <li><a href="./index.php"><i class="fa fa-edit"></i> <?php $lh->translateText("home"); ?></a></li>
+                        <li class="active"><?php $lh->translateText("edit_user"); ?></li>
                     </ol>
                 </section>
 
@@ -93,10 +93,10 @@
 	                			// if it's the same user or we have admin privileges.
 	                			$userobj = $db->getDataForUser($userid);
                 			} else {
-	                			$errormessage = $lh->text("not_permission_edit_user_information");
+	                			$errormessage = $lh->translationFor("not_permission_edit_user_information");
                 			}
                 		} else {
-	                		$errormessage = $lh->text("unknown_error");
+	                		$errormessage = $lh->translationFor("unknown_error");
                 		}
                 		
                 		if (!empty($userobj)) {
@@ -105,7 +105,7 @@
                 	<!-- tabla editar usuarios -->
                             <div class="box box-primary">
                                 <div class="box-header">
-                                    <h3 class="box-title"><?php print $lh->text("insert_new_data"); ?></h3>
+                                    <h3 class="box-title"><?php $lh->translateText("insert_new_data"); ?></h3>
                                 </div><!-- /.box-header -->
                                 <!-- form start -->
                                 <form role="form" id="modifyuser" name="modifyuser" method="post" action=""  enctype="multipart/form-data">
@@ -113,21 +113,21 @@
                                     <div class="box-body">
 	                                    <div class="input-group">
 	                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="<?php print $lh->text("name"); ?>" value="<?php print $userobj["name"]; ?>" disabled>
+	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="<?php $lh->translateText("name"); ?>" value="<?php print $userobj["name"]; ?>" disabled>
 	                                    </div>
 	                                    <br>
 	                                    <div class="input-group">
 	                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-	                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php print $lh->text("email")." (".$lh->text("optional").")"; ?>" value="<?php print $userobj["email"]; ?>">
+	                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>" value="<?php print $userobj["email"]; ?>">
 	                                    </div>
 	                                    <br>
 	                                    <div class="input-group">
 	                                        <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="<?php print $lh->text("phone")." (".$lh->text("optional").")"; ?>" value="<?php print $userobj["phone"]; ?>">
+	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="<?php $lh->translateText("phone")." (".$lh->translationFor("optional").")"; ?>" value="<?php print $userobj["phone"]; ?>">
 	                                    </div>
 	                                    <br>
                                         <div class="form-group">
-                                            <label for="exampleInputFile"><?php print $lh->text("user_avatar")." (".$lh->text("optional").")"; ?></label><br>
+                                            <label for="exampleInputFile"><?php $lh->translateText("user_avatar")." (".$lh->translationFor("optional").")"; ?></label><br>
                                             <?php
                                             	if (!empty($userobj["avatar"])) {
 	                                            	print("<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>");
@@ -135,11 +135,11 @@
                                             ?>
                                             <br>
                                             <input type="file" id="avatar" name="avatar">
-                                            <p class="help-block"><?php print $lh->text("choose_image"); ?></p>
+                                            <p class="help-block"><?php $lh->translateText("choose_image"); ?></p>
                                         </div>
                                         <?php if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) { ?> 
                                         <div class="form-group">
-                                            <label for="role"><?php print $lh->text("user_role"); ?></label>
+                                            <label for="role"><?php $lh->translateText("user_role"); ?></label>
 											<?php print $db->getUserRolesAsFormSelect($userobj["role"]); ?>
                                         </div>
                                         <?php } ?>
@@ -150,7 +150,7 @@
                                     </div><!-- /.box-body -->
 
                                     <div class="box-footer">
-                                        <button type="submit" class="btn btn-primary"><?php print $lh->text("edit_user"); ?></button>
+                                        <button type="submit" class="btn btn-primary"><?php $lh->translateText("edit_user"); ?></button>
                                     </div>
 
                                 </form>
@@ -174,13 +174,49 @@
         <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
-		<script src="js/messages_es.min.js" type="text/javascript"></script>
-		<script src="js/modifyuserform.js" type="text/javascript"></script>
         <!-- AdminLTE App -->
         <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 
+		<script type="text/javascript">
+		$(document).ready(function() {
+			/** 
+			 * modifies a user.
+		 	 */
+			$("#modifyuser").validate({
+				submitHandler: function(e) {
+					//submit the form
+						$("#resultmessage").html();
+						$("#resultmessage").hide();
+						var formData = new FormData(e);
+		
+						$.ajax({
+						  url: "./php/ModifyUser.php",
+						  data: formData,
+						  processData: false,
+						  contentType: false,
+						  type: 'POST',
+						  success: function(data) {
+								if (data == 'success') {
+									$("#resultmessage").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check">\
+									</i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
+									<b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("data_successfully_modified"); ?>');
+									$("#resultmessage").fadeIn(); //show confirmation message
+								} else {
+									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i>\
+									<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
+									<b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("error_modifying_data"); ?>: '+ data);
+									$("#resultmessage").fadeIn(); //show confirmation message
+								}
+						    }
+						});
+					return false; //don't let the form refresh the page...
+				}					
+			});
+			 
+		});
+		</script>
 
         <script>
         	// load data.

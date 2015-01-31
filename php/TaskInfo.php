@@ -1,10 +1,11 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('CRMDefaults.php');
 require_once('DbHandler.php');
 require('Session.php');
 
 $db = new DbHandler();
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -26,6 +27,6 @@ if ($validated == 1) {
 	$result = $db->getTaskInfoAsTable($taskid, $userid, $format);
 	print $result;
 	
-} else { print $db->getErrorMessage("Se produjo un error accediendo a los datos de la tarea. Inténtalo más tarde."); }
+} else { print $db->getErrorMessage($lh->translationFor("error_accessing_task_data")); }
 
 ?>

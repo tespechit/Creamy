@@ -1,7 +1,9 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -22,10 +24,10 @@ if ($validated == 1) {
 
 	$result = $db->markMessagesAsRead($userid, $messageids, $folder);
 	if ($result === false) {
-		print "Ha sido imposible marcar los mensajes como leidos. Por favor, inténtelo de nuevo más tarde.";
+		$lh->translateText("unable_set_read");
 	} else print "success";
 	
 	return;
-} else { print "Imposible marcar los mensajes como leidos. No se han especificado los mensajes."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

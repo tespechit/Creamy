@@ -1,6 +1,8 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -16,10 +18,10 @@ if ($validated == 1) {
 
 	$result = $db->deleteTask($taskid);
 	if ($result === false) {
-		print "¡Vaya! Ha sido imposible borrar la tarea. Por favor, inténtalo de nuevo más tarde.";
+		$lh->translateText("unable_delete_task");
 	} else print "success";
 	
 	return;
-} else { print "Imposible borrar tarea. No se ha especificado la tarea a eliminar."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>

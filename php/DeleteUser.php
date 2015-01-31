@@ -1,6 +1,8 @@
 <?php
-
+require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+
+$lh = LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -16,10 +18,10 @@ if ($validated == 1) {
 
 	$result = $db->deleteUser($userid);
 	if ($result === false) {
-		print "¡Vaya! Ha sido imposible borrar al usuario. Por favor, inténtelo de nuevo más tarde.";
+		$lh->translateText("unable_delete_user");
 	} else print "success";
 	
 	return;
-} else { print "Imposible borrar usuario. No se ha especificado el usuario a eliminar."; }
+} else { $lh->translateText("some_fields_missing"); }
 
 ?>
