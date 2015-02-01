@@ -3,6 +3,8 @@ Creamy is a free, open source CRM for managing contacts & customers, lightweight
 
 Creamy is right now under heavy development, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
 
+![](http://creamycrm.com/img/responsive.jpg)
+
 ## Users and Permissions
 Creamy is a multi-user CRM. You can have as many users as you need. In order to control what data can be accessed by who, and who can delete, edit or modify the information stored in the system, Creamy implements a role permission scheme, so every user belongs to a certain role category:
 
