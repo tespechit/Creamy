@@ -7,6 +7,7 @@ Thanks to its three-step installation process, you can have your Creamy CRM up a
 
 Creamy is under heavy development right now, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
 
+More info: [http://creamycrm.com](http://creamycrm.com)
 
 ## Users and Permissions
 Creamy is a multi-user CRM. You can have as many users as you need. In order to control what data can be accessed by who, and who can delete, edit or modify the information stored in the system, Creamy implements a role permission scheme, so every user belongs to a certain role category:
@@ -60,7 +61,7 @@ You don't need to be a developer. I am also looking to translate Creamy to more 
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Ignacio Nieto Carvajal
+Copyright (c) 2015 [Ignacio Nieto Carvajal](http://digitalleaves.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
