@@ -4,7 +4,7 @@ require_once('DbHandler.php');
 require_once('LanguageHandler.php');
 require('Session.php');
 
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -16,7 +16,7 @@ if (!isset($_POST["customer_type"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// get name (mandatory)
 	$name = $_POST["name"];

@@ -7,10 +7,10 @@
 	
 	// initialize session and DDBB handler
     require_once('./php/Session.php');
-	include_once('./php/DbHandler.php');
+	include_once('./php/UIHandler.php');
 	require_once('./php/LanguageHandler.php');
-    $db = new DbHandler();
-    $lh = LanguageHandler::getInstance();
+	$ui = \creamy\UIHandler::getInstance();
+    $lh = \creamy\LanguageHandler::getInstance();
 ?>
 <html>
     <head>
@@ -55,10 +55,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -66,7 +66,7 @@
         </header>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -91,7 +91,7 @@
                             <div class="small-box bg-orange">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfTodayNotifications($_SESSION["userid"])." ".$lh->translationFor("new");  ?>
+                                        <?php print $ui->generateLabelForTodayNotifications($_SESSION["userid"]);  ?>
                                     </h3>
                                     <p>
                                         <?php $lh->translateText("notifications"); ?>
@@ -110,7 +110,7 @@
                             <div class="small-box bg-aqua">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewCustomers()." ".$lh->translationFor("new"); ?>
+                                        <?php print $ui->generateLabelForNewCustomers(); ?>
                                     </h3>
                                     <p>
                                         <?php $lh->translateText("customers"); ?>
@@ -129,7 +129,7 @@
                             <div class="small-box bg-green">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $db->getNumberOfNewContacts()." ".$lh->translationFor("new"); ?>
+                                        <?php print $ui->generateLabelForNewContacts(); ?>
                                     </h3>
                                     <p>
                                         <?php $lh->translateText("contacts"); ?>
@@ -198,7 +198,7 @@
                                 <div class="box-body">
                                     <form action="#" method="post" id="send-message-form" name="send-message-form">
                                         <div class="form-group">
-											<?php print $db->generateSendToUserSelect($_SESSION["userid"]); ?>
+											<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
                                         </div>
                                         <div class="form-group">
                                             <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
@@ -287,7 +287,7 @@
         element: 'revenue-chart',
         resize: true,
         data: [
-			<?php print $db->getStatisticsAsJSTable(); ?>
+			<?php print $ui->getStatisticsData(); ?>
         ],
         xkey: 'y',
         ykeys: ['item1', 'item2'],

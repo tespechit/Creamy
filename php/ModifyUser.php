@@ -3,7 +3,7 @@ require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
 
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check required fields
 $reason = $lh->translationFor("unable_modify_user");
@@ -38,7 +38,7 @@ if ((!empty($_FILES["avatar"])) && (!empty($_FILES["avatar"]["name"]))) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$modifyid = $_POST["modifyid"];

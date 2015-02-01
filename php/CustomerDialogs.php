@@ -1,6 +1,6 @@
 <?php
 require_once('LanguageHandler.php');
-if (!isset($lh)) { $lh = LanguageHandler::getInstance(); }
+if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
 
 ?>
 <!-- CLIENT CREATION MODAL -->

@@ -20,8 +20,8 @@ class DBInstaller {
     /* ---------------- Initializers -------------------- */
     
     public function __construct($dbhost, $dbname, $dbuser, $dbpass, $dbport = CRM_DEFAULT_DB_PORT) {
-        $this->lh = LanguageHandler::getInstance();
-        $this->conn = @ new mysqli($dbhost, $dbuser, $dbpass, $dbname, $dbport);
+        $this->lh = \creamy\LanguageHandler::getInstance();
+        $this->conn = @ new \mysqli($dbhost, $dbuser, $dbpass, $dbname, $dbport);
 		
         // Check for database connection error
         if ($this->conn->connect_error) {
@@ -225,6 +225,7 @@ class DBInstaller {
 			$index = 1;
 			foreach ($customCustomers as $description) {
 				array_push($customerIdentifiers, "clients_$index");
+				$index += 1;
 			}
 		}
 		return $customerIdentifiers;
@@ -285,6 +286,23 @@ class DBInstaller {
 		$startEventSchedulerQuery = "SET GLOBAL event_scheduler = 1;";
 		if (!$this->conn->query($startEventSchedulerQuery)) return false;
 		// if all operations succeed, return true
+		return true;
+	}
+	
+	public function setupCommonTriggers($schema, $customCustomers) {
+		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
+		// generate a trigger for each customer/contact type insertion
+		foreach ($customerIdentifiers as $identifier) {
+			// generate trigger for that table
+			$userCreatedTrigger = "CREATE TRIGGER new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
+				BEGIN
+					INSERT INTO notifications (`target_user`, `text`, `date`, `action`, `type`) values (0, CONCAT('".
+					$this->lh->translationFor("new_contact_added").": ', NEW.name), now(), 
+					CONCAT('./editcustomer.php?customerid=',NEW.id,'&customer_type=".$identifier."'), 'contact');
+				END;
+			";
+			if (!$this->conn->query($userCreatedTrigger)) return false;
+		}
 		return true;
 	}
 	

@@ -3,7 +3,7 @@
 require_once('DbHandler.php');
 require_once('LanguageHandler.php');
 require('Session.php');
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -15,7 +15,7 @@ if (!isset($_POST["complete-task-progress"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$taskid = $_POST["complete-task-taskid"];

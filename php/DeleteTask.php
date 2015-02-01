@@ -2,7 +2,7 @@
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -11,7 +11,7 @@ if (!isset($_POST["taskid"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$taskid = $_POST["taskid"];

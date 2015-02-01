@@ -10,7 +10,7 @@ if (!isset($_POST["messageids"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$userid = $_SESSION["userid"];

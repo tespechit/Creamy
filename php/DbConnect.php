@@ -1,11 +1,14 @@
 <?php
-
 /**
- * Handling database connection
+ * DbConnect.
+ * Class to handle low-level database connection
  *
- * @author Ravi Tamada
- * @link URL Tutorial link
+ * @author Ignacio Nieto Carvajal
+ * @link http://digitalleaves.com
  */
+ 
+namespace creamy;
+
 class DbConnect {
 
     private $conn;
@@ -14,14 +17,14 @@ class DbConnect {
     }
 
     /**
-     * Establishing database connection
+     * Constructor establishes the database connection
      * @return database connection handler
      */
     function connect() {
         include_once dirname(__FILE__) . '/Config.php';
 
         // Connecting to mysql database
-        $this->conn = new mysqli(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);
+        $this->conn = new \mysqli(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);
 		$this->conn->set_charset('utf8');
 		
         // Check for database connection error

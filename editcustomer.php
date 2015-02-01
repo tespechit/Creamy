@@ -1,11 +1,11 @@
 <?php
-	require_once('./php/DbHandler.php');
+	require_once('./php/UIHandler.php');
 	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
 
 	// initialize structures
-    $db = new DbHandler();
-    $lh = LanguageHandler::getInstance();
+	$ui = \creamy\UIHandler::getInstance();
+    $lh = \creamy\LanguageHandler::getInstance();
 
     $customerType = NULL;
     $customerid = NULL;
@@ -55,10 +55,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -66,7 +66,7 @@
         </header>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -89,186 +89,7 @@
 
                 <!-- Main content -->
                 <section class="content">
-                	
-                	<?php
-                		$customerobj = NULL;
-                		$errormessage = NULL;
-                		
-                		if (isset($customerid) && isset($customerType)) {
-                			$customerobj = $db->getDataForCustomer($customerid, $customerType);
-                		} else {
-	                		$errormessage = "¡Vaya! Se ha producido un error inesperado. No tenemos los datos necesarios para modificar el usuario. Inténtalo de nuevo o contacta con el administrador.";
-                		}
-                		
-                		if (!empty($customerobj)) {
-                	?>
-                	
-                	<!-- tabla editar usuarios -->
-                            <div class="box box-primary">
-                                <div class="box-header">
-                                    <h3 class="box-title">Introduzca los nuevos datos</h3>
-                                </div><!-- /.box-header -->
-                                <!-- form start -->
-				                <form action="" method="post" name="modifycustomerform" id="modifycustomerform">
-				                    <div class="modal-body">
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-				                                <input name="name" id="name" type="text" class="form-control" value="<?php print $customerobj["name"]; ?>" placeholder="<?php print $lh->translationFor("name")." (".$lh->translationFor("mandatory").")"; ?>">
-				                            </div>
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
-				                                <input name="productType" id="productType" value="<?php print $customerobj["type"]; ?>" type="text" class="form-control" placeholder="<?php $lh->translateText("customer_or_service_type"); ?>">
-				                            </div>
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-				                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="<?php $lh->translateText("id_number"); ?>" value="<?php print $customerobj["id_number"]; ?>">
-				                            </div>
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-				                                <input name="email" id="email" type="text" class="form-control" placeholder="<?php $lh->translateText("email"); ?>" value="<?php print $customerobj["email"]; ?>">
-				                            </div>                  
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-				                                <input name="phone" id="phone" type="text" class="form-control" placeholder="<?php $lh->translateText("home_phone"); ?>" value="<?php print $customerobj["phone"]; ?>">
-				                            </div>                  
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-mobile"></i></span>
-				                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="<?php $lh->translateText("mobile_phone"); ?>" value="<?php print $customerobj["mobile"]; ?>">
-				                            </div>                  
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-				                                <input name="address" id="address" type="text" class="form-control" placeholder="<?php $lh->translateText("address"); ?>" value="<?php print $customerobj["address"]; ?>">
-				                            </div>                  
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="row">
-											<div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="city" id="city" type="text" class="form-control" placeholder="<?php $lh->translateText("city"); ?>" value="<?php print $customerobj["city"]; ?>">
-					                            </div>
-					                        </div><!-- /.col-lg-6 -->
-					                        <div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="state" id="state" type="text" class="form-control" placeholder="<?php $lh->translateText("estate"); ?>" value="<?php print $customerobj["state"]; ?>">
-					                            </div>                        
-					                        </div><!-- /.col-lg-6 -->
-				                            </div>
-				                        </div>
-				                        <div class="form-group">
-				                            <div class="row">
-											<div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="<?php $lh->translateText("zip_code"); ?>" value="<?php print $customerobj["zip_code"]; ?>">
-					                            </div>
-					                        </div><!-- /.col-lg-6 -->
-					                        <div class="col-lg-6">
-					                            <div class="input-group">
-					                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-					                                <input name="country" id="country" type="text" class="form-control" placeholder="<?php $lh->translateText("country"); ?>" value="<?php print $customerobj["country"]; ?>">
-					                            </div>                        
-					                        </div><!-- /.col-lg-6 -->
-				                            </div>
-				                        </div>
-										<div class="form-group">
-				                            <div class="input-group">
-				                                <span class="input-group-addon"><i class="fa fa-file-text-o"></i></span>
-				                                <textarea id="notes" name="notes" placeholder="<?php $lh->translateText("notes"); ?>" class="form-control"><?php print $customerobj["notes"]; ?></textarea>
-				                            </div>                  
-				                        </div>
-				                        <div class="form-group">
-				                            <label><?php $lh->translateText("marital_status"); ?></label>
-				                            <select class="form-control" id="maritalstatus" name="maritalstatus">
-					                        <?php 
-						                        $currentMS = 0;
-						                        if (!empty($customerobj["marital_status"])) {
-							                        $currentMS = $customerobj["marital_status"];
-							                        if ($currentMS < 1) $currentMS = 0;
-							                        if ($currentMS > 5) $currentMS = 0;
-						                        }
-						                        
-					                        ?>
-												<option value="0" <?php if ($currentMS == 0) print "selected"; ?>><?php $lh->translateText("choose_an_option"); ?></option>
-				                                <option value="1" <?php if ($currentMS == 1) print "selected"; ?>><?php $lh->translateText("single"); ?></option>
-				                                <option value="2" <?php if ($currentMS == 2) print "selected"; ?>><?php $lh->translateText("married"); ?></option>
-				                                <option value="3" <?php if ($currentMS == 3) print "selected"; ?>><?php $lh->translateText("divorced"); ?></option>
-				                                <option value="4" <?php if ($currentMS == 4) print "selected"; ?>><?php $lh->translateText("separated"); ?></option>
-				                                <option value="5" <?php if ($currentMS == 5) print "selected"; ?>><?php $lh->translateText("widow"); ?></option>
-				                            </select>
-				                        </div>
-										<div class="form-group">
-				                            <label>Sexo</label>
-				                            <select class="form-control" id="gender" name="gender">
-					                        <?php 
-						                        $currentGender = -1;
-						                        if (!empty($customerobj["gender"])) {
-							                        $currentGender = $customerobj["gender"];
-							                        if ($currentMS < 0) $currentGender = -1;
-							                        if ($currentMS > 1) $currentGender = -1;
-						                        }
-						                        
-					                        ?>
-												<option value="-1" <?php if ($currentGender == -1) print "selected"; ?>><?php $lh->translateText("choose_an_option"); ?></option>
-				                                <option value="0" <?php if ($currentGender == 0) print "selected"; ?>><?php $lh->translateText("female"); ?></option>
-				                                <option value="1" <?php if ($currentGender == 1) print "selected"; ?>><?php $lh->translateText("male"); ?></option>
-				                            </select>
-				                        </div>
-				                        <div class="form-group">
-				                            <label><?php $lh->translateText("birthdate"); ?>:</label>
-				                            <div class="input-group">
-				                                <div class="input-group-addon">
-				                                    <i class="fa fa-calendar"></i>
-				                                </div>
-				                                <?php
-					                                $dateAsDMY = NULL;
-					                                if (!empty($customerobj["birthdate"])) { 
-						                                $time = strtotime($customerobj["birthdate"]);
-						                                $dateAsDMY = date('d/m/Y', $time); 
-						                            }
-					                            ?>
-				                                <input name="birthdate" id="birthdate" type="text" class="form-control" data-inputmask="'alias': 'dd/mm/yyyy'" data-mask value="<?php print $dateAsDMY ?>" placeholder="dd/mm/yyyy"/>
-				                            </div><!-- /.input group -->
-				                        </div><!-- /.form group -->                        
-				                        <div class="form-group">
-				                            <div class="checkbox">
-				                                <label><input name="donotsendemail" id="donotsendemail" type="checkbox" <?php if (!empty($customerobj["do_not_send_email"])) print "checked"; ?>/> <?php $lh->translateText("do_not_send_email"); ?></label>
-				                            </div>
-				                        </div>
-										<input type="hidden" id="customer_type" name="customer_type" value="<?php print $customerType; ?>">
-										<input type="hidden" id="customerid" name="customerid" value="<?php print $customerid; ?>">
-										<div id="modifycustomerresult" name="modifycustomerresult"></div>
-				                    </div>
-				                    <div class="modal-footer clearfix">
-				                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="<?php print $customerid ?>"><i class="fa fa-times"></i> <?php $lh->translateText("delete"); ?></button>
-				                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify"); ?></button>
-				                    </div>
-				                </form>
-
-
-                            </div><!-- /.box -->
-                	<!-- /tabla editar usuarios -->
-					<?php
-						} else {
-							print $db->getErrorMessage($errormessage);
-						}
-					?>
-				<!-- /fila con acciones, formularios y demás -->
-
+					<?php print $ui->generateCustomerEditionForm($customerid, $customerType); ?>                	
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->

@@ -1,6 +1,6 @@
 <?php
 	require_once('./php/LanguageHandler.php');
-	$lh = LanguageHandler::getInstance();
+	$lh = \creamy\LanguageHandler::getInstance();
 	
 	$result = NULL;
 	$error = NULL;
@@ -21,7 +21,7 @@
 		if (isset($_POST["password2"])) $password2 = $_POST["password2"];
 		
 		if ($password1 == $password2 && !empty($password1) && !empty($password2)) {
-			$db = new DbHandler();
+			$db = new \creamy\DbHandler();
 			if ($db->checkPasswordResetValidity($email, $date, $nonce, $code)) {
 				if ($db->changePasswordForUserIdentifiedByEmail($email, $password1)) {
 					$result = $lh->translationFor("password_reset_successfully");

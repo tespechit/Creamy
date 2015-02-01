@@ -4,7 +4,7 @@ require_once('DbHandler.php');
 require_once('LanguageHandler.php');
 require('Session.php');
 
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check admin privileges.
 $privileges = 0;
@@ -42,7 +42,7 @@ if ($validated == 1) {
 		exit;
 	}
 	
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 	$result = $db->changePasswordAdmin($userid, $password1);
 	if ($result === true) { print "success"; }
 	else { $lh->translateText("error_changing_password"); } 

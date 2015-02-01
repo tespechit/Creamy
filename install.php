@@ -5,7 +5,7 @@
 	require_once('./php/RandomStringGenerator.php');
 	
 	// language handler
-	$lh = LanguageHandler::getInstance();
+	$lh = \creamy\LanguageHandler::getInstance();
 	
 	session_start(); // Starting Session
 
@@ -157,7 +157,13 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 			if ($dbInstaller->setupCustomerTables($customersType, $customerNames)) {
 				// enable customers statistic retrieval
 				if ($dbInstaller->setupCustomersStatistics($customersType, $customerNames)) {
-					$success = true;
+					// create the notifications triggers.
+					if ($dbInstaller->setupCommonTriggers($customersType, $customerNames)) {
+						$success = true;
+					} else {
+						$success = false;
+						$error = $lh->translationFor("unable_create_triggers");
+					}
 				} else { 
 					$success = false;
 					$error = $lh->translationFor("unable_set_statistics");

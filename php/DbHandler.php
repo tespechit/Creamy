@@ -1,4 +1,17 @@
 <?php
+/**
+ * DbHandler class.
+ * Class to handle all db operations
+ * This class is in charge of managing the database operations for Creamy. All DB managing should be done by means of instances of this class, i.e:
+ *
+ * $db = new \creamy\DbHandler();
+ * $success = $db->deleteUser(123);
+ *
+ * @author Ignacio Nieto Carvajal
+ * @link URL http://digitalleaves.com
+ */
+ 
+namespace creamy;
 
 require_once('CRMDefaults.php');
 require_once('PassHash.php');
@@ -6,95 +19,28 @@ require_once('ImageHandler.php');
 require_once('RandomStringGenerator.php');
 require_once('LanguageHandler.php');
 
-/**
- * Class to handle all db operations
- * This class is in charge of managing the database operations for Creamy. All DB managing should be done by calling this class
- * and performing operations. i.e:
- *
- * $db = new DbHandler();
- * $success = $db->deleteUser(123);
- *
- * @author Ignacio Nieto Carvajal
- * @link URL http://digitalleaves.com
- */
+
 class DbHandler {
 
+	// language handler
     private $conn;
 	private $lh;
-    
-    /* -------------- Variables, predefined text and code ----------------- */
-    
-	private $contactsTablePrefix = "<table id=\"contacts\" class=\"table table-bordered table-striped\">
-	<thead>
-		<tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>phone</th>
-            <th>id_number</th>
-        </tr>
-    </thead>
-    <tbody>";
-	private $contactsTableSuffix = "</tbody>
-	<tfoot>
-            <tr>
-	            <th>Id</th>
-	            <th>name</th>
-	            <th>email</th>
-	            <th>phone</th>
-	            <th>id_number</th>
-            </tr>
-        </tfoot>
-    </table>";
-    
-	private $usersTablePrefix = "<table id=\"contacts\" class=\"table table-bordered table-striped\">
-	<thead>
-		<tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>creation_date</th>
-            <th>role</th>
-            <th>status</th>
-            <th>action</th>
-        </tr>
-    </thead>
-    <tbody>";
-	private $usersTableSuffix = "</tbody>
-	<tfoot>
-        <tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>creation_date</th>
-            <th>role</th>
-            <th>status</th>
-            <th>action</th>
-        </tr>
-        </tfoot>
-    </table>";
-    private $taskTablePrefix = "<ul class=\"todo-list ui-sortable\">";
-    
-    private $taskTableSuffix = "</ul>";
-    
-    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>selection</td><td>favorite</td><td>user</td><td>subject</td><td>date</td></tr></thead>';
-    
         
-    /* ---------------- Initializers -------------------- */
+	/** Creation and class lifetime management */
     
     function __construct() {
         require_once dirname(__FILE__) . '/DbConnect.php';
         // opening db connection
-        $db = new DbConnect();
+        $db = new \creamy\DbConnect();
         $this->conn = $db->connect();
-        $this->lh = LanguageHandler::getInstance();
+        $this->lh = \creamy\LanguageHandler::getInstance();
    		ini_set( 'date.timezone', CRM_TIMEZONE);
 		date_default_timezone_set(CRM_TIMEZONE);
     }
     
-    /** -------------- Administración, usuarios ------------- */
     
-
+    /** Administration of users */
+    
     /**
      * Creating new user
      * @param String $email User login email id
@@ -310,7 +256,35 @@ class DbHandler {
 		} else return NULL;
     }
     
-    
+    /**
+     * Returns an array containing all enabled users (those with status=1).
+     * @return Array an array of objects containing the data of all users in the system.
+	 */
+	public function getAllEnabledUsers() {
+		$stmt = $this->conn->prepare("SELECT * FROM users WHERE status = 1");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+        if ($result == NULL) {
+			return array();
+		} else {
+			$response = array();
+	        // looping through result and preparing channels array
+	        while ($contact = $result->fetch_assoc()) {
+	            $tmp = array();
+	            $tmp["id"] = $contact["id"];
+	            $tmp["name"] = $contact["name"];
+	            $tmp["email"] = $contact["email"];
+	            $tmp["phone"] = $contact["phone"];
+	            $tmp["creation_date"] = $contact["creation_date"];
+	            $tmp["role"] = $contact["role"];
+	            $tmp["status"] = $contact["status"];
+	            
+	            array_push($response, $tmp);
+	        }
+			return $response;
+		}
+	}
     
     /**
      * Checking for duplicate user by name
@@ -341,7 +315,7 @@ class DbHandler {
     }
 
     /**
-     * Returns an array containing all the user's in the system (only relevant data).
+     * Returns an array containing all users in the system (only relevant data).
      * @return Array an array of objects containing the data of all users in the system.
      */
    	public function getAllUsers() {
@@ -369,117 +343,7 @@ class DbHandler {
 			return $response;
 		}
 	}
-
-    /**
-     * Returns a HTML Table representation containing all the user's in the system (only relevant data).
-     * @return String a HTML Table representation of the data of all users in the system.
-     */
-	public function getAllUsersAsTable() {
-       $users = $this->getAllUsers();
-       // is null?
-       if (is_null($users)) { // error getting contacts
-	       return $this->getErrorMessage($this->lh->translationFor("unable_get_user_list"));
-       } else if (empty($users)) { // no contacts found
-	       return $this->getWarningMessage($this->lh->translationFor("no_users_in_list"));
-       } else { 
-	       // we have some users, show a table
-		   $result = $this->lh->translationForTerms($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
-	       
-	       // iterate through all contacts
-	       foreach ($users as $userData) {
-	       	   $status = $userData["status"] == 1 ? $this->lh->translationFor("enabled") : $this->lh->translationFor("disabled");
-	       	   $userRole = $this->lh->translationFor($this->getRoleNameForRole($userData["role"]));	
-	       	   $action = $this->getUserActionMenuForUser($userData["id"], $userData["name"], $userData["status"]);       
-		       $result = $result."<tr>
-	                    <td>".$userData["id"]."</td>
-	                    <td><a class=\"edit-action\" href=\"".$userData["id"]."\">".$userData["name"]."</a></td>
-	                    <td>".$userData["email"]."</td>
-	                    <td>".$userData["creation_date"]."</td>
-	                    <td>".$userRole."</td>
-	                    <td>".$status."</td>
-	                    <td>".$action."</td>
-	                </tr>";
-	       }
-	       
-	       // print suffix
-	       $result = $result.$this->lh->translationForTerms($this->usersTableSuffix, array("name", "email", "creation_date", "role", "status", "action")); 
-	       return $result; 
-       }
-	}
 	
-	/**
-	 * Retrieves the human friendly descriptive name for a role given its identifier number.
-	 * @param $roleNumber Int number/identifier of the role.
-	 * @return Human friendly descriptive name for the role.
-	 */
-	private function getRoleNameForRole($roleNumber) {
-		switch ($roleNumber) {
-			case CRM_DEFAULTS_USER_ROLE_ADMIN:
-				return "administrator";
-				break;
-			case CRM_DEFAULTS_USER_ROLE_MANAGER:
-				return "manager";
-				break;
-			case CRM_DEFAULTS_USER_ROLE_WRITER:
-				return "writer";
-				break;
-			case CRM_DEFAULTS_USER_ROLE_READER:
-				return "reader";
-				break;
-			case CRM_DEFAULTS_USER_ROLE_GUEST:
-				return "guest";		
-				break;
-		}
-	}
-
-	/**
-	 * Generates the HTML code for a select with the human friendly descriptive names for the user roles.
-	 * @return String the HTML code for a select with the human friendly descriptive names for the user roles.
-	 */
-	public function getUserRolesAsFormSelect($selectedOption = CRM_DEFAULTS_USER_ROLE_MANAGER) {
-		$selectedAdmin = $selectedOption == CRM_DEFAULTS_USER_ROLE_ADMIN ? " selected" : "";
-		$selectedManager = $selectedOption == CRM_DEFAULTS_USER_ROLE_MANAGER ? " selected" : "";
-		$selectedWriter = $selectedOption == CRM_DEFAULTS_USER_ROLE_WRITER ? " selected" : "";
-		$selectedReader = $selectedOption == CRM_DEFAULTS_USER_ROLE_READER ? " selected" : "";
-		$selectedGuest = $selectedOption == CRM_DEFAULTS_USER_ROLE_GUEST ? " selected" : "";
-		
-		$adminName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_ADMIN));
-		$managerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_MANAGER));
-		$writerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_WRITER));
-		$readerName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_READER));
-		$guestName = $this->lh->translationFor($this->getRoleNameForRole(CRM_DEFAULTS_USER_ROLE_GUEST));
-		
-		return '<select id="role" name="role">
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_ADMIN.'"'.$selectedAdmin.'>'.$adminName.'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_MANAGER.'"'.$selectedManager.'>'.$managerName.'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_WRITER.'"'.$selectedWriter.'>'.$writerName.'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_READER.'"'.$selectedReader.'>'.$readerName.'</option>
-				   <option value="'.CRM_DEFAULTS_USER_ROLE_GUEST.'"'.$selectedGuest.'>'.$guestName.'</option>				   
-			    </select>';
-	}
-
-    /**
-     * Returns a HTML representation of the action associated with a user in the admin panel.
-     * @param $userid Int the id of the user
-     * @param $username String the name of the user
-     * @param $status Int the status of the user (enabled=1, disabled=0)
-     * @return String a HTML representation of the action associated with a user in the admin panel.
-     */
-	private function getUserActionMenuForUser($userid, $username, $status) {
-		$textForStatus = $status == 1 ? $this->lh->translationFor("disable") : $this->lh->translationFor("enable");
-		$actionForStatus = $status == 1 ? "deactivate-user-action" : "activate-user-action";
-		return '<div class="btn-group">
-	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">'.$this->lh->translationFor("choose_action_user").' '.$username.'</button>
-	                <ul class="dropdown-menu" role="menu">
-	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->translationFor("edit_data").'</a></li>
-	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->translationFor("change_password").'</a></li>
-	                    <li><a class="'.$actionForStatus.'" href="'.$userid.'">'.$textForStatus.'</a></li>
-	                    <li class="divider"></li>
-	                    <li><a class="delete-action" href="'.$userid.'">'.$this->lh->translationFor("delete_user").'</a></li>
-	                </ul>
-	            </div>';
-	}
-
 	/**
 	 * Changes the status for a user, from enabled (=1) to disabled (=0) or viceversa.
      * @param $userid Int the id of the user
@@ -493,25 +357,7 @@ class DbHandler {
 		return $result;
 	}
 	
-	/**
-	 * Generates the HTML with a unauthorized access. It must be included inside a <section> section.
-	 */
-	public function getUnauthotizedAccessMessage() {
-		print '<div class="box box-danger">
-				<div class="box-header">
-	                <i class="fa fa-lock"></i>
-	                <h3 class="box-title">'.$this->lh->translationFor("access_denied").'</h3>
-	            </div>
-				<div class="box-body" id="graph-box">
-					<div class="callout callout-danger">
-						<p>'.$this->lh->translationFor("you_dont_have_permission").'</p>
-					</div>
-				</div>
-			   </div>';
-	}
-	
-	
-	/* ------------------ Password recovery ------------------ */
+	/** Password recovery */
 
 	/** 
 	 * Sends a recovery mail to the user. The user must have a valid email contained in the database.
@@ -584,313 +430,7 @@ class DbHandler {
 		return false;
 	}
 
-	/* -------------- Warnings and messages --------------------- */
-	
-	/**
-	 * Generates a info message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getInfoMessage($message) {
-		return "<div class=\"callout callout-info\">\n\t<h4>".$this->lh->translationFor("message")."</h4>\n\t<p>$message</p>\n</div>\n";	
-	}
-
-	/**
-	 * Generates a warning message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getWarningMessage($message) {
-		return "<div class=\"callout callout-warning\">\n\t<h4>".$this->lh->translationFor("warning")."</h4>\n\t<p>$message</p>\n</div>\n";	
-	}
-
-	/**
-	 * Generates a error message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getErrorMessage($message) {
-		return "<div class=\"callout callout-danger\">\n\t<h4>".$this->lh->translationFor("error")."</h4>\n\t<p>$message</p>\n</div>\n";	
-	}
-	
-	/**
-	 * Generates a error modal message HTML dialog, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getErrorModalMessage($message, $header) {
-		$result = '<div class="modal-dialog"><div class="modal-content"><div class="modal-header">
-		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$header.'</h4>
-		            </div><div class="modal-body">';
-		$result = $result.$this->getErrorMessage($message);
-		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.
-		$this->lh->translationFor("exit").'</button></div></div></div>';
-		return $result;
-	}
-
-	/* -------------- Notifications ------------------------ */
-
-	/**
-	 * Generates the HTML for the message notifications of a user as a dropdown list element to include in the top bar.
-	 * @param $userid the id of the user.
-	 */
-	function getMessageNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
-
-        $list = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
-		$numMessages = count($list);
-		
-		$result = '<li class="dropdown messages-menu">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-envelope"></i>
-                    <span class="label label-success">'.$numMessages.'</span>
-                </a>
-                <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages").'</li>
-                    <li>
-                            <ul class="menu">';
-        
-        foreach ($list as $message) {
-	        if (empty($message["remote_avatar"])) $remoteavatar = CRM_DEFAULTS_USER_AVATAR;
-	        else $remoteavatar = $message["remote_avatar"];
-	        $relativeTime = $this->relativeTime($message["date"], 1);
-	        $shortText = $this->substringUpTo($message["message"], 40);
-	        
-	        $result = $result.'
-	        <li><a href="messages.php">
-                    <div class="pull-left">
-                        <img src="'.$remoteavatar.'" class="img-circle" alt="User Image"/>
-                    </div>
-                    <h4>
-                    <small class="label"> <i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
-                        '.$message["remote_user"].' 
-                    </h4>
-                    <p>'.$shortText.'</p>
-                </a>
-            </li>';
-        }
-        $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->translationFor("see_all_messages").'</a></li></ul></li>';
-        print $result;
-	}
-	
-	/**
-	 * Returns a random color for a notification, between green, red, blue and yellow.
-	 */
-	private function getRandomColorForNotification() {
-		$number = rand(1,4);
-		if ($number == 1) return "info";
-		else if ($number == 2) return "danger";
-		else if ($number == 3) return "warning";
-		else return "success";
-	}
-
-	/**
-	 * Generates the HTML for the alert notifications of a user as a dropdown list element to include in the top bar.
-	 * @param $userid the id of the user.
-	 */
-	public function getAlertNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
-		
-		$notifications = $this->getTodayNotifications($userid);
-		if (empty($notifications)) $notificationNum = 0;
-		else $notificationNum = count($notifications);
-		
-		$result = '<li class="dropdown notifications-menu">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-warning"></i>
-                    <span class="label label-warning">'.$notificationNum.'</span>
-                </a>
-                <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->translationFor("you_have").' '.$notificationNum.' '.strtolower($this->lh->translationFor("notifications")).'</li><li>
-                        <ul class="menu">';
-                        
-        foreach ($notifications as $notification) {
-	        $result = $result.'<li style="text-align: left; !important">
-                                <a href="notifications.php">
-                                     <i class="fa '.$this->notificationIconForNotificationType($notification["type"]).' '.$this->getRandomColorForNotification().'"></i> '.$this->substringUpTo($notification["texto"], 40).'
-                                </a>
-                            </li>';
-        }                                        
-        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">'.$this->lh->translationFor("see_all_notifications").'</a></li></ul></li>';
-        return $result;
-	}
-	
-	public function getTaskNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
-
-		$list = $this->getUnfinishedTasks($userid);
-		$numTasks = count($list);
-		
-		$result = '<li class="dropdown tasks-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="fa fa-tasks"></i>
-                                <span class="label label-danger">'.$numTasks.'</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="header">'.$this->lh->translationFor("you_have").' '.$numTasks.' '.$this->lh->translationFor("pending_tasks").'</li>
-                                <li>
-                                    <ul class="menu">';
-                                    
-        foreach ($list as $task) {
-	        $shortText = $this->substringUpTo($task["description"], 35);
-	        $relativeTime = $this->relativeTime($task["creation_date"], 1);
-	        
-	        
-	        $result = $result.'<li><!-- Task item -->
-	            <a href="tasks.php">
-                    <h3>
-                        <p class="pull-left">'.$shortText.'</p>
-                        <small class="label label-warning"><i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
-                    </h3>
-	            </a>
-	        </li><!-- end task item -->';
-        }
-                                    
-        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">'.$this->lh->translationFor("see_all_tasks").'</a></li></ul></li>';
-        return $result;
-
-        return '';
-    }
-
-	/* -------------- User Account ------------------------- */
-	/**
-	 * Generates the HTML for the user's personal menu as a dropdown list element to include in the top bar.
-	 * @param $userid the id of the user.
-	 */
-	public function getUserMenu($userid, $username, $avatar, $userrole) {
-		// menu actions (only for users with permissions).
-		$menuActions = '';
-		if (userHasBasicPermission($userrole)) $menuActions = '<li class="user-body">
-									<div class="text-center">
-									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a>
-									</div>
-									<div class="text-center">
-									    <a href="./messages.php">'.$this->lh->translationFor("messages").'</a>
-									</div>
-									<div class="text-center">
-									        <a href="./notificationes.php">'.$this->lh->translationFor("notifications").'</a>
-									    </div>
-									<div class="text-center">
-									        <a href="./tasks.php">'.$this->lh->translationFor("tasks").'</a>
-								    </div>
-								</li>';
-		
-		// change my data (only for users with permissions).
-		$changeMyData = '';
-		if (userHasBasicPermission($userrole)) 
-			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("my_profile").'</a></div>';
-		
-		return '<li class="dropdown user user-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="glyphicon glyphicon-user"></i>
-                                <span>'.$username.' <i class="caret"></i></span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="user-header bg-light-blue">
-                                    <img src="'.$avatar.'" class="img-circle" alt="User Image" />
-                                    <p>
-                                        '.$username.'
-                                        <small>'.$this->lh->translationFor("nice_to_see_you_again").'</small>
-                                    </p>
-                                </li>'.$menuActions.'
-                                <li class="user-footer">
-                                    '.$changeMyData.'
-                                    <div class="pull-right">
-                                        <a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("exit").'</a>
-                                    </div>
-                                </li>
-                            </ul>
-                        </li>
-		';
-	}
-
-	/* --------------- Sidebar ----------------------------- */
-	
-	/**
-	 * Generates the HTML for the sidebar of a user, given its role.
-	 * @param $userid the id of the user.
-	 */
-	public function getSidebar($userid, $username, $userrole, $avatar) {
-		$numMessages = $this->getUnreadMessagesNumber($userid);
-		$numTasks = $this->getUnfinishedTasksNumber($userid);
-		$numNotifications = $this->getNumberOfTodayNotifications($userid);
-		
-		$adminArea = "";
-		if ($userrole == CRM_DEFAULTS_USER_ROLE_ADMIN) {
-			$adminArea = '
-				<li class="treeview">
-                    <a href="#">
-                        <i class="fa fa-dashboard"></i> <span>'.$this->lh->translationFor("administration").'</span>
-                        <i class="fa fa-angle-left pull-right"></i>
-                    </a>
-                    <ul class="treeview-menu">
-                        <li><a href="./adminusers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("users").'</a></li>
-                    </ul>
-                </li>';
-		}
-		
-		// get customer types
-		$customerTypes = $this->getCustomerTypes();
-		
-		// prefix: structure and home link
-		print '<aside class="left-side sidebar-offcanvas">
-                <section class="sidebar">
-                    <div class="user-panel">
-                        <div class="pull-left image">
-                            <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
-                        </div>
-                        <div class="pull-left info">
-                            <p>'.$this->lh->translationFor("hello").', '.$username.'</p>
-                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->translationFor("online").'</a>
-                        </div>
-                    </div>
-                    <ul class="sidebar-menu">
-                        <li>
-                            <a href="./index.php">
-                                <i class="fa fa-bar-chart-o"></i> <span>'.$this->lh->translationFor("home").'</span>
-                            </a>
-                        </li>';
-        
-        // include a link for every customer type
-        foreach ($customerTypes as $customerType) {
-	        if (isset($customerType["table_name"]) && isset($customerType["description"])) {
-		        $customerTableName = $customerType["table_name"];
-		        $customerFriendlyName = $customerType["description"];
-		        print '<li>
-                            <a href="./customerslist.php?customer_type='.$customerTableName.'&customer_name='.$customerFriendlyName.'">
-                                <i class="fa fa-users"></i> <span>'.$customerFriendlyName.'</span> 
-                            </a>
-                       </li>
-		        ';
-	        }
-        }
-
-        // suffix: messages, notifications, tasks
-		print '<li>
-                            <a href="./messages.php">
-                                <i class="fa fa-envelope"></i> <span>'.$this->lh->translationFor("messages").'</span>
-                                <small class="badge pull-right bg-green">'.$numMessages.'</small>
-                            </a>
-                        </li>
-						<li>
-                            <a href="./notifications.php">
-                                <i class="fa fa-exclamation"></i> <span>'.$this->lh->translationFor("notifications").'</span>
-                                <small class="badge pull-right bg-orange">'.$numNotifications.'</small>
-                            </a>
-                        </li>
-						<li>
-                            <a href="./tasks.php">
-                                <i class="fa fa-tasks"></i> <span>'.$this->lh->translationFor("tasks").'</span>
-                                <small class="badge pull-right bg-red">'.$numTasks.'</small>
-                            </a>
-                        </li>
-                        '.$adminArea.'
-                    </ul>
-                </section>
-                <!-- /.sidebar -->
-            </aside>
-		';
-	}
-
-
-	/* -------------- Customers ---------------------------- */
+	/** Customers */
 	
 	/**
 	 * Gets all customers of certain type.
@@ -900,6 +440,7 @@ class DbHandler {
 	public function getAllCustomersOfType($customerType) {
 		if (!isset($customerType)) return array();
         $stmt = $this->conn->prepare("SELECT * FROM $customerType");
+        if ($stmt === false) return array();
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
@@ -921,54 +462,6 @@ class DbHandler {
 			return $response;
 		}
    	}
-   	
-   	/**
-	 * Generates the HTML with the HTML table for an array of contacts or customers.
-	 * @param $contacts Array the array with the objects representing the users.
-	 * @param $customerType the type of customer
-	 */
-   	private function getCustomerListAsTable($customers, $customerType) {
-	   	// print prefix
-       $result = $this->lh->translationForTerms($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
-       
-       foreach ($customers as $customer) {
-	       $nameOrNonamed = $customer["name"];
-	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->translationFor("no_name").")";
-	       
-	       $result = $result."<tr>
-                    <td>".$customer["id"]."</td>
-                    <td><a href=\"editcustomer.php?customerid=".$customer["id"]."&customer_type=".$customerType."\" >".$nameOrNonamed."</a></td>
-                    <td>".$customer["email"]."</td>
-                    <td>".$customer["phone"]."</td>
-                    <td>".$customer["id_number"]."</td>
-                </tr>";
-       }
-       
-       // print suffix
-       $result = $result.$this->lh->translationForTerms($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
-       return $result;
-   	}
-
-   	/**
-	 *
-	 */
-
-   	/**
-	 * Generates the HTML with the HTML table for an array of contacts or customers.
-	 * @param $contacts Array the array with the objects representing the users.
-	 * @param $customerType the type of customer
-	 */
-	public function getAllCustomersOfTypeAsTable($customerType) {
-       $customers = $this->getAllCustomersOfType($customerType);
-       // is null?
-       if (is_null($customers)) { // error getting customers
-	       return $this->getErrorMessage($this->lh->translationFor("unable_get_customer_list"));
-       } else if (empty($customers)) { // no customers found
-	       return $this->getWarningMessage($this->lh->translationFor("no_customers_in_list"));
-       } else { // we have some customers, show a table
-		   return $this->getCustomerListAsTable($customers, $customerType);
-       }
-	}	
 	
 	/**
 	 * Creates a new customer
@@ -1107,14 +600,14 @@ class DbHandler {
 		}
 	}
 	
-	/* ---------------- tasks --------------------------------- */
+	/** tasks */
 
 	/**
 	 * Gets all tasks belonging to a given user.
 	 * @param $userid Int id of the user.
 	 * @return Array an array containing all task objects as associative arrays, or NULL if user was not found or an error occurred.
 	 */
-	private function getCompletedTasks($userid) {
+	public function getCompletedTasks($userid) {
         $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? AND completed = 100 ORDER BY creation_date");
         $stmt->bind_param("i", $userid);
         if ($stmt->execute() === false) return NULL;
@@ -1248,80 +741,7 @@ class DbHandler {
 	}
 	
 	
-	/**
-	 * Generates the HTML for a given task as a table row
-	 * @param $task Array associative array representing the task object.
-	 * @return String the HTML representation of the task as a row.
-	 */
-	private function getTaskAsIndividualRow($task) {
-		// define progress and bar color
-		error_log(print_r($task, true));
-		$completed = $task["completed"];
-		if ($completed < 0) $completed = 0;
-		else if ($completed > 100) $completed = 100;
-		$creationdate = $this->relativeTime($task["creation_date"]);
-		// values dependent on completion of the task.
-		$doneOrNot = $completed == 100 ? 'class="done"' : '';
-		$completeActionCheckbox = $completed == 100 ? '' : '<input type="checkbox" value="" name="" style="position: absolute; opacity: 0;">';
-		
-		return '<li id="'.$task["id"].'" '.$doneOrNot.'>
-			  	  '.$completeActionCheckbox.'
-				  <span class="text">'.$task["description"].'</span>
-				  <small class="label label-warning pull-right"><i class="fa fa-clock-o"></i> '.$creationdate.'</small>
-				  <div class="tools">
-						<a class="edit-task-action" href="'.$task["id"].'" data-toggle="modal" data-target="#edit-task-dialog-modal">
-						<i class="fa fa-edit task-item"></i>
-						</a>
-						<a class="delete-task-action" href="'.$task["id"].'">
-							<i class="fa fa-trash-o"></i>
-						</a>
-				  </div>
-			 </li>';
-	}
-
-	/**
-	 * Generates the HTML for a all tasks of a given user as a table row
-	 * @param $userid Int id of the user to retrieve the tasks from.
-	 * @return String the HTML representation of the user's tasks as a table.
-	 */
-	public function getCompletedTasksAsTable($userid, $userrole) { 
-		$tasks = $this->getCompletedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage("You don't have any completed task at the moment"); }
-		else {
-			$list = $this->taskTablePrefix;
-			foreach ($tasks as $task) {
-				// generate row
-				$taskHTML = $this->getTaskAsIndividualRow($task);
-				$list = $list.$taskHTML;
-			}
-			
-			$list = $list.$this->taskTableSuffix;
-	    	return $list;
-		}
-   	}
-
-	/**
-	 * Generates the HTML for a all tasks of a given user as a table row
-	 * @param $userid Int id of the user to retrieve the tasks from.
-	 * @return String the HTML representation of the user's tasks as a table.
-	 */
-	public function getUnfinishedTasksAsTable($userid, $userrole) { 
-		$tasks = $this->getUnfinishedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage("You don't have any pending task at this moment."); }
-		else {
-			$list = $this->taskTablePrefix;
-			foreach ($tasks as $task) {
-				// generate row
-				$taskHTML = $this->getTaskAsIndividualRow($task);
-				$list = $list.$taskHTML;
-			}
-			
-			$list = $list.$this->taskTableSuffix;
-	    	return $list;
-		}
-   	}
-   	
-	/* ------------------- messages --------------------------- */
+	/** Messages */
 	
 	/**
 	 * Sends a message from one user to another.
@@ -1354,34 +774,6 @@ class DbHandler {
 	}
 	
 	/**
-	 * Generates the list of users $myuserid can send message to or assign a task to as a HTML form SELECT.
-	 * @param Int $myuserid id of the user that wants to send messages, all other user's ids will be returned.
-	 * @param Boolean $includeSelf if true, $myuserid will appear listed in the options. If false (default), $myuserid will not be included in the options. If this parameter is set to true, the default option will be the $myuserid
-	 * @param String $customMessage The custome message to ask for a selection in the SELECT, default is "send this message to...".
-	 * @return the list of users $myuserid can send mail to (all valid users except $myuserid unless $includeSelf==true) as a HTML form SELECT.
-	 */
-	public function generateSendToUserSelect($myuserid, $includeSelf = false, $customMessage = NULL) {
-		// perform query of users.
-		if (empty($customMessage)) $customMessage = $this->lh->translationFor("send_this_message_to");
-		$stmt = $this->conn->prepare("SELECT * FROM users WHERE status = 1");
-		if ($stmt->execute() === false) return $this->getErrorMessage($this->lh->translationFor("unable_get_user_list"));
-		$result = $stmt->get_result();
-
-		// iterate through all users and generate the select
-		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">'.$customMessage.'</option>\n';
-		while ($obj = $result->fetch_assoc()) {
-			// don't include ourselves.
-			if ($obj["id"] != $myuserid) {
-				$response = $response.'\t<option value="'.$obj["id"].'">'.$obj["name"].'</option>\n';
-			} else if ($includeSelf === true) { // assign to myself by default
-				$response = $response.'\t<option value="'.$obj["id"].'" selected="true">myself</option>\n';
-			}	
-		}
-		$response = $response.'</select>';
-		return $response;
-	}
-	
-	/**
 	 * Returns the table name associated with a mail folder id.
 	 * @param $folder the identifier of the mail folder.
 	 * @return the table name associated with a mail folder id.
@@ -1411,7 +803,7 @@ class DbHandler {
 	 * - MESSAGES_GET_DELETED_MESSAGES (2): deleted messages  
 	 * - MESSAGES_GET_SENT_MESSAGES (3): sent messages 	 
 	 */
-	private function getMessagesOfType($userid, $type) {
+	public function getMessagesOfType($userid, $type) {
 		// initial sanity checks
 		if (!is_numeric($userid) || !is_numeric($type)) return NULL;
 		
@@ -1460,94 +852,43 @@ class DbHandler {
 	}
 	
 	/**
-	 * Generates the HTML of the given messages as a HTML table, from a table array
-	 * @param Array $messages the list of messages.
-	 * @return the HTML code with the list of messages as a HTML table. 
+	 * Gets a specific message from one folder, taking into account the sender and receiver of the message.
 	 */
-	private function getMessageListAsTable($messages) {
-		// generate the table.
-		$result = $this->lh->translationForTerms($this->messageListPrefix, array("selection", "favorite", "user", "date", "subject"));
-		foreach ($messages as $message) {
-			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
-			else $result = $result.'<tr>';
-						
-			// variables and html text depending on the message
-			$favouriteHTML = "-o"; if ($message["favorite"] == 1) $favouriteHTML = "";
-			$messageLink = '<a href="'.$message["id"].'" class="show-message-link">';
-			
-			$result = $result.'<td class="small-col"><input type="checkbox" class="message-selection-checkbox" value="'.$message["id"].'"/></td>';
-			$result = $result.'<td class="small-col"><i class="fa fa-star'.$favouriteHTML.'" id="'.$message["id"].'"></i></td>';
-			$result = $result.'<td class="name">'.$messageLink.$message["remote_user"].'</a></td>';
-			$result = $result.'<td class="subject">'.$messageLink.$message["subject"].'</a></td>';
-			$result = $result.'<td class="time">'.$this->relativeTime($message["date"]).'</td>';
-			
-			$result = $result."</tr>";
-		}
-		$result = $result."</table>";
-		return $result;		
-	}	
-	
-	/**
-	 * Generates a HTML table with all inbox messages of a user.
-	 * @param Int $userid user to retrieve the messages from
-	 */
-	public function getInboxMessagesAsTable($userid) {
-		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_INBOX_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("unable_get_messages"));
-		else return $this->getMessageListAsTable($messages);
-	}
-	
-	/**
-	 * Generates a HTML table with the unread messages of the user.
-	 * @param Int $userid user to retrieve the messages from
-	 */
-	public function getUnreadMessagesAsTable($userid) {
-		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
-	}
-		
-	/**
-	 * Generates a HTML table with with the junk messages of a user.
-	 * @param Int $userid user to retrieve the messages from
-	 */
-	public function getJunkMessagesAsTable($userid) {
-		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_DELETED_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
-	}
-		
-	/**
-	 * Generates a HTML table with the sent messages of a user.
-	 * @param Int $userid user to retrieve the messages from
-	 */
-	public function getSentMessagesAsTable($userid) {
-		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_SENT_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
-	}
-				
-	/**
-	 * Generates a HTML table with the favourite messages of a user.
-	 * @param Int $userid user to retrieve the messages from
-	 */
-	public function getFavoriteMessagesAsTable($userid) {
-		$messages = $this->getMessagesOfType($userid, MESSAGES_GET_FAVORITE_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
-	}
-		
-	/**
-	 * Generates a HTML table with the messages from given folder for a user.
-	 * @param Int $userid user to retrieve the messages from
-	 * @param Int $folder folder to retrieve the messages from
-	 */
-	public function getMessagesFromFolderAsTable($userid, $folder) {
-		$messages = $this->getMessagesOfType($userid, $folder);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
-	}
+	public function getSpecificMessage($userid, $messageid, $folder) {
+		// sanity checks.
+		$tableName = $this->getTableNameForFolder($folder);
+		if ($tableName == NULL || $userid == NULL || $messageid == NULL) { return NULL; }
 
+		// determine to/from of the message.
+		$remoteuseridfield = "user_from";
+		$useridfield = "user_to";
+		if ($folder == MESSAGES_GET_SENT_MESSAGES) {
+			 $useridfield = "user_from";
+			 $remoteuseridfield = "user_to";
+		}
+		
+		// calculate query message.
+		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id)) ");
+			$stmt->bind_param("iii", $messageid, $userid, $userid);		
+		} else {
+			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?");
+			$stmt->bind_param("ii", $userid, $messageid);
+				
+		}
+		// execute the query
+		if ($stmt->execute() === false) return NULL;
+		$result = $stmt->get_result();
+		$stmt->close();
+		if (empty($result) || $result === false) { // sanity check
+			return NULL;
+		}
+		
+		// do we have a valid message? return it.
+		if ($messageObj = $result->fetch_assoc()) { return $messageObj; }
+		return NULL;
+	}
+	
 	/**
 	 * Returns the number of unread messages for a user.
 	 * @param Int $userid id of the user to get the unread messages from.
@@ -1742,101 +1083,7 @@ class DbHandler {
 		return $messagesUnjunked;	
 	}
 
-	/**
-	 * Generates a modal dialog HTML code for a given message of a given id. If the message is not found or an error occurrs, a error modal message is generated.
-	 * @param $userid Int the user identifier the message belongs to
-	 * @param $messageid Int the identifier for the message.
-	 * @param $folder Int identifier of the mail folder the message is contained in.
-	 * @return the modal dialog HTML code. 
-	 */
-	public function getMessageModalDialogAsHTML($userid, $messageid, $folder) {
-		// sanity checks
-		$tableName = $this->getTableNameForFolder($folder);
-		if ($tableName == NULL || $userid == NULL || $messageid == NULL) {
-			return $this->getErrorModalMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
-		}
-		$remoteuseridfield = "user_from";
-		$useridfield = "user_to";
-		if ($folder == MESSAGES_GET_SENT_MESSAGES) {
-			 $useridfield = "user_from";
-			 $remoteuseridfield = "user_to";
-		}
-		
-		// calculate query message.
-		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id)) ");
-			$stmt->bind_param("iii", $messageid, $userid, $userid);		
-		} else {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?");
-			$stmt->bind_param("ii", $userid, $messageid);
-				
-		}
-		// execute the query
-		if ($stmt->execute() === false) return NULL;
-		$result = $stmt->get_result();
-		if (empty($result) || $result === false) { // sanity check
-			return NULL;
-		}
-		
-		// generate the message modal dialog to show the message.
-		if ($obj = $result->fetch_assoc()) {
-			$messageid = $obj["id"]; 
-			$fromuserid = $obj["user_from"]; 
-			$touserid = $obj["user_to"]; 
-			$subject = $obj["subject"]; 
-			$text = $obj["message"]; 
-			$messagedate = $obj["date"]; 
-			$remoteusername = $obj["name"]; 
-			$fromortodestination = ($fromuserid == $userid)? $this->lh->translationFor("to")." $remoteusername." : $this->lh->translationFor("from")." $remoteusername.";
-			$relativeTime = $this->relativeTime($messagedate);
-		
-			return '
-			<div class="modal-dialog">
-		        <div class="modal-content">
-		            <div class="modal-header">
-		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->translationFor("message").' '.$fromortodestination.'</h4>
-		            </div>
-		            <form action="#" method="post" id="show-message-form" name="show-message-form">
-		                <div class="modal-body">
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-user"></i></span>
-		                            <input name="fromuserid" id="fromuserid" type="text" class="form-control" value="'.$remoteusername.'" readonly>
-		                        </div>
-		                    </div>
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-comment"></i></span>
-		                            <input name="subject" id="subject" type="text" class="form-control" value="'.$subject.'" readonly>
-		                        </div>
-		                    </div>                    
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-		                            <input name="messagedate" id="messagedate" type="text" class="form-control" value="'.$relativeTime.'" readonly>
-		                        </div>
-		                    </div> 
-							<div class="form-group">
-		                        <textarea name="message" id="message" class="form-control" placeholder="'.$this->lh->translationFor("message").'" style="height: 120px;" readonly>'.$text.'
-		                        </textarea>
-		                    </div>
-		                </div>
-		                <input type="hidden" id="messageid" name="messageid" value="'.$messageid.'">
-		                <div class="modal-footer clearfix">
-		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.$this->lh->translationFor("exit").'</button>
-		                </div>
-		            </form>
-		        </div><!-- /.modal-content -->
-			</div><!-- /.modal-dialog -->';
-    	} else {
-	    	
-			return $this->getErrorModalMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
-    	}
-
-	} // end function
-
-	/* ---------------- Notificaciones -------------------------- */
+	/** Notificaciones */
 	
 	/**
 	 * Gets the number of notifications for today for the user.
@@ -1867,7 +1114,7 @@ class DbHandler {
 	 * @param $userid Int the identifier for the user.
 	 * @return Array the notifications as an associative array. 
 	 */
-	private function getTodayNotifications($userid) {
+	public function getTodayNotifications($userid) {
 		// prepare query
 		if (empty($userid)) return NULL;
 		$stmt = $this->conn->prepare("SELECT * FROM notifications WHERE DATE(date) = CURDATE() AND (target_user = 0 OR target_user = ?)");
@@ -1889,7 +1136,7 @@ class DbHandler {
 	 * @param $userid Int the identifier for the user.
 	 * @return Array the notifications as an associative array. 
 	 */
-	private function getNotificationsForPastWeek($userid) {
+	public function getNotificationsForPastWeek($userid) {
 		// prepare query
 		if (empty($userid)) return NULL;
 		$stmt = $this->conn->prepare("SELECT * FROM notifications WHERE (DATE(date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE() - INTERVAL 1 DAY) AND (target_user = 0 OR target_user = ?)");
@@ -1906,136 +1153,9 @@ class DbHandler {
 		return $notifications;
 	}
 	
-	/**
-	 * Returns the HTML font-awesome icon for notifications of certain type.
-	 * @param $type String the type of notification.
-	 * @return String the string with the font-awesome icon for this notification type.
-	 */
-	private function notificationIconForNotificationType($type) {
-		if ($type == "contact") return "fa-user";
-		else if ($type == "message") return "fa-envelope";
-		else return "fa-calendar-o";
-	}
-	
-	/**
-	 * Returns the HTML UI color for notifications of certain type.
-	 * @param $type String the type of notification.
-	 * @return String the string with the UI color for this notification type.
-	 */
-	private function notificationColorForNotificationType($type) {
-		if ($type == "contact") return "bg-aqua";
-		else if ($type == "message") return "bg-blue";
-		else return "bg-yellow";
-	}
-	
-	/**
-	 * Returns the HTML action button text for notifications of certain type.
-	 * @param $type String the type of notification.
-	 * @return String the string with the action button text for this notification type.
-	 */
-	private function actionButtonTextForNotificationType($type) {
-		if ($type == "contact") return $this->lh->translationFor("see_customer");
-		else if ($type == "message") return $this->lh->translationFor("read_message");
-		else return $this->lh->translationFor("see_more");
-	}
-	
-	/**
-	 * Returns the HTML header text for notifications of certain type associated to certain action.
-	 * @param $type String the type of notification.
-	 * @param $action String a URL with the action to perform for this notification.
-	 * @return String the string with the header text for this notification type.
-	 */
-	private function headerTextForNotificationType($type, $action) {
-		if ($type == "contact") 
-		return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("contact") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("contact")."</a>";
-		else if ($type == "message") 
-			return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("message") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("message")."</a>";
 
-		return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("event") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("event")."</a>";
-	}
 	
-	/**
-	 * Generates the HTML code for the given notification.
-	 * @param $notification Array an associative array object containing the notification data.
-	 * @return String a HTML representation of the notification.
-	 */
-	private function timelineItemForNotification($notification) {
-		$type = $notification["type"];
-		$action = isset($notification["action"]) ? $notification["action"]: NULL;
-		$date = $notification["date"];
-		$texto = $notification["text"];
-		$actionHTML = "";
-		
-		if (!empty($action)) $actionHTML = '<div class="timeline-footer"><a class="btn btn-success btn-xs" href="'.$action.'">'.$this->actionButtonTextForNotificationType($type).'</a></div>';
-		
-		$color = $this->notificationColorForNotificationType($type);
-		$icon = $this->notificationIconForNotificationType($type);
-		$relativetime = $this->relativeTime($date, 1);
-
-		return '<li>
-                    <i class="fa '.$icon.' '.$color.'"></i>
-                    <div class="timeline-item">
-                        <span class="time"><i class="fa fa-clock-o"></i> '.$relativetime.'</span>
-                        <h3 class="timeline-header no-border">'.$this->headerTextForNotificationType($type, $action).'</h3>
-						<div class="timeline-body">
-						'.$texto.'
-						</div>
-                        '.$actionHTML.'
-                    </div>
-                </li>';
-	}
-	
-	/**
-	 * Generates the HTML code for the given notification.
-	 * @param $notification Array an associative array object containing the notification data.
-	 * @return String a HTML representation of the notification.
-	 */
-	public function getNotificationsAsTimeLine($userid) {
-		$todayAsText = strftime("%c");
-		
-		// today
-		$timeline = '<ul class="timeline">
-	                    <li class="time-label">
-	                        <span class="bg-green">
-	                            '.$todayAsText.'
-	                        </span>
-	                    </li>';
-		
-		$notifications = $this->getTodayNotifications($userid);
-		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_today")).'</div></li>';
-		} else {
-			foreach ($notifications as $notification) {
-				$timeline = $timeline.$this->timelineItemForNotification($notification);
-			}
-		}
-		
-        // past week
-		$timeline = $timeline.'<li class="time-label">
-	                        <span class="bg-yellow">
-	                            '.$this->lh->translationFor("past_week").'
-	                        </span>
-	                    </li>';
-
-        $notifications = $this->getNotificationsForPastWeek($userid);
-		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_past_week")).'</div></li>';
-		} else {
-			foreach ($notifications as $notification) {
-				$timeline = $timeline.$this->timelineItemForNotification($notification);
-			}
-		}
-
-		// end timeline
-		$timeline = $timeline.'<li>
-							      <i class="fa fa-clock-o"></i>
-						       </li>
-						      </ul>';
-        
-        return $timeline;
-	}
-	
-	/* ---------------- Statistics --------------------------------- */
+	/** Statistics */
 	
 	/**
 	 * Inserts a new entry in the statistics table with the current number of customers in every table.
@@ -2115,90 +1235,27 @@ class DbHandler {
 		}
 		return $numClients;
 	}
-		
-	/** 
-	 * Generates the HTML to be used as input for the statistics table generated by JS in index.php
-	*/
-	public function getStatisticsAsJSTable() {
-		// format: {y: '2011 Q1', item1: 2666, item2: 2666},
+	
+	/**
+	 * Gets the last $limit (default 10) customer statistics.
+	 * @param $limit Int (default = 10) the number of statistics to retrieve, in descending order, ordered by timestamp.
+	 * 
+	 */	
+	public function getLastCustomerStatistics($limit = 10) {
 		$query = "SELECT * FROM `statistics` order by timestamp DESC limit 10";
 		$result = $this->conn->query($query);
 		if ($result === false) {
-			return "";
+			return array();
 		} else {
-			$statistics = "";
+			$stats = array();
 			while ($obj = $result->fetch_assoc()) {
-				$formattedDate = date("Y-m",strtotime($obj['timestamp']));
-				$numContacts = $obj["clients_1"];
-				$numCustomers = 0;
-				$customerTypes = $this->getCustomerTypes();
-				foreach ($customerTypes as $customerType) {
-					$customerTableName = $customerType["table_name"];
-					if ($customerTableName !== "clients_1") { // do not include contacts in the customers row
-						if (isset($obj[$customerTableName])) $numCustomers += $obj[$customerTableName];
-					}
-				}
-				// add the statistics line
-				$statistics = $statistics . "{y: '$formattedDate', item1: $numContacts, item2: $numCustomers},
-				";
+				array_push($stats, $obj);
 			}
-			return $statistics;
+			return $stats;
 		}
 	}
 	
-	
-	/* ---------------- Utility functions -------------------------- */
-	
-	/**
-	 * Generates a relative time string for a given date, relative to the current time.
-	 * @param $mysqltime String a string containing the time extracted from MySQL.
-	 * @param $maxdepth Int the max depth to dig when representing the time, 
-	 *        i.e: 3 days, 4 hours, 1 minute and 20 seconds with $maxdepth=2 would be 3 days, 4 hours.
-	 * @return String the string representation of the time relative to the current date.
-	 */
-	private function relativeTime($mysqltime, $maxdepth = 1) {
-		$time = strtotime(str_replace('/','-', $mysqltime));
-	    $d[0] = array(1,$this->lh->translationFor("second"));
-	    $d[1] = array(60,$this->lh->translationFor("minute"));
-	    $d[2] = array(3600,$this->lh->translationFor("hour"));
-	    $d[3] = array(86400,$this->lh->translationFor("day"));
-	    $d[4] = array(604800,$this->lh->translationFor("week"));
-	    $d[5] = array(2592000,$this->lh->translationFor("month"));
-	    $d[6] = array(31104000,$this->lh->translationFor("year"));
-	
-	    $w = array();
-	
-		$depth = 0;
-	    $return = "";
-	    $now = time();
-	    $diff = ($now-$time);
-	    $secondsLeft = $diff;
-	
-		if ($secondsLeft == 0) return "now";
-	
-	    for($i=6;$i>-1;$i--)
-	    {
-	         $w[$i] = intval($secondsLeft/$d[$i][0]);
-	         $secondsLeft -= ($w[$i]*$d[$i][0]);
-	         if($w[$i]!=0)
-	         {
-	            $return.= abs($w[$i]) . " " . $d[$i][1] . (($w[$i]>1)?'s':'') ." ";
-	            $depth += 1;
-	            if ($depth >= $maxdepth) break;
-	         }
-	
-	    }
-	
-	    $verb = ($diff>0)?"":"in ";
-	    $return = $verb.$return;
-	    return $return;
-	}
-	
-	private function substringUpTo($string, $maxCharacters) {
-		if (empty($maxCharacters)) $maxCharacters = 4;
-		else if ($maxCharacters < 1) $maxCharacters = 4;
-		return (strlen($string) > $maxCharacters) ? substr($string, 0, $maxCharacters-3).'...' : $string;
-	}
+	/** Utility functions */
 	
 	/**
 	 * Escapes a string for a safer inclusion in a MySQL statement. Please note that this method alone is not enough for preventing SQL injections.

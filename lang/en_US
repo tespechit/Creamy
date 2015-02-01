@@ -250,7 +250,8 @@ data_successfully_modified = "Data successfully modified"
 error_modifying_data = "Error modifying data"
 customer_successfully_deleted = "Customer successfully deleted"
 message_successfully_sent = "Message successfully sent"
-
+new_contact_added = "A new person has been added to the database: "
+unable_create_triggers = "I was unable to create the event triggers for the user notifications. The database user must have permissions for creating the triggers."
 
 
 

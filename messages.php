@@ -1,11 +1,11 @@
 <?php
 	require_once('./php/CRMDefaults.php');
-	require_once('./php/DbHandler.php');
+	require_once('./php/UIHandler.php');
 	require_once('./php/LanguageHandler.php');
     include('./php/Session.php');
 
-    $db = new DbHandler();
-    $lh = LanguageHandler::getInstance();
+    $ui = \creamy\UIHandler::getInstance();
+    $lh = \creamy\LanguageHandler::getInstance();
     
 	if (isset($_GET["folder"])) {
 		$folder = $_GET["folder"];
@@ -62,10 +62,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -73,7 +73,7 @@
         </header>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -105,7 +105,7 @@
                                 <div class="box-body" id="messages-message">
 	                                <?php
 		                            	if (!empty($message)) {
-			                            	print $db->getInfoMessage($message);
+			                            	print $ui->getInfoMessage($message);
 		                            	}
 		                            ?>
                                 </div><!-- /.box-body -->
@@ -133,15 +133,7 @@
                                             <!-- Navigation - folders-->
                                             <div style="margin-top: 15px;">
                                                 <ul class="nav nav-pills nav-stacked">
-	                                                <?php 
-		                                                $unreadMessages = $db->getUnreadMessagesNumber($_SESSION["userid"]);
-	                                                ?>
-                                                    <li class="header"><?php $lh->translateText("folders"); ?></li>
-                                                    <li <?php if ($folder == MESSAGES_GET_INBOX_MESSAGES) print ' class="active"'; ?>><a href="messages.php?folder=0"><i class="fa fa-inbox"></i> <?php $lh->translateText("inbox"); ?> (<?php print $unreadMessages; ?>)</a></li>
-                                                    <!--<li><a href="#"><i class="fa fa-pencil-square-o"></i> Borradores</a></li>-->
-                                                    <li <?php if ($folder == MESSAGES_GET_SENT_MESSAGES) print ' class="active"'; ?>><a href="messages.php?folder=3"><i class="fa fa-mail-forward"></i> <?php $lh->translateText("sent"); ?></a></li>
-                                                    <li <?php if ($folder == MESSAGES_GET_FAVORITE_MESSAGES) print ' class="active"'; ?>><a href="messages.php?folder=4"><i class="fa fa-star"></i> <?php $lh->translateText("favorites"); ?></a></li>
-                                                    <li <?php if ($folder == MESSAGES_GET_DELETED_MESSAGES) print ' class="active"'; ?>><a href="messages.php?folder=2"><i class="fa fa-folder"></i> <?php $lh->translateText("trash"); ?></a></li>
+	                                                <?php print $ui->getMessageFoldersAsList($folder); ?>
                                                 </ul>
                                             </div>
                                         </div><!-- /.col (LEFT) -->
@@ -178,7 +170,7 @@
                                             <div class="table table-responsive table-bordered table-striped" id="message-list">
                                                 <!-- THE MESSAGES -->
 												<?php
-													print $db->getMessagesFromFolderAsTable($_SESSION["userid"], $folder);
+													print $ui->getMessagesFromFolderAsTable($_SESSION["userid"], $folder);
 												?>
 
                                             </div><!-- /.table-responsive -->
@@ -190,7 +182,7 @@
                     </div>
                     <!-- MAILBOX END -->
 					<!-- user not authorized -->
-					<?php } else { print $db->getUnauthotizedAccessMessage(); } ?>
+					<?php } else { print $ui->getUnauthotizedAccessMessage(); } ?>
 					
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->

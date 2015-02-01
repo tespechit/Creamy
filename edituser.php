@@ -1,10 +1,10 @@
 <?php
-	require_once('./php/DbHandler.php');
+	require_once('./php/UIHandler.php');
 	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
-    
-    $db = new DbHandler();
-    $lh = LanguageHandler::getInstance();
+
+	$ui = \creamy\UIHandler::getInstance();    
+    $lh = \creamy\LanguageHandler::getInstance();
      
     if (isset($_POST["userid"])) { $userid = $_POST["userid"]; }
     else { $userid = $_SESSION["userid"]; }
@@ -54,10 +54,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -65,7 +65,7 @@
         </header>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -83,86 +83,7 @@
 
                 <!-- Main content -->
                 <section class="content">
-                	
-                	<?php
-                		$userobj = NULL;
-                		$errormessage = NULL;
-                		
-                		if (isset($userid)) {
-                			if (($_SESSION["userid"] == $userid) || ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN)) { 
-	                			// if it's the same user or we have admin privileges.
-	                			$userobj = $db->getDataForUser($userid);
-                			} else {
-	                			$errormessage = $lh->translationFor("not_permission_edit_user_information");
-                			}
-                		} else {
-	                		$errormessage = $lh->translationFor("unknown_error");
-                		}
-                		
-                		if (!empty($userobj)) {
-                	?>
-                	
-                	<!-- tabla editar usuarios -->
-                            <div class="box box-primary">
-                                <div class="box-header">
-                                    <h3 class="box-title"><?php $lh->translateText("insert_new_data"); ?></h3>
-                                </div><!-- /.box-header -->
-                                <!-- form start -->
-                                <form role="form" id="modifyuser" name="modifyuser" method="post" action=""  enctype="multipart/form-data">
-                                	<input type="hidden" id="modifyid" name="modifyid" value="<?php print $userid ?>">
-                                    <div class="box-body">
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="<?php $lh->translateText("name"); ?>" value="<?php print $userobj["name"]; ?>" disabled>
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-	                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>" value="<?php print $userobj["email"]; ?>">
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="<?php $lh->translateText("phone")." (".$lh->translationFor("optional").")"; ?>" value="<?php print $userobj["phone"]; ?>">
-	                                    </div>
-	                                    <br>
-                                        <div class="form-group">
-                                            <label for="exampleInputFile"><?php $lh->translateText("user_avatar")." (".$lh->translationFor("optional").")"; ?></label><br>
-                                            <?php
-                                            	if (!empty($userobj["avatar"])) {
-	                                            	print("<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>");
-                                            	}
-                                            ?>
-                                            <br>
-                                            <input type="file" id="avatar" name="avatar">
-                                            <p class="help-block"><?php $lh->translateText("choose_image"); ?></p>
-                                        </div>
-                                        <?php if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) { ?> 
-                                        <div class="form-group">
-                                            <label for="role"><?php $lh->translateText("user_role"); ?></label>
-											<?php print $db->getUserRolesAsFormSelect($userobj["role"]); ?>
-                                        </div>
-                                        <?php } ?>
-	                                    <br>
-	                                    <div  id="resultmessage" name="resultmessage" style="display:none">
-	                                    </div>
-
-                                    </div><!-- /.box-body -->
-
-                                    <div class="box-footer">
-                                        <button type="submit" class="btn btn-primary"><?php $lh->translateText("edit_user"); ?></button>
-                                    </div>
-
-                                </form>
-                            </div><!-- /.box -->
-                	<!-- /tabla editar usuarios -->
-					<?php
-						} else {
-							print $db->getErrorMessage($errormessage);
-						}
-					?>
-				<!-- /fila con acciones, formularios y demás -->
-
+                	<?php print $ui->getEditUserForm($userid, $_SESSION["userid"], $_SESSION["userrole"]) ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->

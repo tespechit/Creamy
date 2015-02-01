@@ -13,7 +13,7 @@ if (!isset($_POST["folder"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$userid = $_SESSION["userid"];

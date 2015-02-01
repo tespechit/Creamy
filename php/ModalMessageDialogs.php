@@ -1,6 +1,11 @@
 <?php
+// language handler
 require_once('LanguageHandler.php');
-if (!isset($lh)) { $lh = LanguageHandler::getInstance(); }
+if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
+
+// UI handler
+require_once('UIHandler.php');
+if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
 ?>
 
 <!-- COMPOSE MESSAGE MODAL -->
@@ -61,7 +66,7 @@ if (!isset($lh)) { $lh = LanguageHandler::getInstance(); }
             <form action="#" method="post" id="send-message-form" name="send-message-form">
                 <div class="modal-body">
                     <div class="form-group">
-						<?php print $db->generateSendToUserSelect($_SESSION["userid"]); ?>
+						<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
                     </div>
                     <div class="form-group">
                         <input type="text" class="form-control" id="subject" name="<?php $lh->translateText("subject"); ?>" placeholder="Subject"/>

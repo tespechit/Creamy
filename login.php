@@ -4,14 +4,14 @@
 	require_once('./php/LanguageHandler.php');
 
 	session_start(); // Starting Session
-	$lh = LanguageHandler::getInstance();
+	$lh = \creamy\LanguageHandler::getInstance();
 	
 	$error=''; // Variable To Store Error Message
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['username']) || empty($_POST['password'])) {
 			$_SESSION["errorMessage"] = $lh->translationFor("insert_valid_login_password");
 		} else {
-			$db = new DbHandler();
+			$db = new \creamy\DbHandler();
 
 			// Define $username and $password
 			$username=$_POST['username'];

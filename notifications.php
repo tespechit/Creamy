@@ -1,10 +1,10 @@
 <?php
-	require_once "./php/DbHandler.php";
+	require_once "./php/UIHandler.php";
 	require_once "./php/LanguageHandler.php";
     include "./php/Session.php";
 
-    $db = new DbHandler();
-    $lh = LanguageHandler::getInstance();
+    $ui = \creamy\UIHandler::getInstance();
+    $lh = \creamy\LanguageHandler::getInstance();
 ?>
 <html>
     <head>
@@ -45,10 +45,10 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
@@ -57,7 +57,7 @@
 
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -83,11 +83,11 @@
                     <!-- row -->
                     <div class="row">
                         <div class="col-md-12">
-	                        <?php print $db->getNotificationsAsTimeLine($_SESSION["userid"]); ?>
+	                        <?php print $ui->getNotificationsAsTimeLine($_SESSION["userid"]); ?>
                         </div><!-- /.col -->
                     </div><!-- /.row -->
 
-				<?php } else { print $db->getUnauthotizedAccessMessage(); } ?>
+				<?php } else { print $ui->getUnauthotizedAccessMessage(); } ?>
 				
                 </section><!-- /.content -->
 

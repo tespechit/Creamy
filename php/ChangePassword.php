@@ -2,7 +2,7 @@
 
 require_once('DbHandler.php');
 require_once('LanguageHandler.php');
-$lh = LanguageHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
 
 // check required fields
 $validated = 1;
@@ -20,7 +20,7 @@ if (!isset($_POST["new_password_2"])) {
 }
 
 if ($validated == 1) {
-	$db = new DbHandler();
+	$db = new \creamy\DbHandler();
 
 	// check password	
 	$userid = $_POST["userid"];

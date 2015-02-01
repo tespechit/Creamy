@@ -3,13 +3,13 @@
 	require_once('./php/DbHandler.php');
 	
 	$error=''; // Variable To Store Error Message
-	$lh = LanguageHandler::getInstance();
+	$lh = \creamy\LanguageHandler::getInstance();
 	
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['email'])) {
 			$error = $lh->translationFor("insert_valid_address");
 		} else {
-			$db = new DbHandler();
+			$db = new \creamy\DbHandler();
 
 			// Define $username and $password
 			$username=$_POST['email'];

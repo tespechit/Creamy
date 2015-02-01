@@ -1,20 +1,21 @@
 <?php
+/**
+ * Class to handle language and translations. LanguageHandler uses the Singleton pattern, thus gets instanciated by the LanguageHandler::getInstante().
+ * This class is in charge of returning the right texts for the user's language.
+ *
+ * $lh = \creamy\LanguageHandler::getInstance();
+ * $lh->translationFor("cancel"); --> returns "cancel" for en_US, "cancelar" for es_ES, etc...
+ *
+ * @author Ignacio Nieto Carvajal
+ * @link URL http://digitalleaves.com
+ */
+namespace creamy;
 
 require_once('CRMDefaults.php');
 require_once('Config.php');
 
 define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 
-/**
- * Class to handle language and translations. LanguageHandler uses the Singleton pattern, thus gets instanciated by the LanguageHandler::getInstante().
- * This class is in charge of returning the right texts for the user's language.
- *
- * $lh = LanguageHandler::getInstance();
- * $lh->translationFor("cancel"); --> returns "cancel" for en_US, "cancelar" for es_ES, etc...
- *
- * @author Ignacio Nieto Carvajal
- * @link URL http://digitalleaves.com
- */
 class LanguageHandler {
 	
 	/** Variables and constants */

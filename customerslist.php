@@ -1,19 +1,25 @@
 <?php
 	require_once ('./php/CRMDefaults.php');
-	require_once ('./php/DbHandler.php');
+	require_once ('./php/UIHandler.php');
 	require_once ('./php/LanguageHandler.php');
     include ('./php/Session.php');
 
-    $db = new DbHandler();
-	$lh = LanguageHandler::getInstance();
+    $ui = \creamy\UIHandler::getInstance();
+	$lh = \creamy\LanguageHandler::getInstance();
     
     // get the type of customers.
     $customerType = NULL;
     $customerName = NULL;
+    
     if (isset($_GET["customer_type"])) {
 	    $customerType = $_GET["customer_type"];
 	    if (isset($_GET["customer_name"])) $customerName = $_GET["customer_name"];
-		else $customerName = $db->getNameForCustomerType($customerType);
+		else { 
+		    // if we have not been provided with the "human readable" name, we need to find it in the database.
+		    require_once('./php/DbHandler.php'); 
+		    $db = new \creamy\DbHandler();
+			$customerName = $db->getNameForCustomerType($customerType);
+		}
     }
 ?>
 <html>
@@ -57,17 +63,17 @@
                 <div class="navbar-right">
                     <ul class="nav navbar-nav">
                     	<?php 
-                    		print $db->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $db->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $db->getUserMenu($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
+                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
+	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
+	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
                     	?>
                     </ul>
                 </div>
             </nav>
         </header>
         <div class="wrapper row-offcanvas row-offcanvas-left">
-			<?php print $db->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -100,13 +106,13 @@
                                 </div>
 								<?php } ?>
                                 <div class="box-body table-responsive">
-									<?php print $db->getAllCustomersOfTypeAsTable($customerType); ?>
+									<?php print $ui->getAllCustomersOfTypeAsTable($customerType); ?>
                                 </div><!-- /.box-body -->
                             </div><!-- /.box -->
                         </div>
                     </div>
                     <!-- user not authorized -->
-					<?php } else { print $db->getUnauthotizedAccessMessage(); } ?>
+					<?php } else { print $ui->getUnauthotizedAccessMessage(); } ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
