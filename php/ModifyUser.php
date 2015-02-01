@@ -55,7 +55,7 @@ if ($validated == 1) {
 	}
 	$avatar = NULL; 
 	if (!empty($avatarOrigin)) {
-		$imageHandler = new ImageHandler();
+		$imageHandler = new \creamy\ImageHandler();
 		$avatar = $imageHandler->generateProcessedImageFileFromSourceImage($avatarOrigin, $imageFileType);
 		if (empty($avatar)) {
 			$lh->translateText("unable_generate_user_image");

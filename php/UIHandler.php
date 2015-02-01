@@ -1,16 +1,41 @@
 <?php
 /**
- * UIHandler.
- * This class is in charge of generating the dynamic HTML code for the basic functionality of the system. 
- * Every time a page view has to generate dynamic contact, it should do so by calling some of this class methods.
- * UIHandler uses the Singleton pattern, thus gets instanciated by the UIHandler::getInstante().
- */
+	The MIT License (MIT)
+	
+	Copyright (c) 2015 Ignacio Nieto Carvajal
+	
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
 namespace creamy;
 
 require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 
-class UIHandler {
+/**
+ *  UIHandler.
+ *  This class is in charge of generating the dynamic HTML code for the basic functionality of the system. 
+ *  Every time a page view has to generate dynamic contact, it should do so by calling some of this class methods.
+ *  UIHandler uses the Singleton pattern, thus gets instanciated by the UIHandler::getInstante().
+ *  This class is supposed to work as a ViewController, stablishing the link between the view (PHP/HTML view pages) and the Controller (DbHandler).
+ */
+ class UIHandler {
 	
 	// language handler
 	private $lh;
@@ -266,9 +291,9 @@ class UIHandler {
 		$errormessage = NULL;
 		
 		if (!empty($usertoeditid)) {
-			if (($requestinguserid == $userid) || (userHasAdminPermission($requestinguserrole))) { 
+			if (($requestinguserid == $usertoeditid) || (userHasAdminPermission($requestinguserrole))) { 
     			// if it's the same user or we have admin privileges.
-    			$userobj = $this->db->getDataForUser($userid);
+    			$userobj = $this->db->getDataForUser($usertoeditid);
 			} else {
     			$errormessage = $this->lh->translationFor("not_permission_edit_user_information");
 			}
@@ -279,7 +304,7 @@ class UIHandler {
 		if (!empty($userobj)) {
 			// current user avatar
 			$currentUserAvatar = empty($userobj["avatar"]) ? "" : 
-				"<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>;";
+				"<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>";
 			// if requesting user is admin, we can change the user role
 			$setUserRoleCode = "";
 			if (userHasAdminPermission($requestinguserrole)) {
@@ -332,6 +357,7 @@ class UIHandler {
                                     </div>
                                 </form>
                             </div><!-- /.box -->';
+                return $result;
 		} else {
 			return $this->getErrorMessage($errormessage);
 		}

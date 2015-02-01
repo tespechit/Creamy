@@ -1,5 +1,37 @@
 <?php
 /**
+	The MIT License (MIT)
+	
+	Copyright (c) 2015 Ignacio Nieto Carvajal
+	
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+namespace creamy;
+
+require_once('CRMDefaults.php');
+require_once('PassHash.php');
+require_once('ImageHandler.php');
+require_once('RandomStringGenerator.php');
+require_once('LanguageHandler.php');
+
+/**
  * DbHandler class.
  * Class to handle all db operations
  * This class is in charge of managing the database operations for Creamy. All DB managing should be done by means of instances of this class, i.e:
@@ -10,16 +42,6 @@
  * @author Ignacio Nieto Carvajal
  * @link URL http://digitalleaves.com
  */
- 
-namespace creamy;
-
-require_once('CRMDefaults.php');
-require_once('PassHash.php');
-require_once('ImageHandler.php');
-require_once('RandomStringGenerator.php');
-require_once('LanguageHandler.php');
-
-
 class DbHandler {
 
 	// language handler
@@ -92,7 +114,7 @@ class DbHandler {
 		// prepare query depending on parameters.
 		if (!empty($avatar)) { // If we are modifying the user's avatar, make sure to delete the old one.
 			$userdata = $this->getDataForUser($modifyid);
-			$ih = new ImageHandler();
+			$ih = new \creamy\ImageHandler();
 			$ih->removeUserAvatar($userdata["avatar"]);
 			$stmt = $this->conn->prepare("UPDATE users set email = ?, phone = ?, avatar = ?, role = ? WHERE id = ?");
 			$stmt->bind_param("sssii", $email, $phone, $avatar, $role, $modifyid);
@@ -119,7 +141,7 @@ class DbHandler {
 	 	// first check if we need to remove the avatar.
 	 	$data = $this->getDataForUser($userid);
 	 	if (isset($data["avatar"])) {
-		 	$ih = new ImageHandler();
+		 	$ih = new \creamy\ImageHandler();
 		 	$ih->removeUserAvatar($data["avatar"]);
 	 	}
 	 	// then remove the entry at the database
@@ -366,7 +388,7 @@ class DbHandler {
 	 */
 	public function sendPasswordRecoveryEmail($email) {
 		if ($this->userEmailAlreadyExists($email)) {
-			$randomStringGenerator = new RandomStringGenerator();
+			$randomStringGenerator = new \creamy\RandomStringGenerator();
 			$nonce = $randomStringGenerator->generate(40);
 			$dateAsString = date('Y-m-d-H-i-s');
 			$htmlContent = file_get_contents(CRM_RECOVERY_EMAIL_FILE);
