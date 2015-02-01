@@ -93,7 +93,7 @@ if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
 						<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
                     </div>
                     <div class="form-group">
-                        <input type="text" class="form-control" id="subject" name="<?php $lh->translateText("subject"); ?>" placeholder="Subject"/>
+                        <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
                     </div>
                     <div class="form-group">
                         <textarea name="message" id="message" class="form-control" placeholder="<?php $lh->translateText("message"); ?>" style="height: 120px;"></textarea>
@@ -104,7 +104,7 @@ if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
                 </div>
                 <div class="modal-footer clearfix">
 
-                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> <?php $lh->translateText("exit"); ?></button>
 
                     <button type="submit" class="btn btn-primary pull-left"><i class="fa fa-envelope"></i> <?php $lh->translateText("send"); ?></button>
                 </div>

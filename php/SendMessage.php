@@ -36,7 +36,7 @@
 	if (!isset($_POST["fromuserid"])) {
 		$validated = 0;
 	}
-	
+
 	if ($validated == 1) {
 		$db = new \creamy\DbHandler();
 	

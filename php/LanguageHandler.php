@@ -78,9 +78,6 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 		// initialize map of language texts.
 		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$this->locale;
 		$this->texts = parse_ini_file($filepath) or array();
-		
-		// log
-		error_log("Creamy: Singleton instance initialised.");
     }
 
     /**
