@@ -113,7 +113,7 @@
 
                 <!-- Main content -->
                 <section class="content">
-					<?php print $ui->generateCustomerEditionForm($customerid, $customerType); ?>                	
+					<?php print $ui->generateCustomerEditionForm($customerid, $customerType, $_SESSION["userrole"]); ?>                	
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->

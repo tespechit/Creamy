@@ -743,7 +743,7 @@ require_once('LanguageHandler.php');
 	 * @param customerId Int the id of the customer to edit
 	 * @param customerType String the table name (= customer type identifier) of the customer to edit. 
 	 */
-	public function generateCustomerEditionForm($customerid, $customerType) {
+	public function generateCustomerEditionForm($customerid, $customerType, $userrole) {
 		$customerobj = NULL;
 		$errormessage = NULL;
 		
@@ -786,6 +786,17 @@ require_once('LanguageHandler.php');
 	            $time = strtotime($customerobj["birthdate"]);
 	            $dateAsDMY = date('d/m/Y', $time); 
 	        }
+
+			// buttons at bottom (only for writing+ permissions)
+			$buttons = "";
+			if (userHasWritePermission($userrole)) {
+				$buttons = '<div class="modal-footer clearfix">
+	                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="'.
+	                        $customerid.'"><i class="fa fa-times"></i> '.$this->lh->translationFor("delete").'</button>
+	                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> '.
+	                        $this->lh->translationFor("modify").'</button>
+	                    </div>';
+			}
 
 			// do not send email
 			$doNotSendEmail = empty($customerobj["do_not_send_email"]) ? "" : "checked";
@@ -927,10 +938,7 @@ require_once('LanguageHandler.php');
 							<input type="hidden" id="customerid" name="customerid" value="'.$customerid.'">
 							<div id="modifycustomerresult" name="modifycustomerresult"></div>
 	                    </div>
-	                    <div class="modal-footer clearfix">
-	                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="'.$customerid.'"><i class="fa fa-times"></i> '.$this->lh->translationFor("delete").'</button>
-	                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> '.$this->lh->translationFor("modify").'</button>
-	                    </div>
+	                    '.$buttons.'
 	                </form>
                 </div><!-- /.box -->';
 
