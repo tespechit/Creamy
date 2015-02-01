@@ -8,20 +8,20 @@ Creamy is right now under heavy development, and it's still in beta, so use at y
 ## Users and Permissions
 Creamy is a multi-user CRM. You can have as many users as you need. In order to control what data can be accessed by who, and who can delete, edit or modify the information stored in the system, Creamy implements a role permission scheme, so every user belongs to a certain role category:
 
-* *Administrators*: Administrators have full control over the system. They are the only ones which can access the admin area, manage the users or modify the settings of Creamy. They also have all the permissions and attributions of the manager role, so they can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
-* *Managers*: Managers are top non-admin users in Creamy. They can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
-* *Writers*: Writers have writing permissions, but limited to themselves. As they are not managers, they cannot assign tasks to other users, but they can manage, create, delete and modify customers and contacts, and have access to messages and notifications.
-* *Readers*: Readers are those users who need to query some information from the CRM from time to time, but don't really bother updating the customers and contacts. They have read access to customers and clients, and can access the notifications and messaging system.
-* *Guests*: Guests don't have any permission on the system. They cannot access any information apart from the main page. They don't have access to customers, contacts, messages or notifications.
+* **Administrators**: Administrators have full control over the system. They are the only ones which can access the admin area, manage the users or modify the settings of Creamy. They also have all the permissions and attributions of the manager role, so they can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
+* **Managers**: Managers are top non-admin users in Creamy. They can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
+* **Writers**: Writers have writing permissions, but limited to themselves. As they are not managers, they cannot assign tasks to other users, but they can manage, create, delete and modify customers and contacts, and have access to messages and notifications.
+* **Readers**: Readers are those users who need to query some information from the CRM from time to time, but don't really bother updating the customers and contacts. They have read access to customers and clients, and can access the notifications and messaging system.
+* **Guests**: Guests don't have any permission on the system. They cannot access any information apart from the main page. They don't have access to customers, contacts, messages or notifications.
 
 ## Topbar
 
 The top bar will give you quick access to your messages, notifications and tasks. Each icon has a badge with a number of unread or unattended elements to help you get a quick overview of things that would require your attention.
 
-* The messages icon shows you your unread messages, and clicking on it will show you them as a list. Select any of the messages to read it directly.
-* The notifications icon shows you your notifications for today, and clicking on it will show you them as a list.
-* The tasks icon shows you your unfinished tasks, and clicking on it will show you them in a list.
-* The user icon at the right, close to your name, will open a menu where you will be able to access or modify your user data, change your password or logout.
+* The **messages** icon shows you your unread messages, and clicking on it will show you them as a list. Select any of the messages to read it directly.
+* The **notifications** icon shows you your notifications for today, and clicking on it will show you them as a list.
+* The **tasks** icon shows you your unfinished tasks, and clicking on it will show you them in a list.
+* The **user** icon at the right, close to your name, will open a menu where you will be able to access or modify your user data, change your password or logout.
 
 ## Sidebar
 
