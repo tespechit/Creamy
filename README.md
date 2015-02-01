@@ -53,7 +53,7 @@ The Admin menu is only available to user with administration permissions. In the
 
 # Contribute
 
-Creamy is open source and it's still in early beta (really early beta). I know I am not the best or the cleanest PHP programmer out there, so any help, suggestion and correction is welcome. If you are interested in the project, please consider joining the team!
+Creamy is open source and it's still in early beta (really early beta). I know I am not the best or the cleanest PHP programmer out there, so any help, suggestion and correction is welcomed. If you are interested in the project, please consider joining the team!
 
 You don't need to be a developer. I am also looking to translate Creamy to more languages (currently it's in English and Spanish only), so if you want to collaborate just let me know.
 
