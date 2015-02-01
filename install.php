@@ -342,7 +342,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
                 	</div>
                 </div>
                 <div class="footer">                                                               
-                    <button type="submit" name="submit_step3" id="submit_step3" class="btn bg-light-blue btn-block">Crear</button>  
+                    <button type="submit" name="submit_step3" id="submit_step3" class="btn bg-light-blue btn-block"><?php $this->lh->translateText("create"); ?></button>  
                 </div>
             </form>
 
