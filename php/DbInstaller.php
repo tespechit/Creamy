@@ -139,7 +139,7 @@ class DBInstaller {
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
 		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `users`."; return false; } // failed to create table
 		
-		$password_hash = PassHash::hash($initialPass);
+		$password_hash = \creamy\PassHash::hash($initialPass);
 		$initializeTableQuery = "INSERT INTO `users` (`name`, `password_hash`, `email`, `avatar`, `creation_date`, `role`, `status`) VALUES
 ('$initialUser', '$password_hash', '$initialEmail', '".CRM_DEFAULTS_USER_AVATAR."', now(), 0, 1) ON DUPLICATE KEY UPDATE password_hash = '$password_hash'";
 		if (!$this->conn->query($initializeTableQuery)) { $this->error = "CRM: Failed to insert the initial admin user."; return false; } 

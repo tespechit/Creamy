@@ -74,7 +74,7 @@ class DbHandler {
         // First check if user already existed in db
         if (!$this->userAlreadyExists($name)) {
             // Generating password hash
-            $password_hash = PassHash::hash($password);
+            $password_hash = \creamy\PassHash::hash($password);
             if (empty($avatarURL)) $avatarURL = CRM_DEFAULTS_USER_AVATAR;
 
             // insert query
@@ -171,7 +171,7 @@ class DbHandler {
 			$status = $userobj["status"];
 			$result->close();
 			if ($status == 1) { // user is active
-				if (PassHash::check_password($password_hash, $password)) {
+				if (\creamy\PassHash::check_password($password_hash, $password)) {
 	                // User password is correct
 	                $arr = array();
 	                $arr["id"] = $userobj["id"];
@@ -216,9 +216,9 @@ class DbHandler {
 			$status = $userobj["status"];
 			$result->close();
 			if ($status == 1) { // user is active, check old password.
-				if (PassHash::check_password($password_hash, $oldpassword)) {
+				if (\creamy\PassHash::check_password($password_hash, $oldpassword)) {
 	                // oldpassword is correct, change password.
-	                $newPasswordHash = PassHash::hash($password1);
+	                $newPasswordHash = \creamy\PassHash::hash($password1);
 	                $updateStmt = $this->conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
 	                $updateStmt->bind_param("si", $newPasswordHash, $userid);
 					$modifyResult = $updateStmt->execute();
@@ -243,7 +243,7 @@ class DbHandler {
      * @return boolean true if operation succeed.
 	 */
 	public function changePasswordAdmin($userid, $password) {
-		$newPasswordHash = PassHash::hash($password);
+		$newPasswordHash = \creamy\PassHash::hash($password);
 		
 		$stmt = $this->conn->prepare("UPDATE users SET password_hash = ? WHERE id = ? ");
 		$stmt->bind_param("si", $newPasswordHash, $userid);
@@ -446,7 +446,7 @@ class DbHandler {
 	public function changePasswordForUserIdentifiedByEmail($email, $password) {
 		if ($this->userExists($email)) {
 	        // Generating password hash
-	        $password_hash = PassHash::hash($password);
+	        $password_hash = \creamy\PassHash::hash($password);
 			return $this->conn->query("UPDATE users SET password_hash = '$password_hash' WHERE email = '$email'");
 		}
 		return false;
