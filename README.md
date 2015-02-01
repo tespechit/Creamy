@@ -1,9 +1,12 @@
 # Creamy
 Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. Creamy is a full-fledged CRM framework that allows you to handle your contacts, customers and clients easily, manage the tasks associated with your business, and be notified of important events.
 
-Creamy is right now under heavy development, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
+Thanks to its three-step installation process, you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible.
 
 ![](http://creamycrm.com/img/responsive.jpg)
+
+Creamy is under heavy development right now, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
+
 
 ## Users and Permissions
 Creamy is a multi-user CRM. You can have as many users as you need. In order to control what data can be accessed by who, and who can delete, edit or modify the information stored in the system, Creamy implements a role permission scheme, so every user belongs to a certain role category:
@@ -13,6 +16,8 @@ Creamy is a multi-user CRM. You can have as many users as you need. In order to 
 * **Writers**: Writers have writing permissions, but limited to themselves. As they are not managers, they cannot assign tasks to other users, but they can manage, create, delete and modify customers and contacts, and have access to messages and notifications.
 * **Readers**: Readers are those users who need to query some information from the CRM from time to time, but don't really bother updating the customers and contacts. They have read access to customers and clients, and can access the notifications and messaging system.
 * **Guests**: Guests don't have any permission on the system. They cannot access any information apart from the main page. They don't have access to customers, contacts, messages or notifications.
+
+![](http://creamycrm.com/img/features.jpg)
 
 ## Topbar
 
