@@ -3,7 +3,7 @@
 require_once('CRMDefaults.php');
 require_once('Config.php');
 
-define('CRM_LANGUAGE_BASE_DIR', '/../languages/');
+define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 
 /**
  * Class to handle language and translations. LanguageHandler uses the Singleton pattern, thus gets instanciated by the LanguageHandler::getInstante().
