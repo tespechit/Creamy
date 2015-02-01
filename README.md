@@ -57,6 +57,10 @@ Creamy is open source and it's still in early beta (really early beta). I know I
 
 You don't need to be a developer. I am also looking to translate Creamy to more languages (currently it's in English and Spanish only), so if you want to collaborate just let me know.
 
+# Credits & Acknowledgements
+
+Creamy user interface is based in the theme AdminLTE by http://www.almsaeedstudio.com
+
 # License
 
 The MIT License (MIT)
