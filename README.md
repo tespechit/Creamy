@@ -57,6 +57,21 @@ Creamy is open source and it's still in early beta (really early beta). I know I
 
 You don't need to be a developer. I am also looking to translate Creamy to more languages (currently it's in English and Spanish only), so if you want to collaborate just let me know.
 
+## To-Do List
+
+* Automatic updates and versioning.
+* Module system with plug-n-play modules.
+* calendar functionality
+* assign tasks to customers/contacts and to a calendar date
+* add a Creamy table at the database with versioning and general information about Creamy
+* use email to verify the real identity of the Admin user (for password recovery and security purposes)
+* invoices module for customers
+* log system
+* backup module
+* HTTPS option with client/server certificates for added security
+* implement connectivity status for users (online, idle...)
+* cleaner and better code generation ;)
+
 # Credits & Acknowledgements
 
 Creamy user interface is based in the theme AdminLTE by http://www.almsaeedstudio.com
