@@ -13,7 +13,7 @@ More info: [http://creamycrm.com](http://creamycrm.com)
 Creamy is a multi-user CRM. You can have as many users as you need. In order to control what data can be accessed by who, and who can delete, edit or modify the information stored in the system, Creamy implements a role permission scheme, so every user belongs to a certain role category:
 
 * **Administrators**: Administrators have full control over the system. They are the only ones which can access the admin area, manage the users or modify the settings of Creamy. They also have all the permissions and attributions of the manager role, so they can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
-* **Managers**: Managers are top non-admin users in Creamy. They can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
+* **Managers**: Managers are the top non-admin users in Creamy. They can read, add, modify and delete customers, assign tasks to themselves and others, read the notifications, read, send and receive messages, and access the statistics, among other things.
 * **Writers**: Writers have writing permissions, but limited to themselves. As they are not managers, they cannot assign tasks to other users, but they can manage, create, delete and modify customers and contacts, and have access to messages and notifications.
 * **Readers**: Readers are those users who need to query some information from the CRM from time to time, but don't really bother updating the customers and contacts. They have read access to customers and clients, and can access the notifications and messaging system.
 * **Guests**: Guests don't have any permission on the system. They cannot access any information apart from the main page. They don't have access to customers, contacts, messages or notifications.
@@ -34,7 +34,7 @@ The top bar will give you quick access to your messages, notifications and tasks
 The sidebar at the left will get you access to the different sections of Creamy. Let's have a look at what you can find there:
 
 ### Home
-The home screen is where we are right now. It's the main page of Creamy. Here you can find some statistics about the progress in the number of customers, contacts and clients, along with a quick access to the messaging system and this tutorial. Any module or plugin can also install some views here for you to see if they want to allow you to access some functionality or give you a quick overview of the data they handle.
+The home screen is the main page of Creamy. Here you can find some statistics about the progress in the number of customers, contacts and clients, along with a quick access to the messaging system and this tutorial. Any module or plugin can also install some views here for you to see if they want to allow you to access some functionality or give you a quick overview of the data they handle.
 
 ### Contacts and Customers
 These sections contains all the contacts, customers and clients registered in your CRM, grouped by their type. This is the heart of Creamy. If this is the first time you (or someone in your company) is using Creamy, these sections will be empty, so one of the very first things you should do in order to enjoy Creamy is go to these sections and start filling in customers and contacts to feed your database!
