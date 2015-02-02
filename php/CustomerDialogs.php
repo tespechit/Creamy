@@ -107,7 +107,7 @@ if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
                         </div>
                         <div class="form-group">
                             <div class="input-group">
-                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
+                                <span class="input-group-addon"><i class="fa fa-check-circle-o"></i></span>
                                 <input name="productType" id="nproductTypeame" type="text" class="form-control" placeholder="<?php $lh->translateText("customer_or_service_type"); ?>">
                             </div>
                         </div>
