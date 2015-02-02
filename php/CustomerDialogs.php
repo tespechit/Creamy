@@ -174,7 +174,7 @@ if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Estado civil</label>
+                            <label><?php $lh->translateText("marital_status"); ?></label>
                             <select class="form-control" id="maritalstatus" name="maritalstatus">
                                 <option value="0"><?php $lh->translateText("choose_an_option"); ?></option>
                                 <option value="1"><?php $lh->translateText("single"); ?></option>
@@ -185,7 +185,7 @@ if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
                             </select>
                         </div>
 						<div class="form-group">
-                            <label>Sexo</label>
+                            <label><?php $lh->translateText("gender"); ?></label>
                             <select class="form-control" id="gender" name="gender">
                                 <option value="-1"><?php $lh->translateText("choose_an_option"); ?></option>
                                 <option value="0"><?php $lh->translateText("female"); ?></option>
