@@ -1,7 +1,7 @@
 # Creamy
 Creamy is a free, open source CRM for managing contacts & customers, lightweight, easy to use and customisable. Creamy is a full-fledged CRM framework that allows you to handle your contacts, customers and clients easily, manage the tasks associated with your business, and be notified of important events.
 
-Thanks to its three-step installation process, you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible.
+Thanks to its ![three-step installation process](https://github.com/DigitalLeaves/Creamy/wiki/Installation), you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible. Anyway, there is a ![short guide](https://github.com/DigitalLeaves/Creamy/wiki/Installation) to help you install Creamy.
 
 ![](http://creamycrm.com/img/responsive.jpg)
 
@@ -60,17 +60,18 @@ You don't need to be a developer. I am also looking to translate Creamy to more 
 ## To-Do List
 
 * Automatic updates and versioning.
-* Module system with plug-n-play modules.
-* calendar functionality
-* assign tasks to customers/contacts and to a calendar date
-* add a Creamy table at the database with versioning and general information about Creamy
-* use email to verify the real identity of the Admin user (for password recovery and security purposes)
-* invoices module for customers
-* log system
-* backup module
+* Modular system with plug-n-play modules.
+* Support for different databases. rename DbHandler to MysqlHandler and leave DbHandler as a generic interface.
+* Calendar functionality
+* Assign tasks to customers/contacts and to a calendar date
+* Add a Creamy table at the database with versioning and general information about Creamy
+* Use email to verify the real identity of the Admin user (for password recovery and security purposes)
+* Invoices module for customers
+* Log system
+* Backup module
 * HTTPS option with client/server certificates for added security
-* implement connectivity status for users (online, idle...)
-* cleaner and better code generation ;)
+* Implement connectivity status for users (online, idle...)
+* Cleaner and better code generation ;)
 
 # Credits & Acknowledgements
 
