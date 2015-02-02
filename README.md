@@ -37,7 +37,7 @@ The sidebar at the left will get you access to the different sections of Creamy.
 The home screen is the main page of Creamy. Here you can find some statistics about the progress in the number of customers, contacts and clients, along with a quick access to the messaging system and this tutorial. Any module or plugin can also install some views here for you to see if they want to allow you to access some functionality or give you a quick overview of the data they handle.
 
 ### Contacts and Customers
-These sections contains all the contacts, customers and clients registered in your CRM, grouped by their type. This is the heart of Creamy. If this is the first time you (or someone in your company) is using Creamy, these sections will be empty, so one of the very first things you should do in order to enjoy Creamy is go to these sections and start filling in customers and contacts to feed your database!
+These sections contains all the contacts, customers and clients registered in your CRM, grouped by their type. This is the heart of Creamy. You can define as many customers groups as you need, and a default schema of customers and clients is offered so you don't have to bother if you just happen ti fit that schema.
 
 ### Messages
 In the messages section you can access a messaging system for the users of the CRM. This is an inner communication tool to give you a quick way of sending messages, questions and meeting appointments to other members of your company or business.
