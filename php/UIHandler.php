@@ -987,7 +987,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getCompletedTasksAsTable($userid, $userrole) { 
 		$tasks = $this->db->getCompletedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage("You don't have any completed task at the moment"); }
+		if (empty($tasks)) { return $this->getInfoMessage($this->lh->translationFor("you_dont_have_completed_tasks")); }
 		else {
 			$list = $this->taskTablePrefix;
 			foreach ($tasks as $task) {
@@ -1008,7 +1008,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getUnfinishedTasksAsTable($userid, $userrole) { 
 		$tasks = $this->db->getUnfinishedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage("You don't have any pending task at this moment."); }
+		if (empty($tasks)) { return $this->getInfoMessage($this->lh->translationFor("you_dont_have_pending_tasks")); }
 		else {
 			$list = $this->taskTablePrefix;
 			foreach ($tasks as $task) {
@@ -1312,7 +1312,9 @@ require_once('LanguageHandler.php');
 	 * @return String a HTML representation of the notification.
 	 */
 	public function getNotificationsAsTimeLine($userid) {
-		$todayAsText = strftime("%c");
+		setlocale(LC_ALL, CRM_LOCALE);
+		$todayAsDate = strftime("%x");
+		$todayAsText = $this->lh->translationFor("today")." ($todayAsDate)";
 		
 		// today
 		$timeline = '<ul class="timeline">

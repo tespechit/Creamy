@@ -255,7 +255,9 @@ new_contact_added = "Se ha añadido una nueva persona a la base de datos: "
 unable_create_triggers = "Ha sido imposible crear los triggers para las notificaciones de la base de datos. El usuario tiene que tener permiso para crear los triggers."
 start ="Empezar"
 choose_language = "Elige un lenguaje para Creamy:"
-
+you_dont_have_pending_tasks = "No tienes ninguna tarea pendiente en este momento."
+you_dont_have_completed_tasks = "No tienes ninguna tarea completada en este momento."
+today = "Hoy"
 
 
 
