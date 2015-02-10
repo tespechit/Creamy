@@ -195,7 +195,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 					}
 				} else { 
 					$success = false;
-					$error = $lh->translationFor("unable_set_statistics");
+					$error = $lh->translationFor("unable_set_statistics").": ".$dbInstaller->error;
 				}
 				$currentState = "final_step";
 				$_SESSION["installationStep"] = "final_step";
