@@ -24,6 +24,12 @@
 	*/
 
 	require_once('./php/CRMDefaults.php');
+	// check installation before login.
+	if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
+		header("location: ./install.php");
+	}
+
+	// load DB handler and Language Handler.	
 	require_once('./php/DbHandler.php');
 	require_once('./php/LanguageHandler.php');
 

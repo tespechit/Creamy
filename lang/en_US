@@ -162,6 +162,7 @@ admin_user_password = "Password for the admin user"
 admin_user_password_again = "Password for the admin user (again)"
 admin_user_email = "Email of the admin user"
 perfect = "Perfect!"
+finished = "Finished"
 lets_define_customers = "Now let's define the different groups of people your CRM will manage. We have set an initial structure by default: <strong>contacts</strong> and <strong>customers</strong>. Contacts are your potential clients, those who may turn into customers in the future, whereas customers are those who are already your clients. If you need to set different groups of customers, you can do it by selecting the option below and filling the names for your customer groups."
 contacts_and_clients_ok = "Contacts and customers seem right for me."
 i_want_to_define_groups = "I prefer to define my groups of customers and contacts myself."
@@ -253,7 +254,7 @@ message_successfully_sent = "Message successfully sent"
 new_contact_added = "A new person has been added to the database: "
 unable_create_triggers = "I was unable to create the event triggers for the user notifications. The database user must have permissions for creating the triggers."
 start = "Start"
-
+choose_language = "Choose a language for Creamy:"
 
 
 

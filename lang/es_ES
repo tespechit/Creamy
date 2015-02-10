@@ -162,6 +162,7 @@ admin_user_password = "Contraseña del administrador"
 admin_user_password_again = "Contraseña del administrador (otra vez)"
 admin_user_email = "Email del administrador"
 perfect = "¡Perfecto!"
+finished = "Finalizado"
 lets_define_customers = "A continuación vamos a definir los diferentes grupos de personas que gestionará el CRM. Hemos hecho una estructura por defecto para ti: <strong>contactos</strong> y <strong>clientes</strong>. Los contactos son los clientes potenciales, aquellos que podrían en el futuro convertirse en clientes, mientras que clientes son aquellos que ya son clientes tuyos. Si necesitas establecer tus clientes en grupos, puedes hacerlo marcando la casilla correspondiente e introduciendo el nombre de cada grupo."
 contacts_and_clients_ok = "Contactos y clientes está bien para mi."
 i_want_to_define_groups = "Quiero elegir mis grupos de clientes yo mismo."
@@ -253,6 +254,7 @@ message_successfully_sent = "Mensaje enviado correctamente"
 new_contact_added = "Se ha añadido una nueva persona a la base de datos: "
 unable_create_triggers = "Ha sido imposible crear los triggers para las notificaciones de la base de datos. El usuario tiene que tener permiso para crear los triggers."
 start ="Empezar"
+choose_language = "Elige un lenguaje para Creamy:"
 
 
 

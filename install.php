@@ -29,7 +29,8 @@
 	require_once('./php/RandomStringGenerator.php');
 	
 	// language handler
-	$lh = \creamy\LanguageHandler::getInstance();
+	$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']); if ($locale == NULL) $locale = "en_US";
+	$lh = \creamy\LanguageHandler::getInstance($locale);
 	
 	session_start(); // Starting Session
 
@@ -47,18 +48,20 @@
 		$dbuser = NULL;
 		$dbpass = NULL;
 		$timezone = NULL;
-		$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']); if ($locale == NULL) $locale = "en_US";
+		$desiredLanguage = $locale;
 		if (isset($_POST["dbhost"])) { $dbhost = $_POST["dbhost"]; }
 		if (isset($_POST["dbname"])) { $dbname = $_POST["dbname"]; }
 		if (isset($_POST["dbuser"])) { $dbuser = $_POST["dbuser"]; }
 		if (isset($_POST["dbpass"])) { $dbpass = $_POST["dbpass"]; }
 		if (isset($_POST["userTimeZone"])) { $timezone = $_POST["userTimeZone"]; } else { $timezone = "UTC"; }
+		if (isset($_POST["desiredLanguage"])) { $desiredLanguage = $_POST["desiredLanguage"]; }
 		
 		// stablish connection with the database.
 		$dbInstaller = new DBInstaller($dbhost, $dbname, $dbuser, $dbpass);
 	
 		if ($dbInstaller->getState() == CRM_INSTALL_STATE_SUCCESS) { // database access succeed. Try to set the basic tables.
 			// update LanguageHandler locale
+			error_log("Creamy install: Trying to set locale to $locale");
 			$lh->setLanguageHandlerLocale($locale);
 			
 			// generate a new config file for Creamy, incluying db information & timezone.
@@ -75,7 +78,7 @@ define('DB_PORT', '3306');
 		
 // General configuration
 define('CRM_TIMEZONE', '$timezone');
-define('CRM_LOCALE', '$locale');
+define('CRM_LOCALE', '$desiredLanguage');
 define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 
 ".CRM_PHP_END_TAG;
@@ -275,7 +278,24 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 							}
 							print '</select>';
 	                    ?>
-                    </div>          
+                    </div>
+                    <div class="form-group">
+						<p><?php $lh->translateText("choose_language"); ?></p>
+						<select name="desiredLanguage" id="desiredLanguage" class="form-control">
+							<?php
+							$files = scandir(dirname(__FILE__)."/lang");
+							foreach ($files as $file) {
+								if (!is_dir($file)) {
+									$localeCodeForFile = str_replace("_", "-", $file);
+									$languageForLocale = utf8_decode(Locale::getDisplayLanguage($localeCodeForFile));
+									$selectedByDefault = "";
+									if ($file == $locale) { $selectedByDefault = "selected"; }
+									print('<option value="'.$file.'" '.$selectedByDefault.'> '.$file.' ('.$languageForLocale.')</option>');
+								}
+							}
+							?>
+						</select>
+                    </div>       
                 	<div name="error-message" style="color: red;">
                 	<?php 
 	                	if (isset($error)) print ($error); 
@@ -349,7 +369,7 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
             </form>
 
     <?php } elseif ($currentState == "final_step") { ?>  
-            <div class="header">Finalizado</div>
+            <div class="header"><?php $lh->translateText("finished"); ?></div>
             <div class="body bg-gray">
 	            <h3><?php $lh->translateText("everythings_ready"); ?></h3>
 	            <p><?php $lh->translateText("ready_to_start_creamy"); ?></p>
