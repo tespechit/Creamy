@@ -27,7 +27,7 @@
 namespace creamy;
 
 require_once('CRMDefaults.php');
-include_once('Config.php');
+@include_once('Config.php');
 
 define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 
