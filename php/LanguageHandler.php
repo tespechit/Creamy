@@ -71,7 +71,7 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
     protected function __construct()
     {
 		// initialize language and user locale
-		$this->locale = CRM_LOCALE;
+		$this->locale = define(CRM_LOCALE) ? CRM_LOCALE : "en_US";
 		if (!isset($this->locale)) {
 			 $this->locale = "en_US";
 		}
