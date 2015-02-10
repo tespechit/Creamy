@@ -256,16 +256,28 @@ class DBInstaller {
 
 	public function setupCustomerTables($schema, $customCustomers) {
 		// first create the types table
-		if (!$this->createCustomerTypesTable()) return false;
+		if (!$this->createCustomerTypesTable()) {
+			$this->error = "Unable to setup the customer types table: ".$this->conn->error;
+			return false; 
+		}
 		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
 		
 		if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_DEFAULT) { // default schema: clients_1 (contacts) and clients_2 (normal clients).
-			if (!$this->createCustomersTableWithNameAndDescription("clients_1", "Contacts")) return false;
-			if (!$this->createCustomersTableWithNameAndDescription("clients_2", "Customers")) return false;
+			if (!$this->createCustomersTableWithNameAndDescription("clients_1", "Contacts")) { 
+				$this->error = "Unable to create the contacts table: ".$this->conn->error;
+				return false;
+			}
+			if (!$this->createCustomersTableWithNameAndDescription("clients_2", "Customers")) { 
+				$this->error = "Unable to create the contacts table: ".$this->conn->error;
+				return false;
+			}
 		} else if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_CUSTOM) {
 			$index = 1;
 			foreach ($customCustomers as $description) {
-				if (!$this->createCustomersTableWithNameAndDescription("clients_$index", $description)) return false;
+				if (!$this->createCustomersTableWithNameAndDescription("clients_$index", $description)) {
+					$this->error = "Unable to create the customer table named $description: ".$this->conn->error;
+					return false;
+				}
 				$index++;
 			}
 		}
@@ -285,8 +297,11 @@ class DBInstaller {
 		$createStatisticsQuery = $createStatisticsQuery."`timestamp` date NOT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createStatisticsQuery)) return false;
-
+		if (!$this->conn->query($createStatisticsQuery)) {
+			$this->error = "Unable to create the statistics table: ".$this->conn->error;
+			return false;
+		}
+		
 		// create the event for scheduling the statistics retrieval. The event scheduler must be turned on.
 	    $customerFieldsString = "";
 	    $customerCountsString = "";
@@ -303,11 +318,18 @@ class DBInstaller {
 				INSERT INTO statistics ( timestamp $customerFieldsString ) 
 				SELECT now() $customerCountsString ;							    
 			END;";
-		if (!$this->conn->query($eventQuery)) return false;
-
+		if (!$this->conn->query($eventQuery)) { 
+			$this->error = "Unable to create the event for retrieving the statistics: ".$this->conn->error;		
+			return false;
+		}
+		
 		// Start event scheduler. Requires SUPER admin privileges.
 		$startEventSchedulerQuery = "SET GLOBAL event_scheduler = 1;";
-		if (!$this->conn->query($startEventSchedulerQuery)) return false;
+		if (!$this->conn->query($startEventSchedulerQuery)) {
+			$this->error = "Unable to start the global event scheduler. ".$this->conn->error." You can start it manually by setting event_scheduler to ON: http://dev.mysql.com/doc/refman/5.1/en/events-configuration.html";
+			return false;
+		}
+		
 		// if all operations succeed, return true
 		return true;
 	}
@@ -324,7 +346,10 @@ class DBInstaller {
 					CONCAT('./editcustomer.php?customerid=',NEW.id,'&customer_type=".$identifier."'), 'contact');
 				END;
 			";
-			if (!$this->conn->query($userCreatedTrigger)) return false;
+			if (!$this->conn->query($userCreatedTrigger)) { 
+				$this->error = "Unable to create the trigger to add notifications for newly created customers/contacts: ".$this->conn->error;
+				return false;
+			}
 		}
 		return true;
 	}
