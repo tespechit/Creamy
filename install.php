@@ -29,7 +29,7 @@
 	require_once('./php/RandomStringGenerator.php');
 	
 	// language handler
-	$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']); if ($locale == NULL) $locale = "en_US";
+	$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 	$lh = \creamy\LanguageHandler::getInstance($locale);
 	
 	session_start(); // Starting Session

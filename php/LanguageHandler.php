@@ -54,7 +54,7 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
      * @staticvar LanguageHandler $instance The LanguageHandler instance of this class.
      * @return LanguageHandler The singleton instance.
      */
-    public static function getInstance($locale = "en_US")
+    public static function getInstance($locale = NULL)
     {
         static $instance = null;
         if (null === $instance) {
@@ -68,10 +68,10 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
      * Protected constructor to prevent creating a new instance of the
      * *Singleton* via the `new` operator from outside of this class.
      */
-    protected function __construct($locale = "en_US")
+    protected function __construct($locale = NULL)
     {
 		// initialize language and user locale
-		if (isset($locale)) { $this->locale = $locale; }
+		if (!empty($locale)) { $this->locale = $locale; }
 		else $this->locale = defined('CRM_LOCALE') ? CRM_LOCALE : "en_US";
 		if (!isset($this->locale)) {
 			 $this->locale = "en_US";
