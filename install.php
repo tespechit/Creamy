@@ -58,9 +58,11 @@
 		$dbInstaller = new DBInstaller($dbhost, $dbname, $dbuser, $dbpass);
 	
 		if ($dbInstaller->getState() == CRM_INSTALL_STATE_SUCCESS) { // database access succeed. Try to set the basic tables.
-			// generate a new config file for Creamy, incluying db information & timezone.
-			$configContent = file_get_contents(CRM_SKEL_CONFIG_FILE);
+			// update LanguageHandler locale
+			$lh->setLanguageHandlerLocale($locale);
 			
+			// generate a new config file for Creamy, incluying db information & timezone.
+			$configContent = file_get_contents(CRM_SKEL_CONFIG_FILE);			
 			$randomStringGenerator = new \creamy\RandomStringGenerator();
 			$crmSecurityCode = $randomStringGenerator->generate(40);
 			$customConfig = "

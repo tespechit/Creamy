@@ -63,7 +63,6 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 
         return $instance;
     }
-
 	
     /**
      * Protected constructor to prevent creating a new instance of the
@@ -73,10 +72,17 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
     {
 		// initialize language and user locale
 		$this->locale = CRM_LOCALE;
-		if (!isset($this->locale)) $this->locale = "en_US";
+		if (!isset($this->locale)) {
+			 $this->locale = "en_US";
+		}
 		
 		// initialize map of language texts.
 		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$this->locale;
+		if (!file_exists($filepath)) {
+			// fallback to en_US installation (everybody knows english, don't they?)
+			$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."en_US";
+			$this->locale = "en_US";
+		}
 		$this->texts = parse_ini_file($filepath) or array();
     }
 
@@ -101,6 +107,22 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
     }
     	
 	/** Translation methods */
+	
+	/**
+	 * Sets the locale of the LanguageHandler locale
+	 * $locale String locale to set. If a language file for the specified language does not exists, the language will default to en_US.
+	 */
+	public function setLanguageHandlerLocale($locale) {
+		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$locale;
+		if (!file_exists($filepath)) {
+			// fallback to en_US installation (everybody knows english, don't they?)
+			$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."en_US";
+			$this->locale = "en_US";
+		} else {
+			$this->locale = $locale;
+		}
+		$this->texts = parse_ini_file($filepath) or array();
+	}
 	
 	/**
 	 * Return the direct translation for the string term given as parameter, depending on the configured locale.
