@@ -274,7 +274,7 @@ class DBInstaller {
 		} else if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_CUSTOM) {
 			$index = 1;
 			foreach ($customCustomers as $description) {
-				if ($index == 1) { $description = ""; }
+				if ($index == 1) { $description = $lh->translationFor("contacts"); if (empty($description)) $description = "Contacts"; }
 				if (!$this->createCustomersTableWithNameAndDescription("clients_$index", $description)) {
 					$this->error = "Unable to create the customer table named $description: ".$this->conn->error;
 					return false;
