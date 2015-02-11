@@ -313,7 +313,7 @@ class DBInstaller {
 		}
 
 	    // the event scheduler will take care of running the event.
-		$eventQuery = "CREATE EVENT retrieve_statistics 
+		$eventQuery = "CREATE EVENT creamy_retrieve_statistics 
 			ON SCHEDULE EVERY 1 WEEK 
 			DO BEGIN
 				INSERT INTO statistics ( timestamp $customerFieldsString ) 
@@ -340,7 +340,7 @@ class DBInstaller {
 		// generate a trigger for each customer/contact type insertion
 		foreach ($customerIdentifiers as $identifier) {
 			// generate trigger for that table
-			$userCreatedTrigger = "CREATE TRIGGER new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
+			$userCreatedTrigger = "CREATE TRIGGER creamy_new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
 				BEGIN
 					INSERT INTO notifications (`target_user`, `text`, `date`, `action`, `type`) values (0, CONCAT('".
 					$this->lh->translationFor("new_contact_added").": ', NEW.name), now(), 
