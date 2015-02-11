@@ -37,7 +37,7 @@ class DBInstaller {
 
     private $conn;
     private $state;
-    private $error;
+    public $error;
     private $lh;
     
     /* ---------------- Initializers -------------------- */
