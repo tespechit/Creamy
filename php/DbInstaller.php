@@ -121,6 +121,9 @@ class DBInstaller {
 		
 		$dropTableQuery = "DROP TABLE IF EXISTS `statistics` CASCADE";
 		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `statistics`"; return false; } // failed to drop table.
+		
+		$dropEventQuery = "DROP EVENT IF EXISTS `creamy_retrieve_statistics`";
+		if (!$this->conn->query($dropEventQuery)) { $this->error = "CRM: Failed to drop event `creamy_retrieve_statistics`"; return false; } // failed to drop table.
 	}
 
 	private function setupUsersTable($initialUser, $initialPass, $initialEmail) {
@@ -339,6 +342,10 @@ class DBInstaller {
 		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
 		// generate a trigger for each customer/contact type insertion
 		foreach ($customerIdentifiers as $identifier) {
+			// try to delete previous trigger
+			$dropTriggerQuery = "DROP TRIGGER IF EXISTS `creamy_new_$identifier`";
+			if (!$this->conn->query($dropTriggerQuery)) { $this->error = "CRM: Failed to drop trigger `creamy_new_$identifier`";  } 
+			
 			// generate trigger for that table
 			$userCreatedTrigger = "CREATE TRIGGER creamy_new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
 				BEGIN
