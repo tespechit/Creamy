@@ -623,7 +623,8 @@ require_once('LanguageHandler.php');
                         <i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <li><a href="./adminusers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("users").'</a></li>
+                        <li><a href="./adminusers.php"><i class="fa fa-user-secret"></i> '.$this->lh->translationFor("users").'</a></li>
+                        <li><a href="./admincustomers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("customers").'</a></li>
                     </ul>
                 </li>';
 		}
@@ -757,7 +758,7 @@ require_once('LanguageHandler.php');
 
 			// marital status
             $currentMS = 0;
-            if (!empty($customerobj["marital_status"])) {
+            if (isset($customerobj["marital_status"])) {
                 $currentMS = $customerobj["marital_status"];
                 if ($currentMS < 1) $currentMS = 0;
                 if ($currentMS > 5) $currentMS = 0;
@@ -771,7 +772,7 @@ require_once('LanguageHandler.php');
 
 			// gender
 	        $currentGender = -1;
-	        if (!empty($customerobj["gender"])) {
+	        if (isset($customerobj["gender"])) {
 	            $currentGender = $customerobj["gender"];
 	            if ($currentGender < 0) $currentGender = -1;
 	            if ($currentGender > 1) $currentGender = -1;
@@ -782,7 +783,7 @@ require_once('LanguageHandler.php');
 	        
 	        // date as dd/mm/yyyy
 			$dateAsDMY = "";
-	        if (!empty($customerobj["birthdate"])) { 
+	        if (isset($customerobj["birthdate"])) { 
 	            $time = strtotime($customerobj["birthdate"]);
 	            $dateAsDMY = date('d/m/Y', $time); 
 	        }
@@ -912,9 +913,9 @@ require_once('LanguageHandler.php');
 	                            </select>
 	                        </div>
 							<div class="form-group">
-	                            <label>Sexo</label>
+	                            <label>'.$this->lh->translationFor("gender").'</label>
 	                            <select class="form-control" id="gender" name="gender">
-									<option value="-1" '.$cgSelectedDefault.'><'.$this->lh->translationFor("choose_an_option").'</option>
+									<option value="-1" '.$cgSelectedDefault.'>'.$this->lh->translationFor("choose_an_option").'</option>
 	                                <option value="0" '.$cgSelected0.'>'.$this->lh->translationFor("female").'</option>
 	                                <option value="1" '.$cgSelected1.'>'.$this->lh->translationFor("male").'</option>
 	                            </select>
