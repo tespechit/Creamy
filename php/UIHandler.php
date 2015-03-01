@@ -623,7 +623,7 @@ require_once('LanguageHandler.php');
                         <i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <li><a href="./admincustomers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("customers").'</a></li>
+                        <li><a href="./adminusers.php"><i class="fa fa-user-secret"></i> '.$this->lh->translationFor("users").'</a></li>
                     </ul>
                 </li>';
 		}
