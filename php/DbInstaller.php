@@ -266,11 +266,11 @@ class DBInstaller {
 		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
 		
 		if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_DEFAULT) { // default schema: clients_1 (contacts) and clients_2 (normal clients).
-			if (!$this->createCustomersTableWithNameAndDescription("clients_1", $lh->translationFor("contacts"))) { 
+			if (!$this->createCustomersTableWithNameAndDescription("clients_1", $this->lh->translationFor("contacts"))) { 
 				$this->error = "Unable to create the contacts table: ".$this->conn->error;
 				return false;
 			}
-			if (!$this->createCustomersTableWithNameAndDescription("clients_2", $lh->translationFor("customers"))) { 
+			if (!$this->createCustomersTableWithNameAndDescription("clients_2", $this->lh->translationFor("customers"))) { 
 				$this->error = "Unable to create the contacts table: ".$this->conn->error;
 				return false;
 			}
