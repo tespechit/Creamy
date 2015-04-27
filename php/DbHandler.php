@@ -25,11 +25,13 @@
 
 namespace creamy;
 
+// dependencies
 require_once('CRMDefaults.php');
 require_once('PassHash.php');
 require_once('ImageHandler.php');
 require_once('RandomStringGenerator.php');
 require_once('LanguageHandler.php');
+require_once('DatabaseConnectorFactory.php');
 
 /**
  * DbHandler class.
@@ -43,23 +45,25 @@ require_once('LanguageHandler.php');
  * @link URL http://digitalleaves.com
  */
 class DbHandler {
-
-	// language handler
-    private $conn;
+    /** Database connector */
+    private $dbConnector;
+	/** Language handler */
 	private $lh;
         
 	/** Creation and class lifetime management */
     
-    function __construct() {
-        require_once dirname(__FILE__) . '/DbConnect.php';
-        // opening db connection
-        $db = new \creamy\DbConnect();
-        $this->conn = $db->connect();
-        $this->lh = \creamy\LanguageHandler::getInstance();
-   		ini_set( 'date.timezone', CRM_TIMEZONE);
-		date_default_timezone_set(CRM_TIMEZONE);
+    function __construct($dbConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL) {
+		// Database connector
+		$this->dbConnector = \creamy\DatabaseConnectorFactory::getInstance()->getDatabaseConnectorOfType($dbConnectorType);
+		$locale = $this->getLocaleSetting();
+		// language handler
+		$this->lh = \creamy\LanguageHandler::getInstance($locale, $dbConnectorType);
+    
     }
     
+    function __destruct() {
+	    if (isset($this->dbConnector)) { unset($this->dbConnector); }
+    }    
     
     /** Administration of users */
     
@@ -69,36 +73,34 @@ class DbHandler {
      * @param String $password User login password
      */
     public function createUser($name, $password, $email, $phone, $role, $avatarURL) {
-        $response = array();
-
         // First check if user already existed in db
-        if (!$this->userAlreadyExists($name)) {
+        if (!$this->userExistsIdentifiedByName($name)) {
             // Generating password hash
             $password_hash = \creamy\PassHash::hash($password);
             if (empty($avatarURL)) $avatarURL = CRM_DEFAULTS_USER_AVATAR;
 
             // insert query
-            $stmt = $this->conn->prepare("INSERT INTO users (name, password_hash, email, phone, role, avatar, creation_date, status) values(?, ?, ?, ?, ?, ?, now(), 1)");
-            $stmt->bind_param("ssssis", $name, $password_hash, $email, $phone, $role, $avatarURL);
-
-            $result = $stmt->execute();
-
-            $stmt->close();
-
+            $data = Array(
+	            "name" => $name,
+	            "password_hash" => $password_hash,
+	            "email" => $email,
+	            "phone" => $phone,
+	            "role" => $role,
+	            "avatar" => $avatarURL,
+	            "creation_date" => $this->dbConnector->now(),
+	            "status" => "1"
+            );
+            $id = $this->dbConnector->insert(CRM_USERS_TABLE_NAME, $data);
             // Check for successful insertion
-            if ($result) {
-                // User successfully inserted
+            if ($id) { // User successfully inserted
                 return USER_CREATED_SUCCESSFULLY;
-            } else {
-                // Failed to create user
+            } else { // Failed to create user
                 return USER_CREATE_FAILED;
             }
         } else {
             // User with same email already existed in the db
             return USER_ALREADY_EXISTED;
         }
-
-        return $response;
     }
 
 	/**
@@ -112,23 +114,22 @@ class DbHandler {
 	 */
 	public function modifyUser($modifyid, $email, $phone, $role, $avatar) {
 		// prepare query depending on parameters.
+		$this->dbConnector->where("id", $modifyid);
 		if (!empty($avatar)) { // If we are modifying the user's avatar, make sure to delete the old one.
+			// get user data and remove previous avatar.
 			$userdata = $this->getDataForUser($modifyid);
 			$ih = new \creamy\ImageHandler();
 			$ih->removeUserAvatar($userdata["avatar"]);
-			$stmt = $this->conn->prepare("UPDATE users set email = ?, phone = ?, avatar = ?, role = ? WHERE id = ?");
-			$stmt->bind_param("sssii", $email, $phone, $avatar, $role, $modifyid);
+			
+			// update with new avatar
+			$data = Array("email" => $email, "phone" => $phone, "avatar" => $avatar, "role" => $role);
 		} else { // no avatar change required, just update the values.
-	        $stmt = $this->conn->prepare("UPDATE users set email = ?, phone = ?, role = ? WHERE id = ?");
-	        $stmt->bind_param("ssii", $email, $phone, $role, $modifyid);
+			$data = Array("email" => $email, "phone" => $phone, "role" => $role);
 		}
-		
-        // execute modification query
-        $result = $stmt->execute();
-        $stmt->close();
 
-        // return true upon successful insertion
-        return $result;
+		// execute and return results
+		return ( $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data) );
+
    	}
 
 	/**
@@ -145,11 +146,8 @@ class DbHandler {
 		 	$ih->removeUserAvatar($data["avatar"]);
 	 	}
 	 	// then remove the entry at the database
-	 	$stmt = $this->conn->prepare("DELETE FROM users where id = ?");
-	 	$stmt->bind_param("i", $userid);
-	 	$result = $stmt->execute();
-	 	$stmt->close();
-        return $result;
+	 	$this->dbConnector->where("id", $userid);
+	 	return $this->dbConnector->delete(CRM_USERS_TABLE_NAME);
 	 }
 
     /**
@@ -160,19 +158,15 @@ class DbHandler {
      */
     public function checkLogin($name, $password) {
         // fetching user by name and password
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE name = ?");
-        $stmt->bind_param("s", $name);
-        if ($stmt->execute() === false) return NULL;
-        
-        // check result and build response
-        $result = $stmt->get_result();        
-		if ($userobj = $result->fetch_assoc()) { // get first match.
+        $this->dbConnector->where("name", $name);
+        $userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
+
+		if ($userobj) { // first match valid?
 			$password_hash = $userobj["password_hash"];
 			$status = $userobj["status"];
-			$result->close();
 			if ($status == 1) { // user is active
 				if (\creamy\PassHash::check_password($password_hash, $password)) {
-	                // User password is correct
+	                // User password is correct. return some interesting fields...
 	                $arr = array();
 	                $arr["id"] = $userobj["id"];
 	                $arr["name"] = $userobj["name"];
@@ -187,7 +181,6 @@ class DbHandler {
 	            }
 			} else return NULL;
 		} else {
-			$result->close();
 			return NULL;
 		}
     }
@@ -205,32 +198,25 @@ class DbHandler {
 		// safety check
 		if ($password1 != $password2) return false;
 		// get old password hash to check both.
-		$stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
-		$stmt->bind_param("i", $userid);
-		if ($stmt->execute() === false) return false;
-		
+		$this->dbConnector->where("id", $userid);
+		$userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
 		// check if password change is valid
-		$result = $stmt->get_result();
-		if ($userobj = $result->fetch_assoc()) {
+		if ($userobj) {
 			$password_hash = $userobj["password_hash"];
 			$status = $userobj["status"];
-			$result->close();
 			if ($status == 1) { // user is active, check old password.
 				if (\creamy\PassHash::check_password($password_hash, $oldpassword)) {
 	                // oldpassword is correct, change password.
 	                $newPasswordHash = \creamy\PassHash::hash($password1);
-	                $updateStmt = $this->conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-	                $updateStmt->bind_param("si", $newPasswordHash, $userid);
-					$modifyResult = $updateStmt->execute();
-					$updateStmt->close();
-	                return $modifyResult;
+					$this->dbConnector->where("id", $userid);
+					$data = Array("password_hash" => $newPasswordHash);
+					return $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data);
 	            } else {
 	                // oldpassword is incorrect
 	                return false;
 	            }
 			} else return false;
 		} else {
-			$result->close();
 			return false;
 		}
 	}
@@ -244,12 +230,9 @@ class DbHandler {
 	 */
 	public function changePasswordAdmin($userid, $password) {
 		$newPasswordHash = \creamy\PassHash::hash($password);
-		
-		$stmt = $this->conn->prepare("UPDATE users SET password_hash = ? WHERE id = ? ");
-		$stmt->bind_param("si", $newPasswordHash, $userid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		$this->dbConnector->where("id", $userid);
+		$data = Array("password_hash" => $newPasswordHash);
+		return $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data);
 	}
     
     /**
@@ -258,24 +241,9 @@ class DbHandler {
      * @return object an associative array containing the user's relevant data if the user id valid, NULL otherwise.
      */
     public function getDataForUser($userid) {
-	    $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
-	    $stmt->bind_param("i", $userid);
-		if ($stmt->execute() === false) return NULL;
-		$result = $stmt->get_result();
-		
-		// extract relevant user's data.
-		if ($obj = $result->fetch_assoc()) {
-			$userobj = array();
-			$userobj["name"] = $obj["name"];
-			$userobj["email"] = $obj["email"];
-			$userobj["phone"] = $obj["phone"];
-			$userobj["role"] = $obj["role"];
-			$userobj["avatar"] = $obj["avatar"];
-	        $userobj["creation_date"] = $obj["creation_date"];
-			
-			$stmt->close();
-			return $userobj;
-		} else return NULL;
+	    $this->dbConnector->where("id", $userid);
+	    $cols = array("id", "name", "email", "phone", "role", "avatar", "creation_date");
+	    return $this->dbConnector->getOne(CRM_USERS_TABLE_NAME, null, $cols);
     }
     
     /**
@@ -283,29 +251,9 @@ class DbHandler {
      * @return Array an array of objects containing the data of all users in the system.
 	 */
 	public function getAllEnabledUsers() {
-		$stmt = $this->conn->prepare("SELECT * FROM users WHERE status = 1");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result == NULL) {
-			return array();
-		} else {
-			$response = array();
-	        // looping through result and preparing channels array
-	        while ($contact = $result->fetch_assoc()) {
-	            $tmp = array();
-	            $tmp["id"] = $contact["id"];
-	            $tmp["name"] = $contact["name"];
-	            $tmp["email"] = $contact["email"];
-	            $tmp["phone"] = $contact["phone"];
-	            $tmp["creation_date"] = $contact["creation_date"];
-	            $tmp["role"] = $contact["role"];
-	            $tmp["status"] = $contact["status"];
-	            
-	            array_push($response, $tmp);
-	        }
-			return $response;
-		}
+		$this->dbConnector->where("status", "1");
+		$cols = array("id", "name", "email", "phone", "role", "avatar", "creation_date", "status");
+		return $this->dbConnector->get(CRM_USERS_TABLE_NAME, null, $cols);
 	}
     
     /**
@@ -313,13 +261,10 @@ class DbHandler {
      * @param String $name name to check in db
      * @return boolean
      */
-    private function userAlreadyExists($name) {
-        $stmt = $this->conn->prepare("SELECT id from users WHERE name = ?");
-        $stmt->bind_param("s", $name);
-        $stmt->execute();
-        $num_rows = $stmt->num_rows;
-        $stmt->close();
-        return $num_rows > 0;
+    public function userExistsIdentifiedByName($name) {
+	    $this->dbConnector->where("name", $name);
+	    $this->dbConnector->get(CRM_USERS_TABLE_NAME);
+	    return ($this->dbConnector->count > 0);
     }
 
     /**
@@ -327,13 +272,10 @@ class DbHandler {
      * @param String $email email to check in db
      * @return boolean true if operation succeed.
      */
-    private function userEmailAlreadyExists($name) {
-        $stmt = $this->conn->prepare("SELECT id from users WHERE email = ?");
-        $stmt->bind_param("s", $name);
-        $stmt->execute();
-        $num_rows = $stmt->num_rows;
-        $stmt->close();
-        return $num_rows > 0;
+    public function userExistsIdentifiedByEmail($email) {
+	    $this->dbConnector->where("email", $email);
+	    $this->dbConnector->get(CRM_USERS_TABLE_NAME);
+	    return ($this->dbConnector->count > 0);
     }
 
     /**
@@ -341,29 +283,8 @@ class DbHandler {
      * @return Array an array of objects containing the data of all users in the system.
      */
    	public function getAllUsers() {
-        $stmt = $this->conn->prepare("SELECT * FROM users");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result == NULL) {
-			return NULL;
-		} else {
-			$response = array();
-	        // looping through result and preparing channels array
-	        while ($contact = $result->fetch_assoc()) {
-	            $tmp = array();
-	            $tmp["id"] = $contact["id"];
-	            $tmp["name"] = $contact["name"];
-	            $tmp["email"] = $contact["email"];
-	            $tmp["phone"] = $contact["phone"];
-	            $tmp["creation_date"] = $contact["creation_date"];
-	            $tmp["role"] = $contact["role"];
-	            $tmp["status"] = $contact["status"];
-	            
-	            array_push($response, $tmp);
-	        }
-			return $response;
-		}
+	   	$cols = array("id", "name", "email", "phone", "creation_date", "role", "avatar", "status");
+	   	return $this->dbConnector->get(CRM_USERS_TABLE_NAME, null, $cols);
 	}
 	
 	/**
@@ -372,51 +293,13 @@ class DbHandler {
      * @param $status Int the new status for the user
 	 */
 	public function setStatusOfUser($userid, $status) {
-		$stmt = $this->conn->prepare("UPDATE users SET status = ? WHERE id = ?");
-		$stmt->bind_param("ii", $status, $userid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		$this->dbConnector->where("id", $userid);
+		$data = array("status" => $status);
+		return $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data);
 	}
 	
 	/** Password recovery */
 
-	/** 
-	 * Sends a recovery mail to the user. The user must have a valid email contained in the database.
-	 * @param $email string string of the user.
-	 * @return true if successful, false if email couldn't be sent.
-	 */
-	public function sendPasswordRecoveryEmail($email) {
-		if ($this->userEmailAlreadyExists($email)) {
-			$randomStringGenerator = new \creamy\RandomStringGenerator();
-			$nonce = $randomStringGenerator->generate(40);
-			$dateAsString = date('Y-m-d-H-i-s');
-			$htmlContent = file_get_contents(CRM_RECOVERY_EMAIL_FILE);
-			if ($htmlContent !== false) {
-				$subject = "Password reset link for your Creamy account.";
-				$headers = "From: hello@creamycrm.com\r\n";
-				$headers .= "Reply-To: hello@creamycrm.com\r\n";
-				$headers .= "MIME-Version: 1.0\r\n";
-				$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-				
-				$resetCode = $this->generatePasswordResetCode($email, $dateAsString);
-				$htmlContent = str_replace("{email}", $email, $htmlContent);
-				$htmlContent = str_replace("{date}", $dateAsString, $htmlContent);
-				$htmlContent = str_replace("{host}", $_SERVER['SERVER_NAME'], $htmlContent);
-				$htmlContent = str_replace("{code}", $resetCode, $htmlContent);
-				$htmlContent = str_replace("{nonce}", $nonce, $htmlContent);
-				return mail($email, $subject, $htmlContent, $headers);
-			}
-		}
-		return false;
-	}
-	
-	/** Generates a password reset code, a md5($email + $date + $nonce + CRM_SECURITY_TOKEN) */
-	private function generatePasswordResetCode($email, $date, $nonce) {
-		$baseString = $email.$date.$nonce.CRM_SECURITY_TOKEN;
-		return md5($baseString);
-	}
-		
 	/** Checks link validity for a password reset code */
 	public function checkPasswordResetValidity($email, $date, $nonce, $code) {
 		$checkCode = $this->generatePasswordResetCode($email, $date, $nonce);
@@ -438,16 +321,110 @@ class DbHandler {
 		return false;
 	}
 
+	/** Generates a password reset code, a md5($email + $date + $nonce + CRM_SECURITY_TOKEN) */
+	public function generatePasswordResetCode($email, $date, $nonce) {
+		$baseString = $email.$date.$nonce.CRM_SECURITY_TOKEN;
+		return md5($baseString);
+	}
+	
 	/** 
 	 * Changes the password of a user identified by an email. The user must have a valid email in the database.
 	 * @param $email String the email of the user.
 	 * @param $password the new password for the user.
 	 */
 	public function changePasswordForUserIdentifiedByEmail($email, $password) {
-		if ($this->userExists($email)) {
+		if ($this->userExistsIdentifiedByEmail($email)) {
 	        // Generating password hash
 	        $password_hash = \creamy\PassHash::hash($password);
-			return $this->conn->query("UPDATE users SET password_hash = '$password_hash' WHERE email = '$email'");
+	        $this->dbConnector->where("email", $email);
+	        $data = array("password_hash" => $password_hash);
+	        return $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data);
+		}
+		return false;
+	}
+	
+	/** Settings */
+
+	/** Returns the value for a setting with a given key */
+	public function getSettingValueForKey($key) {
+		$this->dbConnector->where("setting", $key);
+		if ($result = $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME)) {
+			return $result["value"];
+		} 
+		return NULL;
+	}
+	
+	public function setSettingValueForKey($key, $value) {
+		$this->dbConnector->where("setting", $key);
+		$data = array("value" => $value);
+		if ($this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $data)) {
+			// update succeed.
+			return true;
+		} else { // unable to upload. Perhaps the key didn't exist?
+			// try to insert instead.
+			$this->dbConnector->where("setting", $key);
+			$data = array("setting" => $key, "value" => $value);
+			return $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data);
+		}
+	}
+	
+	public function setSettings($data) {
+		$this->dbConnector->startTransaction();
+		if (is_array($data) && !empty($data)) {
+			foreach ($data as $key => $value) {
+				// locale
+				if ($key == CRM_SETTING_LOCALE) { $result = $this->setLocaleSetting($value); }
+				// timezone
+				else if ($key == CRM_SETTING_TIMEZONE) { $result = $this->setTimezoneSetting($value); }
+				// other settings.
+				else { $result = $this->setSettingValueForKey($key, $value); }
+				
+				// failure ?
+				if ($result === false) {
+					$this->dbConnector->rollback();
+					return false;
+				}
+				
+			}
+		}
+		$this->dbConnector->commit();
+		return true;
+	}
+	
+	public function getMainAdminUserData() {
+		$adminUserId = $this->getSettingValueForKey(CRM_SETTING_ADMIN_USER);
+		if (!empty($adminUserId)) {
+			return $this->getDataForUser($adminUserId);
+		}
+	}
+	
+	public function getMainAdminEmail() {
+		$adminUserData = $this->getMainAdminUserData();
+		if (isset($adminUserData)) { return $adminUserData["email"]; }
+		else { return null; }
+	}
+	
+	// special settings that need some extra work.
+	
+	public function getLocaleSetting() { return $this->getSettingValueForKey(CRM_SETTING_LOCALE); }
+
+	public function getTimezoneSetting() { return $this->getSettingValueForKey(CRM_SETTING_TIMEZONE); }
+
+	public function setLocaleSetting($newLocale) {
+		if ($this->setSettingValueForKey(CRM_SETTING_LOCALE, $newLocale)) {
+			// update Language handler.
+			\creamy\LanguageHandler::getInstance()->setLanguageHandlerLocale($newLocale);
+			return true;
+		}
+		return false;
+	}
+	
+	public function setTimezoneSetting($newTimezone) {
+		if ($this->setSettingValueForKey(CRM_SETTING_TIMEZONE, $newTimezone)) {
+			// update timezone information.
+	        ini_set('date.timezone', $newTimezone);
+			date_default_timezone_set($newTimezone);
+			return true;
 		}
 		return false;
 	}
@@ -459,31 +436,40 @@ class DbHandler {
 	 * @param $customerType the type of customer to retrieve.
 	 * @return Array an array containing the objects with the users' data.
 	 */
-	public function getAllCustomersOfType($customerType) {
+	public function getAllCustomersOfType($customerType, $numRows = null, $sorting = null, $filtering = null) {
+		// safety check
 		if (!isset($customerType)) return array();
-        $stmt = $this->conn->prepare("SELECT * FROM $customerType");
-        if ($stmt === false) return array();
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result == NULL) {
-			return NULL;
-		} else {
-			$response = array();
-	        // looping through result and preparing channels array
-	        while ($person = $result->fetch_assoc()) {
-	            $tmp = array();
-	            $tmp["id"] = $person["id"];
-	            $tmp["name"] = $person["name"];
-	            $tmp["email"] = $person["email"];
-	            $tmp["phone"] = $person["phone"];
-	            $tmp["id_number"] = $person["id_number"];
-	            
-	            array_push($response, $tmp);
-	        }
-			return $response;
+		
+		// columns
+		$cols = $this->getCustomerColumnsToBeShownInCustomerList($customerType);
+		
+		// sorting
+		if (isset($sorting) && count($sorting) > 0) {
+			foreach ($sorting as $columnToSort => $sortType) { $this->dbConnector->orderBy($columnToSort, $sortType); }
 		}
+		
+		// filtering
+		if (isset($filtering) && count($filtering) > 0) {
+			$i = 0;
+			foreach ($filtering as $columnToSearch => $wordToSearch) {
+				if ($i == 0) { $this->dbConnector->where($columnToSearch, '%'.$wordToSearch.'%', "LIKE"); }
+				else { $this->dbConnector->orWhere($columnToSearch, '%'.$wordToSearch.'%', 'LIKE'); }
+				$i++;
+			}
+		}
+		
+		// perform query and execute results.
+		return $this->dbConnector->get($customerType, $numRows, $cols);
    	}
+	
+	/**
+	 * Gets the customer columns to be shown in the customer list.
+	 * @param $customerType the type of customer to retrieve.
+	 * @return Array an array containing the columns to be shown in the customer list.
+	 */	
+	public function getCustomerColumnsToBeShownInCustomerList($customerType) {
+		return array("id", "name", "email", "phone", "id_number");
+	}
 	
 	/**
 	 * Creates a new customer
@@ -514,11 +500,28 @@ class DbHandler {
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
 		
 		// prepare and execute query.
-		$stmt = $this->conn->prepare("INSERT INTO $customerType (name, email, phone, mobile, id_number, address, city, state, zip_code, country, type, birthdate, marital_status, creation_date, created_by, do_not_send_email, gender) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?)");
-		$stmt->bind_param("ssssssssssssiiii", $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country,  $productType, $correctDate, $maritalstatus,$createdByUser, $donotsendemail, $gender);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		$data = array(
+			"name" => $name,
+			"email" => $email,
+			"phone" => $phone,
+			"mobile" => $mobile,
+			"id_number" => $id_number,
+			"address" => $address,
+			"city" => $city,
+			"state" => $state,
+			"zip_code" => $zipcode,
+			"country" => $country,
+			"type" => $productType,
+			"birthdate" => $correctDate,
+			"marital_status" => $maritalstatus,
+			"creation_date" => $this->dbConnector->now(),
+			"created_by" => $createdByUser,
+			"do_not_send_email" => $donotsendemail,
+			"gender" => $gender,
+		);
+		
+		if ($this->dbConnector->insert($customerType, $data)) { return true; }
+		else { error_log($this->dbConnector->getLastError()); return false; }
 	}
 
 	/**
@@ -549,11 +552,27 @@ class DbHandler {
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
 		
 		// prepare and execute query
-		$stmt = $this->conn->prepare("UPDATE $customerType SET name = ?, email = ?, phone = ?, mobile = ?, id_number = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, type = ?, birthdate = ?, marital_status = ?, do_not_send_email = ?, gender = ?, notes = ? WHERE id = ?");
-		$stmt->bind_param("ssssssssssssiiisi", $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $productType, $correctDate, $maritalstatus, $donotsendemail, $gender, $notes, $customerid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+				// prepare and execute query.
+		$data = array(
+			"name" => $name,
+			"email" => $email,
+			"phone" => $phone,
+			"mobile" => $mobile,
+			"id_number" => $id_number,
+			"address" => $address,
+			"city" => $city,
+			"state" => $state,
+			"zip_code" => $zipcode,
+			"country" => $country,
+			"type" => $productType,
+			"birthdate" => $correctDate,
+			"marital_status" => $maritalstatus,
+			"do_not_send_email" => $donotsendemail,
+			"gender" => $gender,
+			"notes" => $notes,
+		);
+		$this->dbConnector->where("id", $customerid);
+		return $this->dbConnector->update($customerType, $data);
 	}
 		
 	/**
@@ -563,16 +582,8 @@ class DbHandler {
      * @return Array an array containing the customer data, or NULL if customer wasn't found.
      */
     public function getDataForCustomer($customerid, $customerType) {
-		$stmt = $this->conn->prepare("SELECT * FROM $customerType WHERE id = ?");
-		$stmt->bind_param("i", $customerid);
-		if ($stmt->execute() === false) return NULL;
-		
-		// analyze results
-		$result = $stmt->get_result();
-		$stmt->close();
-		if ($obj = $result->fetch_assoc()) {
-			return $obj;
-		} else return NULL;
+	    $this->dbConnector->where("id", $customerid);
+	    return $this->dbConnector->getOne($customerType);
     }
     
     /**
@@ -584,25 +595,121 @@ class DbHandler {
 		 // sanity checks
 	 	if (empty($customerid) || empty($customerType)) return false;
 	 	// then remove the entry at the database
-        $stmt = $this->conn->prepare("DELETE FROM ? where id = ?");
-        $stmt->bind_param("si", $customerType, $customerid);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
+	 	$this->dbConnector->where("id", $customerid);
+	 	return $this->dbConnector->delete($customerType);
 	 }
-	 
+	
+	/**
+	 * Deletes a customer type. This function will delete the table and all associated registers.
+	 * @param Int customerType the identifier of the customer type to delete (= id in table customer_types).
+	 */
+	public function deleteCustomerType($customerTypeId) {
+		// safety checks && get the table name for the customer type.
+		if ($customerTypeId == 1) { return false; } // we don't want to delete the basic contacts table.
+		$this->dbConnector->where("id", $customerTypeId);
+		if ($result = $this->dbConnector->getOne(CRM_CUSTOMER_TYPES_TABLE_NAME)) { 
+			$tableName = $result["table_name"]; 
+		}
+		if (!isset($tableName)) { return false; }
+		
+		// We will set a transaction to make sure we delete everything at once.
+		$this->dbConnector->startTransaction();
+		// try to delete the association first.
+		$this->dbConnector->where("id", $customerTypeId);
+		if ($this->dbConnector->delete(CRM_CUSTOMER_TYPES_TABLE_NAME)) {
+			// now try to delete all the customer table.
+			if ($this->dbConnector->dropTable($tableName)) { // success
+				// now try to delete the statistics column.
+				if ($this->dbConnector->dropColumnFromTable(CRM_STATISTICS_TABLE_NAME, $tableName)) {
+					// success!
+					$this->dbConnector->commit();
+					return true;
+				}
+			}
+			// TODO: Warn the modules about the deletion, in case they need to modify something.
+		}
+		$this->dbConnector->rollback();
+		return false;
+	}
+	
+	private function createNewCustomersTable($tablename) {
+		$fields = array(
+			"company" => "int(1) NOT NULL DEFAULT 0",
+			"name" => "varchar(255) NOT NULL",
+			"id_number" => " varchar(255) DEFAULT NULL",
+			"address" => "text",
+			"city" => "varchar(255) DEFAULT NULL",
+			"state" => "varchar(255) DEFAULT NULL",
+			"zip_code" => "varchar(255) DEFAULT NULL",
+			"country" => "varchar(255) DEFAULT NULL",
+			"phone" => "text",
+			"mobile" => "text",
+			"email" => "varchar(255) DEFAULT NULL",
+			"avatar" => "varchar(255) DEFAULT NULL",
+			"type" => "text",
+			"webpage" => "varchar(255) DEFAULT NULL",
+			"company_name" => "varchar(255) DEFAULT NULL",
+			"notes" => "text",
+			"birthdate" => "datetime DEFAULT NULL",
+			"marital_status" => "int(11) DEFAULT NULL",
+			"creation_date" => "datetime DEFAULT NULL",
+			"created_by" => "int(11) NOT NULL",
+			"do_not_send_email" => "char(1) DEFAULT NULL",
+			"gender" => "int(1) DEFAULT NULL");
+		
+		$unique_keys = array("name", "");
+		
+		return $this->dbConnector->createTable($tablename, $fields, $unique_keys);
+	}
+	
+	/**
+	 * Adds a new customer type, creating the new customer tables and updating customer_types and statistics tables.
+	 */
+	public function addNewCustomerType($description) {
+		// we generate a random temporal name for the table.
+		$rsg = new \creamy\RandomStringGenerator();
+		$tempName = "temp".$rsg->generate(20);
+
+		$this->dbConnector->startTransaction();
+		// first we need to insert the customer_type register, because we don't have a table_name yet.
+		$data = array("table_name" => $tempName, "description" => $description);
+		$id = $this->dbConnector->insert(CRM_CUSTOMER_TYPES_TABLE_NAME, $data);
+		if ($id) { // if insertion was successful, use the generated auto_increment id to set the name of the table_name.
+			$tableName = "clients_$id";
+			$this->dbConnector->where("id", $id);
+			$finalData = array("table_name" => $tableName);
+			if ($this->dbConnector->update(CRM_CUSTOMER_TYPES_TABLE_NAME, $finalData)) { // success!
+				// now we try to add the new customers table.
+				if ($this->createNewCustomersTable($tableName)) { // success!
+					// now try to add to statistics.
+					if ($this->dbConnector->addColumnToTable(CRM_STATISTICS_TABLE_NAME, $tableName, "INT(11) DEFAULT 0", "0")) {
+						// success!
+						$this->dbConnector->commit();
+						return true;
+					}
+				}
+			}
+		}
+		$this->dbConnector->rollback();
+		return false;
+	}
+	
+	/**
+	 * Modifies the description for a type of customer.
+	 */
+	public function modifyCustomerDescription($customerTypeId, $newDescription) {
+		// update description
+		$this->dbConnector->where("id", $customerTypeId);
+		$data = array("description" => $newDescription);
+		return $this->dbConnector->update(CRM_CUSTOMER_TYPES_TABLE_NAME, $data);
+	}
+	
 	/**
 	 * Retrieves an array containing an array with all the customer types expressed as an associative array.
 	 * @return Array the list of customer type structures.
 	 */
 	public function getCustomerTypes() {
-		$result = $this->conn->query("SELECT * FROM customer_types");
-		if ($result === false) return array();
-		$customerTypes = array();
-		while ($row = $result->fetch_assoc()) {
-			array_push($customerTypes, $row);
-		}
-		return $customerTypes;
+		return $this->dbConnector->get(CRM_CUSTOMER_TYPES_TABLE_NAME);
 	}
 	
 	/**
@@ -611,15 +718,8 @@ class DbHandler {
 	 * @return String a human friendly description of this customer type.
 	 */
 	public function getNameForCustomerType($customerType) {
-		$stmt = $this->conn->prepare("SELECT * FROM customer_types WHERE table_name = ?");
-		$stmt->bind_param("s", $customerType);
-		if ($stmt->execute() === false) return $this->lh->translationFor("customer");
-		else {
-			$result = $stmt->get_result();
-			if ($row = $result->fetch_assoc()) {
-				return $row["description"];
-			} else return "Customer";
-		}
+		$this->dbConnector->where("table_name", $customerType);
+		return $this->dbConnector->getValue(CRM_CUSTOMER_TYPES_TABLE_NAME, "description");
 	}
 	
 	/** tasks */
@@ -630,18 +730,10 @@ class DbHandler {
 	 * @return Array an array containing all task objects as associative arrays, or NULL if user was not found or an error occurred.
 	 */
 	public function getCompletedTasks($userid) {
-        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? AND completed = 100 ORDER BY creation_date");
-        $stmt->bind_param("i", $userid);
-        if ($stmt->execute() === false) return NULL;
-        $tasks = $stmt->get_result();
-        $stmt->close();
-	    $result = array();
-        if ($tasks->num_rows > 0) {
-			while ($task = $tasks->fetch_assoc()) {
-		        array_push($result, $task);
-		    }
-        }
-		return $result;
+		$this->dbConnector->where("user_id", $userid);
+		$this->dbConnector->where("completed", 100);
+		$this->dbConnector->orderBy("creation_date", "Desc");
+		return $this->dbConnector->get(CRM_TASKS_TABLE_NAME);
 	}
 
 	
@@ -650,20 +742,11 @@ class DbHandler {
 	 * @param Int $userid returns the number of unfinished tasks of the user.
 	 */
 	 public function getUnfinishedTasksNumber($userid) {
-		 // prepare query.
-		 $stmt = $this->conn->prepare("SELECT count(*) from tasks where user_id = ? AND completed < 100");
-		 $stmt->bind_param("i", $userid);
-		 if ($stmt->execute() === false) return 0;
-		 $result = $stmt->get_result();
-		 $stmt->close();
-		 // analyse result
-		 if ($result === false) return 0;
-		 else {
-			 $row = $result->fetch_row();
-			 $numMessages = $row[0];
-			 $result->close();
-			 return $numMessages;
-		}
+		$this->dbConnector->where("user_id", $userid);
+		$this->dbConnector->where("completed", 100, "<");
+		if ($this->dbConnector->get(CRM_TASKS_TABLE_NAME)) {
+			return $this->dbConnector->count;
+		} else { return 0; }
 	 }
 	 
 	/**
@@ -671,23 +754,10 @@ class DbHandler {
 	 * @param Int $userid returns the unfinished tasks of the user.
 	 */
 	 public function getUnfinishedTasks($userid) {
-		 // prepare query
-		 $stmt = $this->conn->prepare("SELECT * from tasks where user_id = ? AND completed < 100 ORDER BY creation_date");
-		 $stmt->bind_param("i", $userid);
-		 if ($stmt->execute() === false) return 0;
-		 $result = $stmt->get_result();
-		 $stmt->close();
-
-		 // analyse results
-		 if ($result === false) return NULL;
-		 else {
-			 $tasks = array();
-			 while ($task = $result->fetch_assoc()) {
-				 array_push($tasks, $task);
-			 }
-			 $result->close();
-			 return $tasks;
-		}
+		$this->dbConnector->where("user_id", $userid);
+		$this->dbConnector->where("completed", 100, "<");
+		$this->dbConnector->orderBy("creation_date", "Desc");
+		return $this->dbConnector->get(CRM_TASKS_TABLE_NAME);
 	 }
 	 
 	/**
@@ -704,16 +774,15 @@ class DbHandler {
 		else if ($taskInitialProgress < 0) $taskInitialProgress = 0;
 		else if ($taskInitialProgress > 100) $taskInitialProgress = 100;
 		
-		if ($taskInitialProgress == 100) { // already completed.
-			$stmt = $this->conn->prepare("INSERT INTO tasks(user_id, description, completed, creation_date, completion_date) values(?, ?, ?, now(), now())");
-			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
-		} else {
-			$stmt = $this->conn->prepare("INSERT INTO tasks(user_id, description, completed, creation_date) values(?, ?, ?, now())");
-			$stmt->bind_param("isi", $userid, $taskDescription, $taskInitialProgress);
-		}
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		$data = array(
+			"user_id" => $userid, 
+			"description" => $taskDescription, 
+			"completed" => $taskInitialProgress, 
+			"creation_date" => $this->dbConnector->now()
+		);
+		if ($taskInitialProgress == 100) { $data["completion_date"] = $this->dbConnector->now(); }
+		if ($this->dbConnector->insert(CRM_TASKS_TABLE_NAME, $data)) { return true; }
+		else { return $false; }
 	}
 	
 	/**
@@ -722,12 +791,11 @@ class DbHandler {
 	 * @return boolean true if operation was successful, false otherwise.
 	 */
 	public function deleteTask($taskid) {
+	 	// safety check
 	 	if (empty($taskid)) return false;
-        $stmt = $this->conn->prepare("DELETE FROM tasks where id = ?");
-        $stmt->bind_param("i", $taskid);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
+	 	
+	 	$this->dbConnector->where("id", $taskid);
+	 	return $this->dbConnector->delete(CRM_TASKS_TABLE_NAME);
 	}
 	
 	/**
@@ -739,11 +807,11 @@ class DbHandler {
 	 */
 	public function setTaskCompletionStatus($taskid, $progress, $userid) {
 		if (empty($taskid) || empty($progress) || empty($userid)) return false;
-		$stmt = $this->conn->prepare("UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?");
-		$stmt->bind_param("iii", $progress, $taskid, $userid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		
+		$this->dbConnector->where("id", $taskid);
+		$this->dbConnector->where("user_id", $userid);
+		$data = array("completed" => $progress);
+		return $this->dbConnector->update(CRM_TASKS_TABLE_NAME, $data);
 	}
 	
 	/**
@@ -755,11 +823,10 @@ class DbHandler {
 	 */
 	public function editTaskDescription($taskid, $description, $userid) {
 		if (empty($taskid) || empty($description) || empty($userid)) return false;
-		$stmt = $this->conn->prepare("UPDATE tasks SET description = ? WHERE id = ? AND user_id = ?");
-		$stmt->bind_param("sii", $description, $taskid, $userid);
-		$result = $stmt->execute();
-		$stmt->close();
-		return $result;
+		$this->dbConnector->where("id", $taskid);
+		$this->dbConnector->where("user_id", $userid);
+		$data = array("description" => $description);
+		return $this->dbConnector->update(CRM_TASKS_TABLE_NAME, $data);
 	}
 	
 	
@@ -780,19 +847,20 @@ class DbHandler {
 		if (empty($message)) $message = "(".$this->lh->translationFor("no_message").")";
 		
 		// insert the new message in the inbox of the receiving user.
-		$stmt = $this->conn->prepare("INSERT INTO messages_inbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 0, 0)");
-		$stmt->bind_param("iiss", $fromuserid, $touserid, $subject, $message);
-		$insertInbox = $stmt->execute();
-		$stmt->close();
-		if ($insertInbox === false) return false;
+		$data = array(
+			"user_from" => $fromuserid,
+			"user_to" => $touserid,
+			"subject" => $subject,
+			"message" => $message,
+			"date" => $this->dbConnector->now(),
+			"message_read" => 0,
+			"favorite" => 0
+		);
+		if (!$this->dbConnector->insert(CRM_MESSAGES_INBOX_TABLE_NAME, $data)) { return false; }
 				
 		// insert the new message in the outbox of the sending user.
-		$stmt = $this->conn->prepare("INSERT INTO messages_outbox (user_from, user_to, subject, message, date, message_read, favorite) VALUES (?, ?, ?, ?, now(), 1, 0)");
-		$stmt->bind_param("iiss", $fromuserid, $touserid, $subject, $message);
-		$insertOutbox = $stmt->execute();
-		$stmt->close();
-		if ($insertOutbox === false) return false;
-		return true;
+		$data["message_read"] = 1;
+		return $this->dbConnector->insert(CRM_MESSAGES_OUTBOX_TABLE_NAME, $data);
 	}
 	
 	/**
@@ -803,15 +871,15 @@ class DbHandler {
 	private function getTableNameForFolder($folder) {
 		$tableName = NULL;
 		if ($folder == MESSAGES_GET_INBOX_MESSAGES) { // all inbox messages.
-			$tableName = "messages_inbox";
+			$tableName = CRM_MESSAGES_INBOX_TABLE_NAME;
 		} else if ($folder == MESSAGES_GET_UNREAD_MESSAGES) { // unread messages.
-			$tableName = "messages_inbox";
+			$tableName = CRM_MESSAGES_INBOX_TABLE_NAME;
 		} else if ($folder == MESSAGES_GET_DELETED_MESSAGES) { // deleted messages.
-			$tableName = "messages_junk";
+			$tableName = CRM_MESSAGES_JUNK_TABLE_NAME;
 		} else if ($folder == MESSAGES_GET_SENT_MESSAGES) { // sent messages.
-			$tableName = "messages_outbox";
+			$tableName = CRM_MESSAGES_OUTBOX_TABLE_NAME;
 		} else if ($folder == MESSAGES_GET_FAVORITE_MESSAGES) { // favorite inbox messages
-			$tableName = "messages_inbox";
+			$tableName = CRM_MESSAGES_INBOX_TABLE_NAME;
 		}
 		return $tableName;
 	}
@@ -830,47 +898,30 @@ class DbHandler {
 		if (!is_numeric($userid) || !is_numeric($type)) return NULL;
 		
 		// determine type of messages to get.
-		$whereClause = NULL;
 		$tableName = $this->getTableNameForFolder($type);
+		if (empty($tableName)) { return NULL; }
+
 		if ($type == MESSAGES_GET_INBOX_MESSAGES) { // all inbox messages.
-			$whereClause = "WHERE m.user_to = $userid AND m.user_from = u.id";
+			$this->dbConnector->where("$tableName.user_to", $userid);
+			$this->dbConnector->where("$tableName.user_from = ".CRM_USERS_TABLE_NAME.".id");
 		} else if ($type == MESSAGES_GET_UNREAD_MESSAGES) { // unread messages.
-			$whereClause = "WHERE m.user_to = $userid AND m.message_read = 0 AND m.user_from = u.id";
+			$this->dbConnector->where("$tableName.user_to", $userid);
+			$this->dbConnector->where("$tableName.user_from = ".CRM_USERS_TABLE_NAME.".id");
+			$this->dbConnector->where("$tableName.message_read", 0);
 		} else if ($type == MESSAGES_GET_DELETED_MESSAGES) { // deleted messages.
-			$whereClause = "WHERE (m.user_to = $userid AND m.user_from = u.id) OR (m.user_from = $userid AND m.user_to = u.id)";
+			$this->dbConnector->where("($tableName.user_to = $userid AND $tableName.user_from = users.id) OR ($tableName.user_from = $userid AND $tableName.user_to = users.id)");
 		} else if ($type == MESSAGES_GET_SENT_MESSAGES) { // sent messages.
-			$whereClause = "WHERE m.user_from = $userid AND m.user_to = u.id";
+			$this->dbConnector->where("$tableName.user_from", $userid);
+			$this->dbConnector->where("$tableName.user_to = users.id");
 		} else if ($type == MESSAGES_GET_FAVORITE_MESSAGES) { // favorite inbox messages
-			$whereClause = "WHERE m.user_to = $userid AND favorite = 1 AND m.user_from = u.id";
-		}
+			$this->dbConnector->where("$tableName.user_to", $userid);
+			$this->dbConnector->where("$tableName.user_from = users.id");
+			$this->dbConnector->where("$tableName.favorite", 1);
+		} else { return NULL; }
 		
-		// safety check
-		if (empty($whereClause) || empty($tableName)) {
-			return NULL;
-		}
 		// return the messages.
-		$result = $this->conn->query("SELECT u.name, u.avatar, m.id, m.user_from, m.user_to, m.subject, m.message, m.date, m.message_read, m.favorite FROM ".$tableName." m, users u ".$whereClause." ORDER BY m.date DESC");
-		if (empty($result) || $result === false) { // sanity check
-			return NULL;
-		}
-		// iterate through all users and generate the select
-		$response = array();
-		while ($obj = $result->fetch_assoc()) {
-			$tmp = array();
-			$tmp["id"] = $obj["id"]; 
-			$tmp["user_from"] = $obj["user_from"]; 
-			$tmp["user_to"] = $obj["user_to"]; 
-			$tmp["subject"] = $obj["subject"]; 
-			$tmp["message"] = $obj["message"]; 
-			$tmp["date"] = $obj["date"]; 
-			$tmp["message_read"] = $obj["message_read"]; 
-			$tmp["favorite"] = $obj["favorite"];
-			$tmp["remote_user"] = $obj["name"];
-			$tmp["remote_avatar"] = $obj["avatar"]; 
-			array_push($response, $tmp);
-		}
-		
-		return $response;
+		$cols = array("$tableName.id", "$tableName.user_from", "$tableName.user_to", "$tableName.subject", "$tableName.message", "$tableName.date", "$tableName.message_read", "$tableName.favorite", "users.name as remote_user", "users.avatar as remote_avatar");
+		return $this->dbConnector->get("$tableName, users", null, $cols);
 	}
 	
 	/**
@@ -891,24 +942,16 @@ class DbHandler {
 		
 		// calculate query message.
 		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id)) ");
-			$stmt->bind_param("iii", $messageid, $userid, $userid);		
+			$params = arrat($messageid, $userid, $userid);		
+			$query = "SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id))";
 		} else {
-			$stmt = $this->conn->prepare("SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?");
-			$stmt->bind_param("ii", $userid, $messageid);
+			$params = array($userid, $messageid);
+			$query = "SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?";
 				
 		}
 		// execute the query
-		if ($stmt->execute() === false) return NULL;
-		$result = $stmt->get_result();
-		$stmt->close();
-		if (empty($result) || $result === false) { // sanity check
-			return NULL;
-		}
-		
-		// do we have a valid message? return it.
-		if ($messageObj = $result->fetch_assoc()) { return $messageObj; }
-		return NULL;
+		if ($result = $this->dbConnector->rawQuery($query, $params)) { return $result[0]; }
+		else { return NULL; }
 	}
 	
 	/**
@@ -918,19 +961,9 @@ class DbHandler {
 	 public function getUnreadMessagesNumber($userid) {
 		 if (empty($userid)) return 0;
 		 // prepare query.
-		 $stmt = $this->conn->prepare("SELECT count(*) FROM messages_inbox WHERE user_to = ? AND message_read = 0");
-		 $stmt->bind_param("i", $userid);
-		 if ($stmt->execute() === false) return 0;
-
-		 // analyse results
-		 $result = $stmt->get_result();
-		 if ($result === false) return 0;
-		 else {
-			 $row = $result->fetch_row();
-			 $numMessages = $row[0];
-			 $result->close();
-			 return $numMessages;
-		}
+		 $this->dbConnector->where("user_to", $userid);
+		 $this->dbConnector->where("message_read", "0");
+		 return $this->dbConnector->getValue(CRM_MESSAGES_INBOX_TABLE_NAME, "count(*)");
 	 }
 	 
 	/**
@@ -951,9 +984,10 @@ class DbHandler {
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 		
-		// return result of update 
-		$result = $this->conn->query("UPDATE ".$tableName." SET message_read = 1 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
-		return $result;
+		$this->dbConnector->where($useridfield, $userid);
+		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
+		$data = array("message_read" => "1");
+		return $this->dbConnector->update($tableName, $data);
 	}
 		 
 	/**
@@ -974,9 +1008,10 @@ class DbHandler {
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 
-		// return result of update 
-		$result = $this->conn->query("UPDATE ".$tableName." SET message_read = 0 WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
-		return $result;
+		$this->dbConnector->where($useridfield, $userid);
+		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
+		$data = array("message_read" => "0");
+		return $this->dbConnector->update($tableName, $data);
 	}
 
 	/**
@@ -999,8 +1034,10 @@ class DbHandler {
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 		
 		// return result of update 
-		$result = $this->conn->query("UPDATE ".$tableName." SET favorite = ".$favorite." WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
-		return $result;
+		$this->dbConnector->where($useridfield, $userid);
+		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
+		$data = array("favorite" => $favorite);
+		return $this->dbConnector->update($tableName, $data);
 	}
 
 	/**
@@ -1021,9 +1058,9 @@ class DbHandler {
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 
-		// return result of update 
-		$result = $this->conn->query("DELETE FROM ".$tableName." WHERE ".$useridfield." = $userid AND id IN(".implode(',',$messageids).")");
-		return $result;
+		$this->dbConnector->where($useridfield, $userid);
+		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
+		return $this->dbConnector->delete($tableName);
 	}
 
 	/**
@@ -1048,11 +1085,22 @@ class DbHandler {
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 		
 		foreach ($messageids as $messageid) {
-			$copyresult = $this->conn->query("INSERT INTO messages_junk (user_from, user_to, subject, message, date, message_read, favorite, origin_folder) SELECT user_from, user_to, subject, message, date, message_read, favorite, '".$tableName."' as origin_folder FROM ".$tableName." WHERE ".$useridfield." = $userid AND id = ".$messageid);
-			if ($copyresult) {
-				$deleteOriginal = $this->conn->query("DELETE FROM ".$tableName." WHERE ".$useridfield." = $userid AND id = ".$messageid);
-				if ($deleteOriginal) { 
+			// get the data from the old messages box first
+			$this->dbConnector->where($useridfield, $userid);
+			$this->dbConnector->where("id", $messageid);
+			$oldData = $this->dbConnector->getOne($tableName, array("user_from", "user_to", "subject", "message", "date", "message_read", "favorite"));
+			if ($oldData) {
+				// add origin folder
+				$oldData["origin_folder"] = $tableName;
+				// insert old data in messages_junk
+				$newJunkId = $this->dbConnector->insert(CRM_MESSAGES_JUNK_TABLE_NAME, $oldData);
+				if ($newJunkId) {
+					$this->dbConnector->where($useridfield, $userid);
+					$this->dbConnector->where("id", $messageid);
+					if ($deleteOriginal = $this->dbConnector->delete($tableName)) {
 					$messagesJunked = $messagesJunked + 1;
+					}
+
 				}
 			}
 		}
@@ -1078,25 +1126,16 @@ class DbHandler {
 		$useridfield = "user_to";
 		
 		foreach ($messageids as $messageid) {
-			$selectData = $this->conn->query("SELECT * FROM messages_junk WHERE id = $messageid");
-			if ($selectData) {
-				if ($junkedObj = $selectData->fetch_assoc()) {
-					$tableName = $junkedObj["origin_folder"];
-					$fromuserid = $junkedObj["user_from"];
-					$touserid = $junkedObj["user_to"];
-					$subject = $junkedObj["subject"];
-					$text = $junkedObj["message"];
-					$messagedate = $junkedObj["date"];
-					$readmail = $junkedObj["message_read"];
-					$favorite = $junkedObj["favorite"];
-					if (!empty($tableName)) {
-						$restore = $this->conn->query("INSERT INTO ".$tableName." (user_from, user_to, subject, message, date, message_read, favorite) VALUES ($fromuserid, $touserid, '$subject', '$text', '$messagedate', $readmail, $favorite)");
-						if ($restore) {
-							$deleteOriginal = $this->conn->query("DELETE FROM messages_junk WHERE id = $messageid");
-							if ($deleteOriginal) {
-								$messagesUnjunked = $messagesUnjunked + 1;
-							}
-						}
+			$this->dbConnector->where("id", $messageid);
+			$junkedObj = $this->dbConnector->getOne(CRM_MESSAGES_JUNK_TABLE_NAME, array("user_from", "user_to", "subject", "message", "date", "message_read", "favorite", "origin_folder"));
+			if ($junkedObj) {
+				$tableName = $junkedObj["origin_folder"];
+				unset($junkedObj["origin_folder"]); // origin_folder doesn't exist in $tableName to insert, so we remove it.
+				if (!empty($tableName)) {
+					if ($this->dbConnector->insert($tableName, $junkedObj)) { // insert into origin_folder succeed!
+						// now try to delete the message from the junk folder.
+						$this->dbConnector->where("id", $messageid);
+						if ($this->dbConnector->delete(CRM_MESSAGES_JUNK_TABLE_NAME)) { $messagesUnjunked = $messagesUnjunked + 1; }
 					}
 				}
 			}
@@ -1113,22 +1152,8 @@ class DbHandler {
 	 * @return Int the number of notifications. 
 	 */
 	public function getNumberOfTodayNotifications($userid) {
-		// prepare query
-		if (empty($userid)) return NULL;
-		$stmt = $this->conn->prepare("SELECT count(*) FROM notifications WHERE DATE(date) = CURDATE() AND (target_user = 0 OR target_user = ?)");
-		$stmt->bind_param("i", $userid);
-		if ($stmt->execute() === false) return 0;
-		
-		// execute query and return results
-		$result = $stmt->get_result();
-		$stmt->close();
-		if ($result === false) return 0;
-		else {
-			 $row = $result->fetch_row();
-			 $numMessages = $row[0];
-			 $result->close();
-			 return $numMessages;
-		}
+		$this->dbConnector->where("DATE(date) = CURDATE() AND (target_user = 0 OR target_user = ?)", array($userid));
+		return $this->dbConnector->getValue(CRM_NOTIFICATIONS_TABLE_NAME, "count(*)");
 	}
 	
 	/**
@@ -1139,18 +1164,8 @@ class DbHandler {
 	public function getTodayNotifications($userid) {
 		// prepare query
 		if (empty($userid)) return NULL;
-		$stmt = $this->conn->prepare("SELECT * FROM notifications WHERE DATE(date) = CURDATE() AND (target_user = 0 OR target_user = ?)");
-		$stmt->bind_param("i", $userid);
-		if ($stmt->execute() === false) return NULL;
-		
-		// execute query and return results.
-		$result = $stmt->get_result();
-		$stmt->close();		
-		$notifications = array();
-		while ($obj = $result->fetch_assoc()) {
-			array_push($notifications, $obj);
-		}
-		return $notifications;
+		$this->dbConnector->where("DATE(date) = CURDATE() AND (target_user = 0 OR target_user = ?)", array($userid));
+		return $this->dbConnector->get(CRM_NOTIFICATIONS_TABLE_NAME);
 	}
 	
 	/**
@@ -1161,22 +1176,10 @@ class DbHandler {
 	public function getNotificationsForPastWeek($userid) {
 		// prepare query
 		if (empty($userid)) return NULL;
-		$stmt = $this->conn->prepare("SELECT * FROM notifications WHERE (DATE(date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE() - INTERVAL 1 DAY) AND (target_user = 0 OR target_user = ?)");
-		$stmt->bind_param("i", $userid);
-		if ($stmt->execute() === false) return NULL;
-		
-		// execute query and return results.
-		$result = $stmt->get_result();
-		$stmt->close();				
-		$notifications = array();
-		while ($obj = $result->fetch_assoc()) {
-			array_push($notifications, $obj);
-		}
-		return $notifications;
+		$this->dbConnector->where("(DATE(date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE() - INTERVAL 1 DAY) AND (target_user = 0 OR target_user = ?)", array($userid));
+		return $this->dbConnector->get(CRM_NOTIFICATIONS_TABLE_NAME);
 	}
-	
 
-	
 	/** Statistics */
 	
 	/**
@@ -1189,52 +1192,33 @@ class DbHandler {
 		if (empty($customerTypes)) return true;
 
 		// build the query by adding customer types
-		$queryPrefix = "INSERT INTO statistics (date ";
-		$querySuffix = ") VALUES (now() ";
-		
+		$data = array("date" => $this->dbConnector->now());
 		foreach ($customerTypes as $customerType) {
 			$numCustomers = $this->getNumberOfClientsFromTable($customerType["table_name"]);
-			$queryPrefix = $queryPrefix.", ".$customerType["table_name"];
-			$querySuffix = $querySuffix.", ".$numCustomers;
+			$customerKey = $customerType["table_name"];
+			$data[$customerKey] = $numCustomers;
 		}
-		$query = $queryPrefix.$querySuffix.")";
-
-		// execute query and return results.
-		return $this->conn->query($query);
+		return $this->dbConnector->insert(CRM_STATISTICS_TABLE_NAME, $data);
 	}
 
 	/**
-	 * Gets the number of customers of a given type (= tablename).
+	 * Gets the number of customers of a given customerType (= tablename).
 	 * @param $tableName String the table of customers to get the count from.
 	 * @return the number (count(*)) of entries in the given customer table.
 	 */
-	private function getNumberOfClientsFromTable($tableName) {
+	public function getNumberOfClientsFromTable($tableName) {
 		if (empty($tableName)) return 0;
 		$tableName = $this->escape_string($tableName);
-
-		$result = $this->conn->query("SELECT count(*) FROM $tableName");
-		if ($result === false) return 0;
-		 else {
-			 $row = $result->fetch_row();
-			 $numClients = $row[0];
-			 $result->close();
-			 return $numClients;
-		}
+		return $this->dbConnector->getValue($tableName, "count(*)");
 	}
-	
+
 	/**
 	 * Gets the number of new contacts (last week).
 	 * @return the number of contact entries that were created in the last week.
 	 */
 	public function getNumberOfNewContacts() {
-		$result = $this->conn->query("SELECT count(*) FROM ".CRM_CONTACTS_TABLE_NAME." WHERE (DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE())");
-		if ($result === false) return 0;
-		 else {
-			 $row = $result->fetch_row();
-			 $numClients = $row[0];
-			 $result->close();
-			 return $numClients;
-		}
+		$this->dbConnector->where("DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE()");
+		return $this->dbConnector->getValue(CRM_CONTACTS_TABLE_NAME, "count(*)");
 	}
 	
 	/**
@@ -1248,12 +1232,8 @@ class DbHandler {
 		$numClients = 0;
 		foreach ($customerTypes as $customerType) {
 			if ($customerType["table_name"] == CRM_CONTACTS_TABLE_NAME) continue;
-			$result = $this->conn->query("SELECT count(*) FROM ".$customerType["table_name"]." WHERE (DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE())");
-			if ($result !== false) {
-				 $row = $result->fetch_row();
-				 $numClients += $row[0];
-				 $result->close();
-			}
+			$this->dbConnector->where("DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE()");
+			$numClients += $this->dbConnector->getValue($customerType["table_name"], "count(*)");
 		}
 		return $numClients;
 	}
@@ -1264,17 +1244,69 @@ class DbHandler {
 	 * 
 	 */	
 	public function getLastCustomerStatistics($limit = 10) {
-		$query = "SELECT * FROM `statistics` order by timestamp DESC limit 10";
-		$result = $this->conn->query($query);
-		if ($result === false) {
-			return array();
-		} else {
-			$stats = array();
-			while ($obj = $result->fetch_assoc()) {
-				array_push($stats, $obj);
-			}
-			return $stats;
+		$this->dbConnector->orderBy("timestamp", "Desc");
+		return $this->dbConnector->get(CRM_STATISTICS_TABLE_NAME, $limit);
+	}
+	
+	/** Modules */
+	
+	/**
+	 * Retrieves the list of active modules.
+	 * @return Array an array with the list of active modules.
+	 */
+	public function getActiveModules() {
+		$this->dbConnector->where("setting", CRM_SETTING_ACTIVE_MODULES);
+		$modulesRow = $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME);
+		if (is_string($modulesRow["value"]) && !empty($modulesRow["value"])) { return explode(",", $modulesRow["value"]); } 
+		return array();
+	}
+	
+	/**
+	 * Sets the list of active modules.
+	 * @param Array $modules an array containing the short names of the modules to enable.
+	 * @return Bool true if successful, false otherwise.
+	 */
+	public function setActiveModules($modules) {
+		if (is_array($modules)) {
+			// generate module string.
+			$modulesString = implode(",", $modules);
+			$moduleData = array("value" => $modulesString);
+			// update settings.
+			$this->dbConnector->where("setting", CRM_SETTING_ACTIVE_MODULES);
+			return $this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $moduleData);
+		} else { return false; }
+	}
+	
+	/** 
+	 * Returns true if the module system is enabled. 
+	 * @return true if the module system is enabled. False otherwise.
+	 */
+	public function moduleSystemEnabled() {
+		$this->dbConnector->where("setting", CRM_SETTING_MODULE_SYSTEM_ENABLED);
+		return $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME);
+	}
+	
+	/**
+	 * Modify the status (enabled/disabled) of a module.
+	 * @param String $moduleName the name of the module to enable/disable.
+	 * @param String/Bool $status 1/true if module should be enabled, 0/false otherwise.
+	 * @return Bool true if active modules changed, false otherwise.
+	 */
+	public function changeModuleStatus($moduleName, $status) {
+		$modules = $this->getActiveModules();
+		$modulesChanged = false;
+		// check status
+		if ($status == "1" || $status == true) {
+			if (!in_array($moduleName, $modules, true)) { $modules[] = $moduleName; $modulesChanged = true; }
+		} else if ($status == "0" || $status == false) {
+			if ( ($key = array_search($moduleName, $modules)) !== false) { unset($modules[$key]); $modulesChanged = true; } 
 		}
+		
+		// change status and return success.
+		if ($modulesChanged) {
+			return $this->setActiveModules($modules);
+		}
+		return false;
 	}
 	
 	/** Utility functions */
@@ -1285,8 +1317,13 @@ class DbHandler {
 	 * @return String the string escaped with a call to mysqli::real_escape_string();
 	 */
 	public function escape_string($string) {
-		return $this->conn->real_escape_string($string);
+		return $this->dbConnector->escape($string);
 	}
+	
+	/**
+	 * Returns the number of affected/selected rows from the last query.
+	 */
+	public function rowCount() { return $this->dbConnector->count; }
 	
 	/**
 	 * Checks if a given array only contains numeric values.
@@ -1300,6 +1337,7 @@ class DbHandler {
 		}
 		return true;
 	}
+	
 }
 
 ?>

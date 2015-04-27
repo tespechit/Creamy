@@ -37,9 +37,18 @@ if (!isset($_POST["userid"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// sanity checks	
 	$userid = $_POST["userid"];
+	$currentMainAdminData = $db->getMainAdminUserData(); // check that we are not deleting the main admin user.
+	if (is_array($currentMainAdminData) && (array_key_exists("id", $currentMainAdminData))) {
+		if ($userid == $currentMainAdminData["id"]) {
+			// can't delete the main admin user.
+			print $lh->translateText("unable_delete_main_admin");
+			return;
+		}
+	}
 
+	// delete user
 	$result = $db->deleteUser($userid);
 	if ($result === false) {
 		$lh->translateText("unable_delete_user");

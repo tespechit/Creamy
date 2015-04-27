@@ -26,10 +26,11 @@
 
 	require_once('./php/LanguageHandler.php');
 	require_once('./php/DbHandler.php');
+	require_once('./php/CRMUtils.php');
 	
 	$error=''; // Variable To Store Error Message
 	$lh = \creamy\LanguageHandler::getInstance();
-	
+
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['email'])) {
 			$error = $lh->translationFor("insert_valid_address");
@@ -43,11 +44,17 @@
 			$email = stripslashes($_POST["email"]);
 			
 			// Check password and redirect accordingly
-			$result = $db->sendPasswordRecoveryEmail($email);
+			$fullURL = \creamy\CRMUtils::getCurrentURLPath();
+			$baseURLPlusDir = \creamy\CRMUtils::getBasePathWithDirectoryOfURL($fullURL);
+			$result = false;
+			
+			require_once('./php/MailHandler.php');
+			$mh = \creamy\MailHandler::getInstance();
+			$result = $mh->sendPasswordRecoveryEmail($email, $baseURLPlusDir);
 			if ($result === false) { // login failed
 				$error = $lh->translationFor("error_sending_recovery_email");
 			} else {
-				$error = $lh->translationFor("recovery_email_sent")." $email. ".$lh->translateText("please_check_email");
+				$error = $lh->translationFor("recovery_email_sent")." $email. ".$lh->translationFor("please_check_email");
 			}
 		}
 	}
@@ -83,9 +90,7 @@
                     </div>
                 	<div name="error-message" class="text-center" style="color: red;">
                 	<?php
-                		if (isset($error)) {
-	                		print ($error);
-                		}
+                		if (isset($error)) { print ($error); }
                 	?>
                 	</div>
                 </div>

@@ -55,33 +55,7 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]);   
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
@@ -103,12 +77,11 @@
                 <!-- Main content -->
                 <section class="content">
                 <?php if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) { ?>
-                	<!-- tabla muestra los usuarios -->
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="box">
                                 <div class="box-header">
-                                    <h3 class="box-title">Usuarios</h3>
+                                    <h3 class="box-title"><?php $lh->translateText("users"); ?></h3>
                                 </div><!-- /.box-header -->
                                 <div class="box-body table-responsive" id="users_table">
 									<?php print $ui->getAllUsersAsTable(); ?>
@@ -116,13 +89,11 @@
                             </div><!-- /.box -->
                         </div>
                     </div>
-                	<!-- /tabla muestra los usuarios -->
 
-					<!-- Filas con acciones, formularios y demás -->
 
                     <div class="row">
                         <!-- left column -->
-                        <section class="col-lg-6 connectedSortable">
+                        <section class="col-lg-12 connectedSortable">
                             <!-- general form elements -->
                             <div class="box box-primary">
                                 <div class="box-header">
@@ -131,40 +102,51 @@
                                 <!-- form start -->
                                 <form role="form" id="createuser" name="createuser" method="post" action="" enctype="multipart/form-data">
                                     <div class="box-body">
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="<?php $lh->translateText("name"); ?>">
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-	                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>">
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="<?php $lh->translateText("phone")." (".$lh->translationFor("optional").")"; ?>">
-	                                    </div>
-	                                    <br>
-										<div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-lock"></i></span>
-	                                        <input type="password" id="password1" name="password1" class="form-control required" placeholder="<?php $lh->translateText("password"); ?>">
-	                                    </div>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-lock"></i></span>
-	                                        <input type="password" id="password2" name="password2" class="form-control required" placeholder="<?php $lh->translateText("repeat_password"); ?>">
-	                                    </div>
-	                                    <br>
+										<div class="form-group">
+											<div class="row">
+											<div class="col-lg-6">
+			                                    <div class="input-group">
+			                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
+			                                        <input type="text" id="name" name="name" class="form-control required" placeholder="<?php $lh->translateText("name"); ?>">
+			                                    </div>
+											</div><!-- /.col-lg-6 -->
+											<div class="col-lg-6">
+			                                    <div class="input-group">
+			                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
+			                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>">
+			                                    </div>
+											</div>
+											</div>
+										</div>
+										<div class="form-group">
+											<div class="row">
+											<div class="col-lg-6">
+												<div class="input-group">
+			                                        <span class="input-group-addon"><i class="fa fa-lock"></i></span>
+			                                        <input type="password" id="password1" name="password1" class="form-control required" placeholder="<?php $lh->translateText("password"); ?>">
+			                                    </div>
+											</div>
+											<div class="col-lg-6">
+			                                    <div class="input-group">
+			                                        <span class="input-group-addon"><i class="fa fa-lock"></i></span>
+			                                        <input type="password" id="password2" name="password2" class="form-control required" placeholder="<?php $lh->translateText("repeat_password"); ?>">
+			                                    </div>
+											</div>
+											</div>
+										</div>
                                         <div class="form-group">
-                                            <label for="exampleInputFile"><?php $lh->translateText("user_avatar")." (".$lh->translationFor("optional").")"; ?></label>
-                                            <input type="file" id="avatar" name="avatar">
-                                            <p class="help-block"><?php $lh->translateText("choose_image"); ?></p>
+											<div class="row">
+											<div class="col-lg-6">
+	                                            <label for="exampleInputFile"><?php $lh->translateText("user_avatar")." (".$lh->translationFor("optional").")"; ?></label>
+	                                            <input type="file" id="avatar" name="avatar">
+	                                            <p class="help-block"><?php $lh->translateText("choose_image"); ?></p>
+                                        	</div>
+											<div class="col-lg-6">
+	                                            <label for="role"><?php $lh->translateText("user_role"); ?></label>
+												<p class="help-block"><?php print $ui->getUserRolesAsFormSelect(); ?></p>
+                                        	</div>
+											</div>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="role"><?php $lh->translateText("user_role"); ?></label>
-											<?php print $ui->getUserRolesAsFormSelect(); ?>
-                                        </div>
-	                                    <br>
 	                                    <div  id="resultmessage" name="resultmessage" style="display:none">
 	                                    </div>
 
@@ -176,42 +158,13 @@
 
                                 </form>
                             </div><!-- /.box -->
-
                         </section><!--/.col (left) -->
-                        <!-- right column -->
-                        <section class="col-lg-6 connectedSortable">
-                            <!-- quick email widget -->
-                            <div class="box box-info">
-                                <div class="box-header">
-                                    <i class="fa fa-envelope"></i>
-                                    <h3 class="box-title"><?php $lh->translateText("messaging_system"); ?></h3>
-                                </div>
-                                <div class="box-body">
-                                    <form action="#" method="post" id="send-message-form" name="send-message-form">
-                                        <div class="form-group">
-											<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
-                                        </div>
-                                        <div class="form-group">
-                                            <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
-                                        </div>
-                                        <div>
-                                            <textarea class="textarea" placeholder="<?php $lh->translateText("message"); ?>" id="message" name="message" style="width: 100%; height: 150px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
-                                        </div>
-                                        <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $_SESSION["userid"] ?>">
-                                        <div id="messagesendingresult" name="messagesendingresult"></div>
-								</div>
-                                <div class="box-footer clearfix">
-                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail"><?php $lh->translateText("send"); ?> <i class="fa fa-arrow-circle-right"></i></button>
-                                </div>
-                            </form>
-                            </div>
-                        </section><!--/.col (right) -->
                     </div>   <!-- /.row -->
 
 				<!-- /fila con acciones, formularios y demás -->
 				<?php
 					} else {
-						print $ui->getErrorMessage($lh->translationFor("you_dont_have_permission"));
+						print $ui->calloutErrorMessage($lh->translationFor("you_dont_have_permission"));
 					}
 				?>
                 </section><!-- /.content -->

@@ -33,10 +33,12 @@
  */
 
 // global constants
-define('CRM_SKEL_CONFIG_FILE', 'skel/Config.php');
+define('CRM_INSTALL_VERSION', '1.0');
 define('CRM_INSTALLED_FILE', './installed.txt');
 define('CRM_GETTING_STARTED_FILE', './help/gettingstarted.html');
+define('CRM_RECOVERY_EMAIL_FILE', '../skel/recoveryEmail.html');
 define('CRM_PHP_CONFIG_FILE', 'php/Config.php');
+define('CRM_PHP_BEGIN_TAG', '<?php');
 define('CRM_PHP_END_TAG', '?>');
 
 // messages constants
@@ -60,11 +62,8 @@ define ('TASK_GENERAL_INFO_FORMAT', 'task-general-info');
 define ('TASK_PROGRESS_FORMAT', 'task-progress-info');
 
 // Database constants
-define ('CRM_DEFAULTS_DATABASE_CONTACTS', 'people_contacts');
-define ('CRM_DEFAULTS_DATABASE_CUSTOMERS', 'people_customers');
 define ('CRM_DEFAULTS_CUSTOMERS_SCHEMA_DEFAULT', 'default');
 define ('CRM_DEFAULTS_CUSTOMERS_SCHEMA_CUSTOM', 'custom');
-define ('CRM_RECOVERY_EMAIL_FILE', '../skel/recoveryEmail.html');
 define ('CRM_DEFAULT_DB_PORT', 3306);
 define ('CRM_CONTACTS_TABLE_NAME', 'clients_1');
 
@@ -73,17 +72,55 @@ define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);
 define('USER_ALREADY_EXISTED', 2);
 define('WRONG_AUTHENTICATION_TYPE', 3);
-
 define ('CRM_DEFAULTS_USER_ROLE_ADMIN', 0);
 define ('CRM_DEFAULTS_USER_ROLE_MANAGER', 1);
 define ('CRM_DEFAULTS_USER_ROLE_WRITER', 2);
 define ('CRM_DEFAULTS_USER_ROLE_READER', 3);
 define ('CRM_DEFAULTS_USER_ROLE_GUEST', 4);
-
 define ('CRM_DEFAULTS_USER_DISABLED', 0);
 define ('CRM_DEFAULTS_USER_ENABLED', 1);
-
 define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/defaultAvatar.png');
+
+// User interface
+define ('CRM_UI_STYLE_DEFAULT', 'default');
+define ('CRM_UI_STYLE_PRIMARY', 'primary');
+define ('CRM_UI_STYLE_SUCCESS', 'success');
+define ('CRM_UI_STYLE_DANGER', 'danger');
+define ('CRM_UI_STYLE_INFO', 'info');
+define ('CRM_UI_STYLE_WARNING', 'warning');
+
+// installation constants.
+define ('CRM_INSTALL_STATE_SUCCESS', 1);
+define ('CRM_INSTALL_STATE_ERROR', 0);
+define ('CRM_INSTALL_STATE_DATABASE_ERROR', 'Database error');
+define ('CRM_INSTALL_STATE_FILE_ERROR', 'Filesystem error');
+
+// Table names
+define('CRM_CUSTOMER_TYPES_TABLE_NAME', "customer_types");
+define('CRM_MARITAL_STATUS_TABLE_NAME', "marital_status");
+define('CRM_MESSAGES_INBOX_TABLE_NAME', "messages_inbox");
+define('CRM_MESSAGES_OUTBOX_TABLE_NAME', "messages_outbox");
+define('CRM_MESSAGES_JUNK_TABLE_NAME', "messages_junk");
+define('CRM_NOTIFICATIONS_TABLE_NAME', "notifications");
+define('CRM_SETTINGS_TABLE_NAME', "settings");
+define('CRM_STATISTICS_TABLE_NAME', "statistics");
+define('CRM_TASKS_TABLE_NAME', "tasks");
+define('CRM_USERS_TABLE_NAME', "users");
+
+// settings constants
+define('CRM_SETTING_CRM_VERSION', "crm_version");
+define('CRM_SETTING_ADMIN_USER', "admin_user");
+define('CRM_SETTING_INSTALLATION_DATE', "installation_date");
+define('CRM_SETTING_ACTIVE_MODULES', "active_modules");
+define('CRM_SETTING_MODULE_SYSTEM_ENABLED', "plugin_system_enabled");
+define('CRM_SETTING_STATISTICS_SYSTEM_ENABLED', "statistics_system_enabled");
+define('CRM_SETTING_CUSTOMER_LIST_FIELDS', "customer_list_fields");
+define('CRM_SETTING_TIMEZONE', "timezone");
+define('CRM_SETTING_LOCALE', "locale");
+define('CRM_SETTING_SECURITY_TOKEN', "security_token");
+
+// misc constants
+define ('CRM_DEFAULT_SUCCESS_RESPONSE', "success");
 
 // user access functions
 function userHasAdminPermission($userrole) {
@@ -109,12 +146,5 @@ function userHasBasicPermission($userrole) {
 	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER) || ($userrole === CRM_DEFAULTS_USER_ROLE_READER)) return true;
 	return false;
 }
-
-// installation constants.
-define ('CRM_INSTALL_STATE_SUCCESS', 1);
-define ('CRM_INSTALL_STATE_ERROR', 0);
-define ('CRM_INSTALL_STATE_DATABASE_ERROR', 'Database error');
-define ('CRM_INSTALL_STATE_FILE_ERROR', 'Filesystem error');
-
 
 ?>

@@ -26,6 +26,7 @@
 require_once('CRMDefaults.php');
 require_once('PassHash.php');
 require_once('LanguageHandler.php');
+require_once('DatabaseConnectorFactory.php');
 
 /**
  * Class to handle DB Installation
@@ -35,30 +36,25 @@ require_once('LanguageHandler.php');
  */
 class DBInstaller {
 
-    private $conn;
+    private $dbConnector;
     private $state;
     public $error;
     private $lh;
     
     /* ---------------- Initializers -------------------- */
     
-    public function __construct($dbhost, $dbname, $dbuser, $dbpass, $dbport = CRM_DEFAULT_DB_PORT) {
-        $this->lh = \creamy\LanguageHandler::getInstance();
-        $this->conn = @ new \mysqli($dbhost, $dbuser, $dbpass, $dbname, $dbport);
-		
-        // Check for database connection error
-        if ($this->conn->connect_error) {
-            $this->state = CRM_INSTALL_STATE_ERROR;
-            $this->error = CRM_INSTALL_STATE_DATABASE_ERROR . ". " .  $this->conn->connect_error;
-        } else {
-			$this->conn->set_charset('utf8');
+    public function __construct($dbhost, $dbname, $dbuser, $dbpass, $dbport = CRM_DEFAULT_DB_PORT, $dbConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL) {
+		$this->lh = \creamy\LanguageHandler::getInstance();
+        try {
+	        $this->dbConnector = \creamy\DatabaseConnectorFactory::getDatabaseConnectorOfType($dbConnectorType);
 	        $this->state = CRM_INSTALL_STATE_SUCCESS;
-	    }
-        
+        } catch (\Exception $e) {
+            $this->state = CRM_INSTALL_STATE_ERROR;
+            $this->error = CRM_INSTALL_STATE_DATABASE_ERROR . ". Unable to instantiate database connector of type $dbConnectorType.";
+        }
     }
     
     public function __destruct() {
-	    $this->closeDatabaseConnection();
     }
     
     public function getState() {
@@ -68,11 +64,7 @@ class DBInstaller {
     public function getLastErrorMessage() {
 	    return $this->error;
     }
-    
-    public function closeDatabaseConnection() {
-	    if (isset($this->conn)) { @ $this->conn->close(); }
-    }
-    
+
     /* ---------------- Setup of database -------------------------- */
     
     /**
@@ -98,146 +90,181 @@ class DBInstaller {
 	/* ----------------------- Table creation, deletion and population -------------------------- */
 
 	private function dropPreviousTables() {
-		$dropTableQuery = "DROP TABLE IF EXISTS `users` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `users`"; return false; } // failed to drop table.
-
-		$dropTableQuery = "DROP TABLE IF EXISTS `tasks` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `tasks`"; return false; } // failed to drop table.
-
-		$dropTableQuery = "DROP TABLE IF EXISTS `notifications` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `notifications`"; return false; } // failed to drop table.
+		$tablesToDrop = array(CRM_CUSTOMER_TYPES_TABLE_NAME, CRM_MARITAL_STATUS_TABLE_NAME, 
+			CRM_MESSAGES_INBOX_TABLE_NAME, CRM_MESSAGES_OUTBOX_TABLE_NAME, CRM_MESSAGES_JUNK_TABLE_NAME, 
+			CRM_NOTIFICATIONS_TABLE_NAME, CRM_SETTINGS_TABLE_NAME, CRM_STATISTICS_TABLE_NAME, 
+			CRM_TASKS_TABLE_NAME, CRM_USERS_TABLE_NAME);
 		
-		$dropTableQuery = "DROP TABLE IF EXISTS `marital_status` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `marital_status`"; return false; } // failed to drop table.
-
-		$dropTableQuery = "DROP TABLE IF EXISTS `messages_inbox` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `messages_inbox`"; return false; } // failed to drop table.
-		
-		$dropTableQuery = "DROP TABLE IF EXISTS `messages_outbox` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `messages_outbox`"; return false; } // failed to drop table.
-		
-		$dropTableQuery = "DROP TABLE IF EXISTS `messages_junk` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `messages_junk`"; return false; } // failed to drop table.
-		
-		$dropTableQuery = "DROP TABLE IF EXISTS `statistics` CASCADE";
-		if (!$this->conn->query($dropTableQuery)) { $this->error = "CRM: Failed to drop table `statistics`"; return false; } // failed to drop table.
-		
-		$dropEventQuery = "DROP EVENT IF EXISTS `creamy_retrieve_statistics`";
-		if (!$this->conn->query($dropEventQuery)) { $this->error = "CRM: Failed to drop event `creamy_retrieve_statistics`"; return false; } // failed to drop table.
+		foreach ($tablesToDrop as $tablename) {
+			if (!$this->dbConnector->dropTable(CRM_USERS_TABLE_NAME, true)) { 
+				$this->error = "Creamy install: Failed to drop table $tablename"; 
+				return false; 
+			}
+		}
 	}
 
 	private function setupUsersTable($initialUser, $initialPass, $initialEmail) {
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `users` (
-			  `id` int(11) NOT NULL AUTO_INCREMENT,
-			  `name` varchar(255) NOT NULL,
-			  `password_hash` varchar(255) NOT NULL,
-			  `phone` varchar(40) DEFAULT NULL,
-			  `email` varchar(120) DEFAULT NULL,
-			  `avatar` varchar(255) DEFAULT NULL,
-			  `creation_date` date NOT NULL,
-			  `role` int(4) NOT NULL,
-			  `status` int(1) NOT NULL COMMENT '1=enabled, 0=disabled',
-			  PRIMARY KEY (`id`),
-			  UNIQUE KEY `name` (`name`)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `users`."; return false; } // failed to create table
-		
+		// users data table.
+		$fields = array(
+			"name" => "VARCHAR(255) NOT NULL",
+			"password_hash" => "VARCHAR(255) NOT NULL",
+			"phone" => "VARCHAR(255) DEFAULT NULL",
+			"email" => "VARCHAR(255) DEFAULT NULL",
+			"avatar"  => "VARCHAR(255) DEFAULT NULL",
+			"creation_date" => "DATETIME NOT NULL",
+			"role" => "INT(4) NOT NULL",
+			"status" => "INT(1) NOT NULL", // 1=enabled, 0=disabled
+		);
+		if (!$this->dbConnector->createTable(CRM_USERS_TABLE_NAME, $fields, ["name"])) {
+			$this->error = "Creamy install: Failed to create table ".CRM_USERS_TABLE_NAME."."; 
+			return false;
+		}
+
+		// create main admin users.		
 		$password_hash = \creamy\PassHash::hash($initialPass);
-		$initializeTableQuery = "INSERT INTO `users` (`name`, `password_hash`, `email`, `avatar`, `creation_date`, `role`, `status`) VALUES
-('$initialUser', '$password_hash', '$initialEmail', '".CRM_DEFAULTS_USER_AVATAR."', now(), 0, 1) ON DUPLICATE KEY UPDATE password_hash = '$password_hash'";
-		if (!$this->conn->query($initializeTableQuery)) { $this->error = "CRM: Failed to insert the initial admin user."; return false; } 
+		$data = array(
+			"name" => $initialUser, "password_hash" => $password_hash, "email" => $initialEmail, 
+			"avatar" => CRM_DEFAULTS_USER_AVATAR, "creation_date" => "now()", "role" => CRM_DEFAULTS_USER_ROLE_ADMIN,
+			"status" => CRM_DEFAULTS_USER_ENABLED
+		);
+		if (!$this->dbConnector->insert(CRM_USERS_TABLE_NAME, $data)) {
+			$this->error = "Creamy install: Failed to insert the initial admin user."; 
+			return false;
+		}
+		return true;
+	}
+	
+	public function setupSettingTable($timezone, $locale, $securityToken) {
+		// create setting data table.
+		$fields = array("setting" => "VARCHAR(255) NOT NULL", "value" => "LONGTEXT");
+		if (!$this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting"])) { return false; }
 		
+		// fill the settings table.
+		
+		// admin account
+		$adminEmail = array("setting" => CRM_SETTING_ADMIN_USER, "value" => 1);
+		$adminEmailFound = $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $adminEmail);
+
+		// crm version
+		$data = array("setting" => CRM_SETTING_CRM_VERSION, "value" => CRM_INSTALL_VERSION);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+		
+		// installation date. We try to get it from the Config.php file first
+		if ($timestamp = filemtime(dirname(__FILE__) . '/Config.php')) {
+			$dbDate = date("Y-m-d H:i:s", $timestamp);
+		} else { $dbDate = $this->dbConnector->now(); }
+		$data = array("setting" => CRM_SETTING_INSTALLATION_DATE, "value" => $dbDate);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+		
+		// plugin system enabled (1 by default)
+		$data = array("setting" => CRM_SETTING_MODULE_SYSTEM_ENABLED, "value" => true);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+		
+		// statistics system enabled (1 by default)
+		$data = array("setting" => CRM_SETTING_STATISTICS_SYSTEM_ENABLED, "value" => true);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
+		// active plugins (empty by default)
+		$data = array("setting" => CRM_SETTING_ACTIVE_MODULES, "value" => "");
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
+		// customer list fields
+		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "value" => "name, email, phone, id_number");
+
+		// timezone
+		$data = array("setting" => CRM_SETTING_TIMEZONE, "value" => $timezone);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+		
+		// locale
+		$data = array("setting" => CRM_SETTING_LOCALE, "value" => $locale);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+		
+		// security token
+		$data = array("setting" => CRM_SETTING_SECURITY_TOKEN, "value" => $securityToken);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
 		return true;
 	}
 	
 	private function setupTasksTable() {
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `tasks` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `description` varchar(512) NOT NULL,
-		  `user_id` int(11) NOT NULL,
-		  `target_customer_id` int(11),
-		  `creation_date` datetime NOT NULL,
-		  `completion_date` datetime DEFAULT NULL,
-		  `completed` int(3) NOT NULL COMMENT 'from 0 to 100, 0=not started, 100=completed',
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `tasks`"; return false; } // failed to create table
+		$fields = array(
+			"description" => "VARCHAR(512) NOT NULL",
+			"user_id" => "INT(11) NOT NULL",
+			"target_customer_id" => "INT(11)",
+			"creation_date" => "DATETIME NOT NULL",
+			"completion_date" => "DATETIME DEFAULT NULL",
+			"completed" => "INT(3) NOT NULL" // from 0 to 100, 0=not started, 100=completed
+		);
+		if (!$this->dbConnector->createTable(CRM_TASKS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_TASKS_TABLE_NAME."."; 
+			return false;
+		}
 		return true;
 	}
 
 	private function setupNotificationsTable() {
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `notifications` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `target_user` int(11) DEFAULT NULL COMMENT '0=all users, otherwise, the user id of the target user.',
-		  `text` varchar(512) NOT NULL,
-		  `date` datetime NOT NULL,
-		  `action` varchar(255) DEFAULT NULL COMMENT 'if not null, a link to the target of the action',
-		  `type` varchar(255) NOT NULL DEFAULT 'event',
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `notifications`"; return false; } // failed to create table
-		return true;
+		$fields = array(
+			"target_user" => "INT(11) DEFAULT NULL", // '0=all users, otherwise, the user id of the target user.',
+			"text" => "VARCHAR(512) NOT NULL",
+			"date" => "DATETIME NOT NULL",
+			"action" => "VARCHAR(255) DEFAULT NULL", // 'if not null, a link to the target of the action',
+			"type" => "VARCHAR(255) NOT NULL"
+		);
+		if (!$this->dbConnector->createTable(CRM_NOTIFICATIONS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_NOTIFICATIONS_TABLE_NAME."."; 
+			return false;
+		}
 	}
 
 	private function setupMaritalStatusTable() {
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `marital_status` (
-		  `id` int(1) NOT NULL,
-		  `name` varchar(80) NOT NULL,
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `marital_status`"; return false; } // failed to create table
+		$fields = array(
+			"name" => "VARCHAR(255) NOT NULL"
+		);
+		if (!$this->dbConnector->createTable(CRM_MARITAL_STATUS_TABLE_NAME, $fields, null)) {
+			this->error = "Creamy install: Failed to create table ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
+			return false;
+		}
 		
-		$initializeTableQuery = "INSERT INTO `marital_status` (`id`, `name`) VALUES
-			(1, 'single'), (2, 'married'), (3, 'divorced'), (4, 'separated'), (5, 'widow/er')";
-		if (!$this->conn->query($initializeTableQuery)) { $this->error = "CRM: Failed to initialize `marital_status`"; return false; } // failed to initialize table
-		
+		$marital_statuses = array("single", "married", "divorced", "separated", "widow/er");
+		$i = 1;
+		foreach ($marital_statuses as $ms) {
+			$data = array($i => $ms);
+			if (!$this->dbConnector->insert(CRM_MARITAL_STATUS_TABLE_NAME, $data)) {
+				$this->error = "Creamy install: Failed to initialize ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
+				return false;
+			}
+			$i++;
+		}
 		return true;
 	}
 
 	private function setupMessagesTables() {
+		$fields = array(
+		  	"user_from" => "INT(11) NOT NULL",
+		  	"user_to" => "INT(11) NOT NULL",
+		  	"subject" => "VARCHAR(255) NOT NULL",
+		  	"message" => "LONGTEXT DEFAULT NULL",
+		  	"date" => "DATETIME NOT NULL",
+		  	"message_read" => "INT(1) NOT NULL",
+		  	"favorite" => "INT(1) NOT NULL DEFAULT 0" // '0=not-favorite, 1=favorite',
+		);
 		// inbox
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `messages_inbox` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `user_from` int(11) NOT NULL,
-		  `user_to` int(11) NOT NULL,
-		  `subject` varchar(255) NOT NULL,
-		  `message` varchar(1024) DEFAULT NULL,
-		  `date` datetime NOT NULL,
-		  `message_read` int(1) NOT NULL,
-		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `messages_inbox`"; return false; } // failed to create table
-		
+		if (!$this->dbConnector->createTable(CRM_MESSAGES_INBOX_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_MESSAGES_INBOX_TABLE_NAME."."; 
+			return false;
+		}
 		// outbox
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `messages_junk` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `user_from` int(11) NOT NULL,
-		  `user_to` int(11) NOT NULL,
-		  `subject` varchar(255) NOT NULL,
-		  `message` varchar(1024) DEFAULT NULL,
-		  `date` datetime NOT NULL,
-		  `message_read` int(1) NOT NULL,
-		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
-		  `origin_folder` varchar(120) NOT NULL COMMENT 'origin folder of the message (for restore purposes)',
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `messages_junk`"; return false; } // failed to create table
+		if (!$this->dbConnector->createTable(CRM_MESSAGES_OUTBOX_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_MESSAGES_OUTBOX_TABLE_NAME."."; 
+			return false;
+		}
 		
 		// junk
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `messages_outbox` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `user_from` int(11) NOT NULL,
-		  `user_to` int(11) NOT NULL,
-		  `subject` varchar(255) NOT NULL,
-		  `message` varchar(1024) DEFAULT NULL,
-		  `date` datetime NOT NULL,
-		  `message_read` int(1) NOT NULL,
-		  `favorite` int(1) NOT NULL DEFAULT '0' COMMENT '0=not-favorite, 1=favorite',
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createTableQuery)) { $this->error = "CRM: Failed to create table `messages_outbox`"; return false; } // failed to create table
-		
+		$fields["origin_folder"] = "varchar(255) NOT NULL";
+		if (!$this->dbConnector->createTable(CRM_MESSAGES_JUNK_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_MESSAGES_JUNK_TABLE_NAME."."; 
+			return false;
+		}
 		return true;		
 	}
 
@@ -260,18 +287,18 @@ class DBInstaller {
 	public function setupCustomerTables($schema, $customCustomers) {
 		// first create the types table
 		if (!$this->createCustomerTypesTable()) {
-			$this->error = "Unable to setup the customer types table: ".$this->conn->error;
+			$this->error = "Creamy install: Unable to setup the customer types table: ".$this->conn->error;
 			return false; 
 		}
 		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
 		
 		if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_DEFAULT) { // default schema: clients_1 (contacts) and clients_2 (normal clients).
 			if (!$this->createCustomersTableWithNameAndDescription("clients_1", $this->lh->translationFor("contacts"))) { 
-				$this->error = "Unable to create the contacts table: ".$this->conn->error;
+				$this->error = "Creamy install: Unable to create the contacts table";
 				return false;
 			}
 			if (!$this->createCustomersTableWithNameAndDescription("clients_2", $this->lh->translationFor("customers"))) { 
-				$this->error = "Unable to create the contacts table: ".$this->conn->error;
+				$this->error = "Creamy install: Unable to create the contacts table";
 				return false;
 			}
 		} else if ($schema == CRM_DEFAULTS_CUSTOMERS_SCHEMA_CUSTOM) {
@@ -279,7 +306,7 @@ class DBInstaller {
 			foreach ($customCustomers as $description) {
 				if ($index == 1) { $description = $this->lh->translationFor("contacts"); if (empty($description)) $description = "Contacts"; }
 				if (!$this->createCustomersTableWithNameAndDescription("clients_$index", $description)) {
-					$this->error = "Unable to create the customer table named $description: ".$this->conn->error;
+					$this->error = "Creamy install: Unable to create the customer table named $description";
 					return false;
 				}
 				$index++;
@@ -293,16 +320,12 @@ class DBInstaller {
 	public function setupCustomersStatistics($schema, $customCustomers) {
 	    // create the statistics table for tracking evolution in number of customers.
 		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
-	    $createStatisticsQuery = "CREATE TABLE IF NOT EXISTS `statistics` (
-			`id` int(11) NOT NULL AUTO_INCREMENT,";
+		$fields = array("timestamp" => "DATETIME NOT NULL");
 		foreach ($customerIdentifiers as $customerId) {
-			$createStatisticsQuery = $createStatisticsQuery . "`$customerId` int(11) NOT NULL,\n";
+			$fields[$customerId] = "INT(11) NOT NULL DEFAULT 0";
 		}
-		$createStatisticsQuery = $createStatisticsQuery."`timestamp` date NOT NULL,
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		if (!$this->conn->query($createStatisticsQuery)) {
-			$this->error = "Unable to create the statistics table: ".$this->conn->error;
+		if (!$this->dbConnector->createTable(CRM_STATISTICS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Unable to create the table ".CRM_STATISTICS_TABLE_NAME.".";
 			return false;
 		}
 		
@@ -322,18 +345,21 @@ class DBInstaller {
 				INSERT INTO statistics ( timestamp $customerFieldsString ) 
 				SELECT now() $customerCountsString ;							    
 			END;";
-		if (!$this->conn->query($eventQuery)) { 
-			$this->error = "Unable to create the event for retrieving the statistics: ".$this->conn->error;		
+		$this->dbConnector->rawQuery($eventQuery);
+		$errorMsg = $this->dbConnector->getLastError();
+		if (!empty($errorMsg)) { // error.
+			$this->error = "Creamy install: Unable to create the event for retrieving the statistics: ".$errorMsg;		
 			return false;
 		}
-		
+
 		// Start event scheduler. Requires SUPER admin privileges.
 		$startEventSchedulerQuery = "SET GLOBAL event_scheduler = 1;";
-		if (!$this->conn->query($startEventSchedulerQuery)) {
-			$this->error = "Unable to start the global event scheduler. ".$this->conn->error." You can start it manually by setting event_scheduler to ON: http://dev.mysql.com/doc/refman/5.1/en/events-configuration.html";
+		$this->dbConnector->rawQuery($startEventSchedulerQuery);
+		$errorMsg = $this->dbConnector->getLastError();
+		if (!empty($errorMsg)) { // error.
+			$this->error = "Creamy install: Unable to start the global event scheduler. ".$errorMsg.". You can start it manually by setting event_scheduler to ON: http://dev.mysql.com/doc/refman/5.1/en/events-configuration.html";
 			return false;
 		}
-		
 		// if all operations succeed, return true
 		return true;
 	}
@@ -344,18 +370,22 @@ class DBInstaller {
 		foreach ($customerIdentifiers as $identifier) {
 			// try to delete previous trigger
 			$dropTriggerQuery = "DROP TRIGGER IF EXISTS `creamy_new_$identifier`";
-			if (!$this->conn->query($dropTriggerQuery)) { $this->error = "CRM: Failed to drop trigger `creamy_new_$identifier`";  } 
+			$this->dbConnector->rawQuery($dropTriggerQuery);
+			$errorMsg = $this->dbConnector->getLastError();
+			if (!empty($errorMsg)) { $this->error = "Creamy install: Failed to drop trigger `creamy_new_$identifier`";  } 
 			
 			// generate trigger for that table
 			$userCreatedTrigger = "CREATE TRIGGER creamy_new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
 				BEGIN
-					INSERT INTO notifications (`target_user`, `text`, `date`, `action`, `type`) values (0, CONCAT('".
+					INSERT INTO ".CRM_NOTIFICATIONS_TABLE_NAME." (`target_user`, `text`, `date`, `action`, `type`) values (0, CONCAT('".
 					$this->lh->translationFor("new_contact_added").": ', NEW.name), now(), 
 					CONCAT('./editcustomer.php?customerid=',NEW.id,'&customer_type=".$identifier."'), 'contact');
 				END;
 			";
-			if (!$this->conn->query($userCreatedTrigger)) { 
-				$this->error = "Unable to create the trigger to add notifications for newly created customers/contacts: ".$this->conn->error;
+			$this->dbConnector->rawQuery($dropTriggerQuery);
+			$errorMsg = $this->dbConnector->getLastError();
+			if (!empty($errorMsg)) { 
+				$this->error = "Creamy install: Unable to create the notification trigger for newly created customers: ".$errorMsg;
 				return false;
 			}
 		}
@@ -363,51 +393,44 @@ class DBInstaller {
 	}
 	
 	private function createCustomersTableWithNameAndDescription($name, $description) {
-		$createContactsQuery = "CREATE TABLE IF NOT EXISTS `$name` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `company` int(1) NOT NULL DEFAULT '0',
-		  `name` varchar(50) NOT NULL,
-		  `id_number` varchar(50) DEFAULT NULL COMMENT 'passport, dni, nif or identifier of the person',
-		  `address` text,
-		  `city` varchar(50) DEFAULT NULL,
-		  `state` varchar(50) DEFAULT NULL,
-		  `zip_code` varchar(50) DEFAULT NULL,
-		  `country` varchar(50) DEFAULT NULL,
-		  `phone` text,
-		  `mobile` text,
-		  `email` varchar(255) DEFAULT NULL,
-		  `avatar` varchar(255) DEFAULT NULL,
-		  `type` text,
-		  `notes` text,
-		  `birthdate` datetime DEFAULT NULL,
-		  `marital_status` int(11) DEFAULT NULL,
-		  `creation_date` datetime DEFAULT NULL,
-		  `created_by` int(11) NOT NULL COMMENT 'id of the user that created the contact or client',
-		  `do_not_send_email` char(1) DEFAULT NULL,
-		  `gender` int(1) DEFAULT NULL COMMENT '0=female, 1=male',
-		  PRIMARY KEY (`id`),
-		  KEY `Unique id` (`id`),
-		  KEY `Unique name` (`name`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		$success = $this->conn->query($createContactsQuery);
-		
-		if ($success === true) {
-			$addCustomerLinkQuery = "INSERT INTO customer_types (table_name, description) VALUES ('$name', '$description')";
-			$success = $this->conn->query($addCustomerLinkQuery);
-		}
+		$fields = array(
+		  "company" => "INT(1) NOT NULL DEFAULT 0",
+		  "name" => "VARCHAR(255) NOT NULL",
+		  "id_number" => "VARCHAR(255) DEFAULT NULL", // 'passport, dni, nif or identifier of the person',
+		  "address" => "TEXT",
+		  "city" => "VARCHAR(255) DEFAULT NULL",
+		  "state" => "VARCHAR(255) DEFAULT NULL",
+		  "zip_code" => "VARCHAR(255) DEFAULT NULL",
+		  "country" => "VARCHAR(255) DEFAULT NULL",
+		  "phone" => "TEXT",
+		  "mobile" => "TEXT",
+		  "email" => "VARCHAR(255) DEFAULT NULL",
+		  "avatar" => "VARCHAR(255) DEFAULT NULL",
+		  "type" => "TEXT",
+		  "webpage" => "VARCHAR(255) DEFAULT NULL",
+		  "company_name" => "VARCHAR(255) DEFAULT NULL",
+		  "notes" => "TEXT",
+		  "birthdate" => "DATETIME DEFAULT NULL",
+		  "marital_status" => "INT(11) DEFAULT NULL",
+		  "creation_date" => "DATETIME DEFAULT NULL",
+		  "created_by" => "INT(11) NOT NULL", // 'id of the user that created the contact or client',
+		  "do_not_send_email" => "CHAR(1) DEFAULT NULL",
+		  "gender" => "INT(1) DEFAULT NULL" // '0=female, 1=male',
+		);
+		if ($this->dbConnector->createTable($name, $fields, ["name", "id_number", "email"])) {
+			$data = array("table_name" => $name, "description" => $description);
+			return ($this->dbConnector->insert(CRM_CUSTOMER_TYPES_TABLE_NAME, $data));
+		} else { return true; }
 		
 		return $success;
 	}
 	
 	private function createCustomerTypesTable() {
-		$createTableQuery = "CREATE TABLE IF NOT EXISTS `customer_types` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `table_name` varchar(255) NOT NULL,
-		  `description` varchar(255) NOT NULL,
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		
-		return $this->conn->query($createTableQuery);
+		$fields = array(
+		  "table_name" => "VARCHAR(255) NOT NULL",
+		  "description" => "VARCHAR(255) NOT NULL",
+		);
+		return $this->dbConnector->createTable(CRM_CUSTOMER_TYPES_TABLE_NAME, $fields, null);
 	}
 }
 

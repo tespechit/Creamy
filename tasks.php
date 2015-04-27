@@ -57,33 +57,7 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
@@ -218,7 +192,7 @@
 						<div id="changetaskresult" name="changetaskresult"></div>
                     </div>
                     <div class="modal-footer clearfix">
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
+                        <button type="button" class="btn btn-danger pull-right" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
                         <button type="submit" class="btn btn-primary pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
                     </div>
                 </form>
@@ -291,8 +265,9 @@
 			 */
 			$(".edit-task-action").click(function(e) {
 				// Set ID of the task to edit
+				e.preventDefault();
 		        var ele = $(this).parents("li").first();
-				var task_id = ele[0].id; // task ID is contained in the ID element of the li object.
+				var task_id = ele.attr("id"); // task ID is contained in the ID element of the li object.
 				$('#edit-task-taskid').val(task_id);
 				
 				// set the previous description of task.

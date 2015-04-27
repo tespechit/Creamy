@@ -84,7 +84,7 @@ class RandomStringGenerator
      * @param int $max
      * @return int
      */
-    protected function getRandomInteger($min, $max)
+    public function getRandomInteger($min, $max)
     {
         $range = ($max - $min);
 

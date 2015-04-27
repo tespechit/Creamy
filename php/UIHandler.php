@@ -27,6 +27,8 @@ namespace creamy;
 
 require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
+require_once('CRMUtils.php');
+require_once('ModuleHandler.php');
 
 /**
  *  UIHandler.
@@ -102,9 +104,9 @@ require_once('LanguageHandler.php');
 	/** Creation and class lifetime management */
 
 	/**
-     * Returns the singleton instance of LanguageHandler.
-     * @staticvar LanguageHandler $instance The LanguageHandler instance of this class.
-     * @return LanguageHandler The singleton instance.
+     * Returns the singleton instance of UIHandler.
+     * @staticvar UIHandler $instance The UIHandler instance of this class.
+     * @return UIHandler The singleton instance.
      */
     public static function getInstance()
     {
@@ -149,8 +151,379 @@ require_once('LanguageHandler.php');
     {
     }
     
+    /** Generic HTML structure */
+
+	public function fullRowWithContent($content, $colSize = "xs") {
+		return '<div class="row"><div class="col-'.$colSize.'-12">'.$content.'</div></div>';
+	}
+
+    public function boxWithContent($header_title, $body_content, $footer_content = NULL, $icon = NULL, $style = NULL, $body_id = NULL, $additional_body_classes = "") {
+	    // if icon is present, generate an icon item.
+	    $iconItem = (empty($icon)) ? "" : '<i class="fa fa-'.$icon.'"></i>';
+	    $bodyIdCode = (empty($body_id)) ? "" : 'id="'.$body_id.'"';
+	    $boxStyleCode = empty($style) ? "" : "box-$style";
+	    $footerDiv = empty($footer_content) ? "" : '<div class="box-footer">'.$footer_content.'</div>';
+	    
+	    return '<div class="box '.$boxStyleCode.'">
+					<div class="box-header">'.$iconItem.'
+				        <h3 class="box-title">'.$header_title.'</h3>
+				    </div>
+					<div class="box-body '.$additional_body_classes.'" '.$bodyIdCode.'>'.$body_content.'</div>
+					'.$footerDiv.'
+				</div>';
+    }
+    
+    public function responsibleTableBox($header_title, $table_content, $icon = NULL, $style = NULL, $body_id = NULL) {
+	    return $this->boxWithContent($header_title, $table_content, NULL, $icon, $style, $body_id, "table-responsive");
+    }
+    
+    public function boxWithMessage($header_title, $message, $icon = NULL, $style = "PRIMARY") {
+	    $body_content = '<div class="callout callout-'.$style.'"><p>'.$body_text.'</p></div>';
+	    return $this->boxWithContent($header_title, $body_content, NULL, $icon, $style);
+    }
+    
+    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = null, $messagetag = "resultmessage") {
+	    if (empty($submit_text)) { $submit_text = $this->lh->translationFor("accept"); }
+	    return '<div class="box box-primary"><div class="box-header"><h3 class="box-title">'.$header_title.'</h3></div>
+	    	   '.$this->formWithContent($id, $content, $submit_text, $messagetag).'</div>';
+    }
+    
+    public function boxWithQuote($title, $quote, $author, $icon = "quote-left", $style = null, $body_id = null, $additional_body_classes = "") {
+	    $body_content = '<blockquote><p>'.$quote.'</p><small>'.$author.'</small></blockquote>';
+	    return $this->boxWithContent($title, $body_content, null, $icon, $style, $body_id, $additional_body_classes);
+    }
+    
+    /** Tables */
+
+    public function generateTableHeaderWithItems($items, $id, $styles = "", $needsTranslation = true) {
+	    $table = "<table id=\"$id\" class=\"table $styles\"><thead><tr>";
+	    if (is_array($items)) {
+		    foreach ($items as $item) {
+			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
+		    }
+	    }
+		$table .= "</tr></thead><tbody>";
+		return $table;
+    }
+    
+    public function generateTableFooterWithItems($items, $needsTranslation = true) {
+	    $table = "</tbody><tfoot><tr>";
+	    if (is_array($items)) {
+		    foreach ($items as $item) {
+			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
+		    }
+	    }
+		$table .= "</tr></tfoot></table>";
+		return $table;
+	}
+    
+    /** Messages */
+    
+    public function dismissableAlertWithMessage($message, $success, $includeResultData = false) {
+	    $icon = $success ? "check" : "ban";
+	    $color = $success ? "success" : "danger";
+	    $title = $success ? $this->lh->translationFor("success") : $this->lh->translationFor("error");
+	    $plusData = $includeResultData ? "'+ data+'" : "";
+	    return '<div class="alert alert-dismissable alert-'.$color.'"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><h4><i class="fa fa-'.$icon.'"></i> '.$title.'</h4><p>'.$message.' '.$plusData.'</p></div>';
+    }
+    
+    public function emptyMessageDivWithTag($tagname) {
+	    return '<div  id="'.$tagname.'" name="'.$tagname.'" style="display:none"></div>';
+    } 
+    
+    /**
+	 * Generates a generic callout message with the given title, message and style.
+	 * @param title String the title of the callout message.
+	 * @param message String the message to show.
+	 * @param style String a string containing the style (danger, success, primary...) or NULL if no style.
+	 */
+	public function calloutMessageWithTitle($title, $message, $style = NULL) {
+		$styleCode = empty($style) ? "" : "callout-$style";
+		return "<div class=\"callout $styleCode\"><h4>$title</h4><p>$message</p></div>";	
+	}
+    
+	/**
+	 * Generates a generic message HTML box, with the given message.
+	 * @param message String the message to show.
+	 */
+	public function calloutInfoMessage($message) { 
+		return $this->calloutMessageWithTitle($this->lh->translationFor("message"), $message, "info"); 
+	}
+
+	/**
+	 * Generates a warning message HTML box, with the given message.
+	 * @param message String the message to show.
+	 */
+	public function calloutWarningMessage($message) { 
+		return $this->calloutMessageWithTitle($this->lh->translationFor("warning"), $message, "warning");
+	}
+
+	/**
+	 * Generates a error message HTML box, with the given message.
+	 * @param message String the message to show.
+	 */
+	public function calloutErrorMessage($message) {
+		return $this->calloutMessageWithTitle($this->lh->translationFor("error"), $message, "danger");
+	}
+	
+	/**
+	 * Generates a error modal message HTML dialog, with the given message.
+	 * @param message String the message to show.
+	 */
+	public function modalErrorMessage($message, $header) {
+		$result = '<div class="modal-dialog"><div class="modal-content"><div class="modal-header">
+		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$header.'</h4>
+		            </div><div class="modal-body">';
+		$result = $result.$this->calloutErrorMessage($message);
+		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.
+		$this->lh->translationFor("exit").'</button></div></div></div>';
+		return $result;
+	}
+	
+	/** Forms */
+	
+	public function formWithContent($id, $content, $submit_text = null, $messagetag = "resultmessage", $action = "") {
+		return '<form role="form" id="'.$id.'" name="'.$id.'" method="post" action="'.$action.'" enctype="multipart/form-data">
+            <div class="box-body">
+            	'.$content.'
+            </div>
+            <div class="box-footer" id="form-footer">
+            	'.$this->emptyMessageDivWithTag($messagetag).'
+                <button type="submit" class="btn btn-primary">'.$submit_text.'</button>
+            </div>
+        </form>';
+	}
+	
+	public function modalFormStructure($modalid, $formid, $title, $subtitle, $body, $footer, $icon = null) {
+		$iconCode = empty($icon) ? '' : '<i class="fa fa-'.$icon.'"></i> ';
+		$subtitleCode = empty($subtitle) ? '' : '<p>'.$subtitle.'</p>';
+		
+		return '<div class="modal fade" id="'.$modalid.'" name="'.$modalid.'" tabindex="-1" role="dialog" aria-hidden="true">
+	        	<div class="modal-dialog"><div class="modal-content">
+	                <div class="modal-header">
+	                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	                    <h4 class="modal-title">'.$iconCode.$title.'</h4>
+	                    '.$subtitleCode.'
+	                </div>
+	                <form action="" method="post" name="'.$formid.'" id="'.$formid.'">
+	                    <div class="modal-body">
+	                        '.$body.'
+	                    </div>
+	                    <div class="modal-footer clearfix">
+							'.$footer.'
+	                    </div>
+	                </form>
+				</div></div>
+				</div>';
+	}
+	
+    public function checkboxInputWithLabel($label, $id, $name, $enabled) {
+	    return '<div class="checkbox"><label for="'.$id.'">
+	    <input type="checkbox" id="'.$id.'" name="'.$name.'"'.$enabled.'/>'.$label.'</label></div>';
+    }
+    
+    public function selectWithLabel($label, $id, $name, $options, $selectedOption) {
+	    $selectCode = '<div class="form-group"><label>'.$label.'</label><select id="'.$id.'" name="'.$name.'" class="form-control">';
+	    foreach ($options as $key => $value) {
+		    $isSelected = ($selectedOption == $key) ? " selected" : "";
+		    $selectCode .= '<option value="'.$key.'" '.$isSelected.'>'.$value.'</option>';
+	    }
+		$selectCode .= '</select></div>';
+		return $selectCode;
+    }
+    
+    public function singleFormInputElement($id, $name, $type, $placeholder, $value = null) {
+	    $iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
+	    $valueCode = empty($value) ? '' : ' value="'.$value.'"';
+	    return $iconCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
+    }
+
+	public function hiddenFormField($id) {
+		return '<input type="hidden" id="'.$id.'" name="'.$id.'" value="">';
+	}
+
+    public function singleFormInputGroup($inputElement) {
+	    return '<div class="form-group">'.$inputElement.'</div>';
+    }
+    
+    public function doubleFormInputGroup($firstInputElement, $secondInputElement, $sizeClass = "lg") {
+	    return '<div class="form-group"><div class="row"><div class="col-'.$sizeClass.'-6"><div class="input-group">'.$firstInputElement.'</div></div>
+                <div class="col-'.$sizeClass.'-6">'.$secondInputElement.'</div></div></div>';
+    }
+    
+    public function modalDismissButton($id, $message = null, $position = "right", $dismiss = true) {
+	    if (empty($message)) { $message = $this->lh->translationFor("cancel"); }
+	    $dismissCode = $dismiss ? 'data-dismiss="modal"' : '';
+	    return '<button type="button" class="btn btn-danger pull-'.$position.'" '.$dismissCode.' id="'.$id.'">
+	    		<i class="fa fa-times"></i> '.$message.'</button>';
+    }
+    
+    public function modalSubmitButton($id, $message = null, $position = "left", $dismiss = false) {
+	    if (empty($message)) { $message = $this->lh->translationFor("accept"); }
+	    $dismissCode = $dismiss ? 'data-dismiss="modal"' : '';
+	    return '<button type="submit" class="btn btn-primary pull-'.$position.'" '.$dismissCode.' id="'.$id.'"><i class="fa fa-check-circle"></i> '.$message.'</button>';
+    }
+    
+    /** Pop-Up Action buttons */
+    
+    public function popupActionButton($title, $options, $style = CRM_UI_STYLE_DEFAULT) {
+	    $popup = '<div class="btn-group"><button type="button" class="btn btn-'.$style.' dropdown-toggle" data-toggle="dropdown">'.$title.'</button><ul class="dropdown-menu" role="menu">';
+	    foreach ($options as $option) { $popup .= $option; }
+	    $popup .= '</ul></div>';
+	    return $popup;
+    }
+    
+    public function optionForPopupButtonWithClass($class, $text, $parameter_value, $parameter_name = "href") {
+	    return '<li><a class="'.$class.'" '.$parameter_name.'="'.$parameter_value.'">'.$text.'</a></li>';
+    }
+    
+    public function separatorForPopupButton() {
+	    return '<li class="divider"></li>';
+    }
+    
+    /** Javascript HTML code generation */
+    
+    public function wrapOnDocumentReadyJS($content) {
+	    return '<script type="text/javascript">$(document).ready(function() {
+		    '.$content.'
+		    });</script>';
+    }
+    
+    public function formPostJS($formid, $phpfile, $successJS, $failureJS, $preambleJS = "", $successResult = "success") {
+	    return $this->wrapOnDocumentReadyJS('$("#'.$formid.'").validate({
+			submitHandler: function(e) {
+				'.$preambleJS.'
+				$.post("'.$phpfile.'", $("#'.$formid.'").serialize(), function(data) {
+					if (data == "'.$successResult.'") {
+						'.$successJS.'
+					} else {
+						'.$failureJS.'
+					}
+				}).fail(function(){ 
+					'.$failureJS.'
+  				});
+			}
+		 });');
+    }
+    
+    public function fadingInMessageJSWithTag($tagname, $message) {
+	    return '$("#'.$tagname.'").html(\''.$message.'\');
+				$("#'.$tagname.'").fadeIn();';
+    }
+    
+    public function fadingOutMessageJSWithTag($tagname, $animated = false) {
+	    if ($animated) { return '$("#'.$tagname.'").fadeOut();'; }
+	    else { return '$("#'.$tagname.'").hide();'; }
+    }
+    
+    public function reloadLocationJS() { return 'location.reload();'; }
+    
+    public function showRetrievedErrorMessageAlertJS() { return 'alert(data);'; }
+    
+    public function showCustomErrorMessageAlertJS($msg) { return 'alert("'.$msg.'");'; }
+    
+    public function clickableClassActionJS($className, $parameter, $container, $phpfile, $successJS, $failureJS, $confirmation = false, $successResult = "success", $additionalParameters = null, $parentContainer = null) {
+	    // build the confirmation code if needed.
+	    $confirmPrefix = $confirmation ? 'var r = confirm("'.$this->lh->translationFor("are_you_sure").'"); if (r == true) {' : '';
+	    $confirmSuffix = $confirmation ? '}' : '';
+	    $paramCode = empty($parentContainer) ? 'var paramValue = $(this).attr("'.$container.'");' : 
+	    			'var ele = $(this).parents("'.$parentContainer.'").first(); var paramValue = ele.attr("'.$container.'");';
+	    // additional parameters
+	    $additionalString = "";
+	    if (is_array($additionalParameters) && count($additionalParameters) > 0) {
+		    foreach ($additionalParameters as $apKey => $apValue) { $additionalString .= ", \"$apKey\": $apValue ";  }
+	    }
+	    
+	    
+	    // return the JS code
+	    return $this->wrapOnDocumentReadyJS(
+	    '$(".'.$className.'").click(function(e) {
+			e.preventDefault();
+			'.$confirmPrefix.'
+				'.$paramCode.'
+				$.post("'.$phpfile.'", { "'.$parameter.'": paramValue '.$additionalString.'} ,function(data){
+					if (data == "'.$successResult.'") { '.$successJS.' }
+					else { '.$failureJS.' }
+				}).fail(function(){ 
+					'.$failureJS.'
+  				});
+			'.$confirmSuffix.'
+		 });');
+    }
+    
+    // Assignment to variables from one place to a form destination.
+    
+    private function javascriptVarFromName($name, $prefix = "var") {
+	    $result = str_replace("-", "", $prefix.$name);
+	    $result = str_replace("_", "", $result);
+	    return trim($result);
+    }
+    
+    public function selfValueAssignmentJS($attr, $destination) {
+	    $varName = $this->javascriptVarFromName($destination);
+	    return 'var '.$varName.' = $(this).attr("'.$attr.'"); 
+	    		$("#'.$destination.'").val('.$varName.');';
+    }
+    
+    public function directValueAssignmentJS($source, $attr, $destination) {
+	    $varName = $this->javascriptVarFromName($destination);
+	    return 'var '.$varName.' = $("#'.$source.'").attr("'.$attr.'"); 
+	    		$("#'.$destination.'").val('.$varName.');';
+    }
+    
+    public function classValueFromParentAssignmentJS($classname, $parentContainer, $destination) {
+	    $elementName = $this->javascriptVarFromName($destination, "ele");
+	    $varName = $this->javascriptVarFromName($destination);
+	    return 'var '.$elementName.' = $(this).parents("'.$parentContainer.'").first();
+				var '.$varName.' = $(".'.$classname.'", '.$elementName.');
+				$("#'.$destination.'").val('.$varName.'.text().trim());';
+    }
+        
+    public function clickableFillValuesActionJS($classname, $assignments) {
+	    $js = '$(".'.$classname.'").click(function(e) {'."\n".'e.preventDefault();';
+		foreach ($assignments as $assignment) { $js .= "\n".$assignment; }
+		$js .= '});'."\n";
+		return $this->wrapOnDocumentReadyJS($js);
+    }
     
     /* Administration & user management */
+    
+    /** Returns the HTML form for modyfing the system settings */
+    public function getGeneralSettingsForm() {
+		// current settings values
+	    $modulesEnabled = $this->db->getSettingValueForKey(CRM_SETTING_MODULE_SYSTEM_ENABLED) == true ? " checked" : "";
+	    $statsEnabled = $this->db->getSettingValueForKey(CRM_SETTING_STATISTICS_SYSTEM_ENABLED) ? " checked" : "";
+	    $tz = $this->db->getSettingValueForKey(CRM_SETTING_TIMEZONE);
+	    $lo = $this->db->getSettingValueForKey(CRM_SETTING_LOCALE);
+	    
+	    // translation.
+	    $em_text = $this->lh->translationFor("enable_modules");
+	    $es_text = $this->lh->translationFor("enable_statistics");
+	    $tz_text = $this->lh->translationFor("detected_timezone");
+	    $lo_text = $this->lh->translationFor("choose_language");
+	    $ok_text = $this->lh->translationFor("settings_successfully_changed");
+	    $ko_text = $this->lh->translationFor("error_changing_settings");
+	    
+	    // form
+	    $form = '<div class="form-group"><form role="form" id="adminsettings" name="adminsettings" class="form">
+	    	  <label>'.$this->lh->translationFor("general_settings").'</label>
+			  '.$this->checkboxInputWithLabel($em_text, "enableModules", "enableModules", $modulesEnabled).'
+			  '.$this->checkboxInputWithLabel($es_text, "enableStatistics", "enableStatistics", $statsEnabled).'
+			  '.$this->selectWithLabel($tz_text, "timezone", "timezone", \creamy\CRMUtils::getTimezonesAsArray(), $tz).'
+			  '.$this->selectWithLabel($lo_text, "locale", "locale", \creamy\LanguageHandler::getAvailableLanguages(), $lo).'
+			  <div class="box-footer">
+			  '.$this->emptyMessageDivWithTag("resultmessage").'
+			  <button type="submit" class="btn btn-info">'.$this->lh->translationFor("modify").'</button></form></div></div>';
+		
+		// javascript
+		$successJS = $this->reloadLocationJS();
+		$failureJS = $this->fadingInMessageJSWithTag("resultmessage", $this->dismissableAlertWithMessage($ko_text, false, true));
+		$preambleJS = $this->fadingOutMessageJSWithTag("resultmessage");
+		$javascript = $this->formPostJS("adminsettings", "./php/ModifySettings.php", $successJS, $failureJS, $preambleJS);
+		
+		return $form."</br>".$javascript;
+    }
     
     /**
 	 * Generates the HTML code for a select with the human friendly descriptive names for the user roles.
@@ -189,7 +562,7 @@ require_once('LanguageHandler.php');
 		$textForStatus = $status == 1 ? $this->lh->translationFor("disable") : $this->lh->translationFor("enable");
 		$actionForStatus = $status == 1 ? "deactivate-user-action" : "activate-user-action";
 		return '<div class="btn-group">
-	                <button type="button" class="btn btn-danger dropdown-toggle"  data-toggle="dropdown">'.$this->lh->translationFor("choose_action_user").' '.$username.'</button>
+	                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'.$this->lh->translationFor("choose_action").'</button>
 	                <ul class="dropdown-menu" role="menu">
 	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->translationFor("edit_data").'</a></li>
 	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->translationFor("change_password").'</a></li>
@@ -208,9 +581,9 @@ require_once('LanguageHandler.php');
        $users = $this->db->getAllUsers();
        // is null?
        if (is_null($users)) { // error getting contacts
-	       return $this->getErrorMessage($this->lh->translationFor("unable_get_user_list"));
+	       return $this->calloutErrorMessage($this->lh->translationFor("unable_get_user_list"));
        } else if (empty($users)) { // no contacts found
-	       return $this->getWarningMessage($this->lh->translationFor("no_users_in_list"));
+	       return $this->calloutWarningMessage($this->lh->translationFor("no_users_in_list"));
        } else { 
 	       // we have some users, show a table
 		   $result = $this->lh->translationForTerms($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
@@ -266,17 +639,7 @@ require_once('LanguageHandler.php');
 	 * Generates the HTML with a unauthorized access. It must be included inside a <section> section.
 	 */
 	public function getUnauthotizedAccessMessage() {
-		print '<div class="box box-danger">
-				<div class="box-header">
-	                <i class="fa fa-lock"></i>
-	                <h3 class="box-title">'.$this->lh->translationFor("access_denied").'</h3>
-	            </div>
-				<div class="box-body" id="graph-box">
-					<div class="callout callout-danger">
-						<p>'.$this->lh->translationFor("you_dont_have_permission").'</p>
-					</div>
-				</div>
-			   </div>';
+		return $this->boxWithMessage($this->lh->translationFor("access_denied"), $this->lh->translationFor("you_dont_have_permission"), "lock", "danger");
 	}
 	
 	/**
@@ -359,50 +722,62 @@ require_once('LanguageHandler.php');
                             </div><!-- /.box -->';
                 return $result;
 		} else {
-			return $this->getErrorMessage($errormessage);
+			return $this->calloutErrorMessage($errormessage);
 		}
 	}
 
-	/** Warnings and messages */
+	/** Modules */
 	
-	/**
-	 * Generates a info message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getInfoMessage($message) {
-		return "<div class=\"callout callout-info\">\n\t<h4>".$this->lh->translationFor("message")."</h4>\n\t<p>$message</p>\n</div>\n";	
+	public function getModulesAsList() {
+		// get all modules.
+		$mh = \creamy\ModuleHandler::getInstance();
+		$allModules = $mh->listOfAllModules();
+		
+		// generate a table with all elements.
+		$items = array("name", "description", "enabled", "action");
+		$table = $this->generateTableHeaderWithItems($items, "moduleslist", "table-striped");
+		// fill table
+		foreach ($allModules as $moduleClass => $moduleDefinition) {
+			// module data
+			if ($mh->moduleIsEnabled($moduleClass)) { // module is enabled.
+				$status = "<i class='fa fa-check-square-o'></i>";
+				$enabled = true;
+			} else { // module is disabled.
+				$status = "<i class='fa fa-times-circle-o'></i>";
+				$enabled = false;
+			}
+			$moduleName = $moduleDefinition->getModuleName();
+			$moduleVersion = $moduleDefinition->getModuleVersion();
+			$moduleDescription = $moduleDefinition->getModuleDescription();
+			// module action
+			$moduleShortName = $moduleDefinition->getModuleShortName();
+			$action = $this->getActionButtonForModule($moduleShortName, $enabled);
+			// add module row
+			$table .= "<tr><td><b>$moduleName</b><br/><div class='small'>$moduleDescription</div></td><td>$moduleVersion</td><td>$status</td><td>$action</td></tr>";
+		}
+
+		// close table
+		$table .= $this->generateTableFooterWithItems($items);
+		
+		// add javascript code.
+		$enableJS = $this->clickableClassActionJS("enable_module", "module_name", "href", "./php/ModifyModule.php", $this->reloadLocationJS(), $this->showRetrievedErrorMessageAlertJS(), false, CRM_DEFAULT_SUCCESS_RESPONSE, array("enabled"=>"1"), null);
+		$disableJS = $this->clickableClassActionJS("disable_module", "module_name", "href", "./php/ModifyModule.php", $this->reloadLocationJS(), $this->showRetrievedErrorMessageAlertJS(), false, CRM_DEFAULT_SUCCESS_RESPONSE, array("enabled"=>"0"), null);
+		$deleteJS = $this->clickableClassActionJS("uninstall_module", "module_name", "href", "./php/DeleteModule.php", $this->reloadLocationJS(), $this->showRetrievedErrorMessageAlertJS(), true);
+		$table .= $enableJS.$disableJS.$deleteJS;
+		
+		return $table;
+	}
+	
+	private function getActionButtonForModule($moduleShortName, $enabled) {
+		// build the options.
+		$ed_option = $enabled ? $this->optionForPopupButtonWithClass("disable_module", $this->lh->translationFor("disable"), $moduleShortName) : $this->optionForPopupButtonWithClass("enable_module", $this->lh->translationFor("enable"), $moduleShortName);
+		//$up_option = $this->optionForPopupButtonWithClass("update_module", $this->lh->translationFor("update"), $moduleShortName);
+		$un_option = $this->optionForPopupButtonWithClass("uninstall_module", $this->lh->translationFor("uninstall"), $moduleShortName);
+		$options = array($ed_option, $un_option);
+		// build and return the popup action button.
+		return $this->popupActionButton($this->lh->translationFor("choose_action"), $options);
 	}
 
-	/**
-	 * Generates a warning message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getWarningMessage($message) {
-		return "<div class=\"callout callout-warning\">\n\t<h4>".$this->lh->translationFor("warning")."</h4>\n\t<p>$message</p>\n</div>\n";	
-	}
-
-	/**
-	 * Generates a error message HTML box, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getErrorMessage($message) {
-		return "<div class=\"callout callout-danger\">\n\t<h4>".$this->lh->translationFor("error")."</h4>\n\t<p>$message</p>\n</div>\n";	
-	}
-	
-	/**
-	 * Generates a error modal message HTML dialog, with the given message.
-	 * @param message String the message to show.
-	 */
-	function getErrorModalMessage($message, $header) {
-		$result = '<div class="modal-dialog"><div class="modal-content"><div class="modal-header">
-		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$header.'</h4>
-		            </div><div class="modal-body">';
-		$result = $result.$this->getErrorMessage($message);
-		$result = $result.'</div><div class="modal-footer clearfix"><button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.
-		$this->lh->translationFor("exit").'</button></div></div></div>';
-		return $result;
-	}
 
 	/** Notifications */
 
@@ -417,14 +792,16 @@ require_once('LanguageHandler.php');
 		$numMessages = count($list);
 		
 		$result = '<li class="dropdown messages-menu">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-envelope"></i>
-                    <span class="label label-success">'.$numMessages.'</span>
-                </a>
-                <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages").'</li>
-                    <li>
-                            <ul class="menu">';
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <i class="fa fa-envelope"></i>
+                <span class="label label-success">'.$numMessages.'</span>
+            </a>
+            <ul class="dropdown-menu">
+                <li class="header">
+                '.$this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages").'
+                </li>
+                <li>
+					<ul class="menu">';
         
         foreach ($list as $message) {
 	        if (empty($message["remote_avatar"])) $remoteavatar = CRM_DEFAULTS_USER_AVATAR;
@@ -446,7 +823,7 @@ require_once('LanguageHandler.php');
             </li>';
         }
         $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->translationFor("see_all_messages").'</a></li></ul></li>';
-        print $result;
+        return $result;
 	}
 	
 	/**
@@ -550,7 +927,35 @@ require_once('LanguageHandler.php');
 		else return "success";
 	}
 
-	/** Basic UI Elements */
+	/** Basic UI Elements & structure */
+	
+	/**
+	 * Returns the default creamy header for all pages.
+	 */
+	public function creamyHeader($userid, $userrole, $username, $avatar) {
+		return '<header class="header">
+	            <a href="./index.php" class="logo">
+		            <img src="img/logoWhite.png" width="32" height="32">
+	                Creamy
+	            </a>
+	            <nav class="navbar navbar-static-top" role="navigation">
+	                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
+	                    <span class="sr-only">Toggle navigation</span>
+	                    <span class="icon-bar"></span>
+	                    <span class="icon-bar"></span>
+	                    <span class="icon-bar"></span>
+	                </a>
+	                <div class="navbar-right">
+	                    <ul class="nav navbar-nav">
+	                    		'.$this->getMessageNotifications($userid, $userrole).'  
+		                    	'.$this->getAlertNotifications($userid, $userrole).'
+		                    	'.$this->getTaskNotifications($userid, $userrole).'
+		                    	'.$this->getTopbarItems($userid, $username, $avatar, $userrole).'
+	                    </ul>
+	                </div>
+	            </nav>
+	        </header>';
+	}
 	
 	/**
 	 * Generates the HTML for the user's topbar menu.
@@ -623,7 +1028,10 @@ require_once('LanguageHandler.php');
                         <i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <li><a href="./adminusers.php"><i class="fa fa-user-secret"></i> '.$this->lh->translationFor("users").'</a></li>
+                        <li><a href="./adminsettings.php"><i class="fa fa-gears"></i> '.$this->lh->translationFor("settings").'</a></li>
+                        <li><a href="./adminusers.php"><i class="fa fa-user"></i> '.$this->lh->translationFor("users").'</a></li>
+                        <li><a href="./adminmodules.php"><i class="fa fa-archive"></i> '.$this->lh->translationFor("modules").'</a></li>
+                        <li><a href="./admincustomers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("customers").'</a></li>
                     </ul>
                 </li>';
 		}
@@ -632,63 +1040,50 @@ require_once('LanguageHandler.php');
 		$customerTypes = $this->db->getCustomerTypes();
 		
 		// prefix: structure and home link
-		print '<aside class="left-side sidebar-offcanvas">
-                <section class="sidebar">
-                    <div class="user-panel">
-                        <div class="pull-left image">
-                            <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
-                        </div>
-                        <div class="pull-left info">
-                            <p>'.$this->lh->translationFor("hello").', '.$username.'</p>
-                            <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->translationFor("online").'</a>
-                        </div>
-                    </div>
-                    <ul class="sidebar-menu">
-                        <li>
-                            <a href="./index.php">
-                                <i class="fa fa-bar-chart-o"></i> <span>'.$this->lh->translationFor("home").'</span>
-                            </a>
-                        </li>';
-        
+		$result = '<aside class="left-side sidebar-offcanvas"><section class="sidebar">
+	            <div class="user-panel">
+	                <div class="pull-left image">
+	                    <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
+	                </div>
+	                <div class="pull-left info">
+	                    <p>'.$this->lh->translationFor("hello").', '.$username.'</p>
+	                    <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->translationFor("online").'</a>
+	                </div>
+	            </div>
+	            <ul class="sidebar-menu">';
+	    // body: home and customer menus
+        $result .= $this->getSidebarItem("./index.php", "bar-chart-o", $this->lh->translationFor("home"));
         // include a link for every customer type
         foreach ($customerTypes as $customerType) {
 	        if (isset($customerType["table_name"]) && isset($customerType["description"])) {
 		        $customerTableName = $customerType["table_name"];
 		        $customerFriendlyName = $customerType["description"];
-		        print '<li>
-                            <a href="./customerslist.php?customer_type='.$customerTableName.'&customer_name='.$customerFriendlyName.'">
-                                <i class="fa fa-users"></i> <span>'.$customerFriendlyName.'</span> 
-                            </a>
-                       </li>
-		        ';
+		        $url = './customerslist.php?customer_type='.$customerTableName.'&customer_name='.$customerFriendlyName;
+		        $result .= $this->getSidebarItem($url, "users", $customerFriendlyName);
 	        }
         }
 
-        // suffix: messages, notifications, tasks
-		print '<li>
-                            <a href="./messages.php">
-                                <i class="fa fa-envelope"></i> <span>'.$this->lh->translationFor("messages").'</span>
-                                <small class="badge pull-right bg-green">'.$numMessages.'</small>
-                            </a>
-                        </li>
-						<li>
-                            <a href="./notifications.php">
-                                <i class="fa fa-exclamation"></i> <span>'.$this->lh->translationFor("notifications").'</span>
-                                <small class="badge pull-right bg-orange">'.$numNotifications.'</small>
-                            </a>
-                        </li>
-						<li>
-                            <a href="./tasks.php">
-                                <i class="fa fa-tasks"></i> <span>'.$this->lh->translationFor("tasks").'</span>
-                                <small class="badge pull-right bg-red">'.$numTasks.'</small>
-                            </a>
-                        </li>
-                        '.$adminArea.'
-                    </ul>
-                </section>
-                <!-- /.sidebar -->
-            </aside>
-		';
+        // ending: messages, notifications, tasks
+        $result .= $this->getSidebarItem("./messages.php", "envelope", $this->lh->translationFor("messages"), $numMessages);
+        $result .= $this->getSidebarItem("./notifications.php", "exclamation", $this->lh->translationFor("notifications"), $numNotifications, "orange");
+        $result .= $this->getSidebarItem("./tasks.php", "tasks", $this->lh->translationFor("tasks"), $numTasks, "red");
+        
+        // suffix: modules
+        $activeModules = \creamy\ModuleHandler::getInstance()->activeModulesInstances();
+        foreach ($activeModules as $shortName => $module) {
+        	$result .= $this->getSidebarItem("./modulepage.php?module_name=".urlencode($shortName), $module->mainPageViewIcon(), $module->mainPageViewTitle(), $module->sidebarBadgeNumber());
+        } 
+        
+		$result .= $adminArea.'</ul></section></aside>';
+		return $result;
+	}
+
+	/**
+	 * Generates the HTML code for a sidebar link.
+	 */
+	protected function getSidebarItem($url, $icon, $title, $includeBadge = null, $badgeColor = "green") {
+		$badge = (isset($includeBadge)) ? '<small class="badge pull-right bg-'.$badgeColor.'">'.$includeBadge.'</small>' : '';
+		return '<li><a href="'.$url.'"><i class="fa fa-'.$icon.'"></i> <span>'.$title.'</span>'.$badge.'</a></li>';
 	}
 
 	/** Customers */
@@ -701,24 +1096,94 @@ require_once('LanguageHandler.php');
    	private function getCustomerListAsTable($customers, $customerType) {
 	   	// print prefix
        $result = $this->lh->translationForTerms($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
-       
-       foreach ($customers as $customer) {
-	       $nameOrNonamed = $customer["name"];
-	       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->translationFor("no_name").")";
-	       
-	       $result = $result."<tr>
-                    <td>".$customer["id"]."</td>
-                    <td><a href=\"editcustomer.php?customerid=".$customer["id"]."&customer_type=".$customerType."\" >".$nameOrNonamed."</a></td>
-                    <td>".$customer["email"]."</td>
-                    <td>".$customer["phone"]."</td>
-                    <td>".$customer["id_number"]."</td>
-                </tr>";
+       if (isset($customers)) {
+		   foreach ($customers as $customer) {
+		       $nameOrNonamed = $customer["name"];
+		       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->translationFor("no_name").")";
+		       
+		       $result = $result."<tr>
+	                    <td>".$customer["id"]."</td>
+	                    <td><a href=\"editcustomer.php?customerid=".$customer["id"]."&customer_type=".$customerType."\" >".$nameOrNonamed."</a></td>
+	                    <td>".$customer["email"]."</td>
+	                    <td>".$customer["phone"]."</td>
+	                    <td>".$customer["id_number"]."</td>
+	                </tr>";
+	       }
        }
        
        // print suffix
        $result = $result.$this->lh->translationForTerms($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
        return $result;
    	}
+
+   	/**
+	 * Generates a HTML table with all customer types for the administration panel.
+	 */
+	public function getCustomerTypesAdminTable() {
+		// generate table		
+		$items = array("Id", $this->lh->translationFor("name"));
+		$table = $this->generateTableHeaderWithItems($items, "customerTypes", "table-bordered table-striped", true);
+		if ($customerTypes = $this->db->getCustomerTypes()) {
+			foreach ($customerTypes as $customerType) {
+				$table .= "<tr><td>".$customerType["id"]."</td><td><span class='text'>".$customerType["description"].'
+				</span><div class="tools pull-right">
+				<a class="edit-customer" href="'.$customerType["id"].'" data-toggle="modal" data-target="#edit-customer-modal">
+				<i class="fa fa-edit task-item"></i></a>
+				<a class="delete-customer" href="'.$customerType["id"].'"><i class="fa fa-trash-o"></i></a>
+				</div></td></tr>';
+			}
+		}
+		$table .= $this->generateTableFooterWithItems($items, true);
+		
+		// generate companion JS code.
+		// delete customer type
+		$ec_ok = $this->reloadLocationJS();
+		$ec_ko = $this->showRetrievedErrorMessageAlertJS();
+		$deletephp = "./php/DeleteCustomerType.php";
+		$deleteCustomerJS = $this->clickableClassActionJS("delete-customer", "customertype", "href", $deletephp, $ec_ok, $ec_ko, true);
+		// edit customer type
+		$idAssignment = $this->selfValueAssignmentJS("href", "customer-type-id");
+		$textAssignment = $this->classValueFromParentAssignmentJS("text", "td", "newname");
+		$editCustomerJS = $this->clickableFillValuesActionJS("edit-customer", array($idAssignment, $textAssignment));	
+
+		// edit customer modal form
+		$modalTitle = $this->lh->translationFor("edit_customer_type");
+		$modalSubtitle = $this->lh->translationFor("enter_new_name_customer_type");
+		$name = $this->lh->translationFor("name");
+		$newnameInput = $this->singleFormInputGroup($this->singleFormInputElement("newname", "newname", "text required", $name, null));
+		$hiddenidinput = $this->hiddenFormField("customer-type-id");
+		$bodyInputs = $newnameInput.$hiddenidinput;
+		$msgDiv = $this->emptyMessageDivWithTag("editcustomermessage");
+		$modalFooter = $this->modalDismissButton("edit-customer-cancel").$this->modalSubmitButton("edit-customer-accept").$msgDiv;
+		$modalForm = $this->modalFormStructure("edit-customer-modal", "edit-customer-form", $modalTitle, $modalSubtitle, $bodyInputs, $modalFooter, "user");
+		
+		// validate form javascript
+		$successJS = $this->reloadLocationJS();
+		$em_text = $this->lh->translationFor("error_editing_customer_name");
+		$failureJS = $this->fadingInMessageJSWithTag("editcustomermessage", $this->dismissableAlertWithMessage($em_text, false, true));
+		$preambleJS = $this->fadingOutMessageJSWithTag("editcustomermessage", false);
+		$javascript = $this->formPostJS("edit-customer-form", "./php/ModifyCustomerType.php", $successJS, $failureJS, $preambleJS);
+
+		return $table."\n".$editCustomerJS."\n".$deleteCustomerJS."\n".$modalForm."\n".$javascript;
+	}
+	
+	public function newCustomerTypeAdminForm() {
+		// form
+		$cg_text = $this->lh->translationFor("customer_group");
+		$hc_text = $this->lh->translationFor("new_customer_group");
+		$cr_text = $this->lh->translationFor("create");
+		$inputfield = $this->singleFormInputGroup($this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text, null));
+		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, "primary", "creationmessage");
+		
+		// javascript form submit.
+		$successJS = $this->reloadLocationJS();
+		$ua_text = $this->lh->translationFor("unable_add_customer_group");
+		$failureJS = $this->fadingInMessageJSWithTag("creationmessage", $this->dismissableAlertWithMessage($ua_text, false, true));
+		$preambleJS = $this->fadingOutMessageJSWithTag("creationmessage", false);
+		$javascript = $this->formPostJS("createcustomergroup", "./php/CreateCustomerGroup.php", $successJS, $failureJS, $preambleJS);
+		
+		return $formbox."\n".$javascript;
+	}
 
   	/**
 	 * Generates the HTML with the HTML table for an array of contacts or customers.
@@ -729,15 +1194,21 @@ require_once('LanguageHandler.php');
        $customers = $this->db->getAllCustomersOfType($customerType);
        // is null?
        if (is_null($customers)) { // error getting customers
-	       return $this->getErrorMessage($this->lh->translationFor("unable_get_customer_list"));
+	       return $this->calloutErrorMessage($this->lh->translationFor("unable_get_customer_list"));
        } else if (empty($customers)) { // no customers found
-	       return $this->getWarningMessage($this->lh->translationFor("no_customers_in_list"));
+	       return $this->calloutWarningMessage($this->lh->translationFor("no_customers_in_list"));
        } else { // we have some customers, show a table
 		   return $this->getCustomerListAsTable($customers, $customerType);
        }
 	}	
+	
+	/**
+	 * Generates the HTML with an empty table for a list of contacts or customers.
+	 */
+	public function getEmptyCustomersList() {
+		return $this->getCustomerListAsTable(null, null);
+	}
 
-   	
    	/**
 	 * Generates the HTML code for the editing customer form.
 	 * @param customerId Int the id of the customer to edit
@@ -806,7 +1277,7 @@ require_once('LanguageHandler.php');
                         <h3 class="box-title">Introduzca los nuevos datos</h3>
                     </div><!-- /.box-header -->
                     <!-- form start -->
-	                <form action="" method="post" name="modifycustomerform" id="modifycustomerform">
+	                <form role="form" action="" method="post" name="modifycustomerform" id="modifycustomerform">
 	                    <div class="modal-body">
 	                        <div class="form-group">
 	                            <div class="input-group">
@@ -943,7 +1414,7 @@ require_once('LanguageHandler.php');
                 </div><!-- /.box -->';
 
 		} else {
-			print $this->getErrorMessage($errormessage);
+			print $this->calloutErrorMessage($errormessage);
 		}
 		
 	}
@@ -971,11 +1442,8 @@ require_once('LanguageHandler.php');
 				  <small class="label label-warning pull-right"><i class="fa fa-clock-o"></i> '.$creationdate.'</small>
 				  <div class="tools">
 						<a class="edit-task-action" href="'.$task["id"].'" data-toggle="modal" data-target="#edit-task-dialog-modal">
-						<i class="fa fa-edit task-item"></i>
-						</a>
-						<a class="delete-task-action" href="'.$task["id"].'">
-							<i class="fa fa-trash-o"></i>
-						</a>
+						<i class="fa fa-edit task-item"></i></a>
+						<a class="delete-task-action" href="'.$task["id"].'"><i class="fa fa-trash-o"></i></a>
 				  </div>
 			 </li>';
 	}
@@ -987,7 +1455,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getCompletedTasksAsTable($userid, $userrole) { 
 		$tasks = $this->db->getCompletedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage($this->lh->translationFor("you_dont_have_completed_tasks")); }
+		if (empty($tasks)) { return $this->calloutInfoMessage($this->lh->translationFor("you_dont_have_completed_tasks")); }
 		else {
 			$list = $this->taskTablePrefix;
 			foreach ($tasks as $task) {
@@ -1008,7 +1476,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getUnfinishedTasksAsTable($userid, $userrole) { 
 		$tasks = $this->db->getUnfinishedTasks($userid);
-		if (empty($tasks)) { return $this->getInfoMessage($this->lh->translationFor("you_dont_have_pending_tasks")); }
+		if (empty($tasks)) { return $this->calloutInfoMessage($this->lh->translationFor("you_dont_have_pending_tasks")); }
 		else {
 			$list = $this->taskTablePrefix;
 			foreach ($tasks as $task) {
@@ -1084,7 +1552,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getInboxMessagesAsTable($userid) {
 		$messages = $this->db->getMessagesOfType($userid, MESSAGES_GET_INBOX_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("unable_get_messages"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("unable_get_messages"));
 		else return $this->getMessageListAsTable($messages);
 	}
 	
@@ -1094,7 +1562,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getUnreadMessagesAsTable($userid) {
 		$messages = $this->db->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1104,7 +1572,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getJunkMessagesAsTable($userid) {
 		$messages = $this->db->getMessagesOfType($userid, MESSAGES_GET_DELETED_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1114,7 +1582,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getSentMessagesAsTable($userid) {
 		$messages = $this->db->getMessagesOfType($userid, MESSAGES_GET_SENT_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 				
@@ -1124,7 +1592,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getFavoriteMessagesAsTable($userid) {
 		$messages = $this->db->getMessagesOfType($userid, MESSAGES_GET_FAVORITE_MESSAGES);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 		
@@ -1135,7 +1603,7 @@ require_once('LanguageHandler.php');
 	 */
 	public function getMessagesFromFolderAsTable($userid, $folder) {
 		$messages = $this->db->getMessagesOfType($userid, $folder);
-		if ($messages == NULL) return $this->getInfoMessage($this->lh->translationFor("no_messages_in_list"));
+		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
 		else return $this->getMessageListAsTable($messages);
 	}
 	
@@ -1187,7 +1655,7 @@ require_once('LanguageHandler.php');
 		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->translationFor("message").' '.$fromortodestination.'</h4>
 		            </div>
-		            <form action="#" method="post" id="show-message-form" name="show-message-form">
+		            <form action="#" method="post" id="show-message-form" name="show-message-form" role="form">
 		                <div class="modal-body">
 		                    <div class="form-group">
 		                        <div class="input-group">
@@ -1220,7 +1688,7 @@ require_once('LanguageHandler.php');
 		        </div><!-- /.modal-content -->
 			</div><!-- /.modal-dialog -->';
     	} else {
-			return $this->getErrorModalMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
+			return $this->modalErrorMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
     	}
 
 	} // end function
@@ -1326,7 +1794,7 @@ require_once('LanguageHandler.php');
 		
 		$notifications = $this->db->getTodayNotifications($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_today")).'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->calloutInfoMessage($this->lh->translationFor("no_notifications_today")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -1342,7 +1810,7 @@ require_once('LanguageHandler.php');
 
         $notifications = $this->db->getNotificationsForPastWeek($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->getInfoMessage($this->lh->translationFor("no_notifications_past_week")).'</div></li>';
+			$timeline = $timeline.'<li><div class="timeline-item">'.$this->calloutInfoMessage($this->lh->translationFor("no_notifications_past_week")).'</div></li>';
 		} else {
 			foreach ($notifications as $notification) {
 				$timeline = $timeline.$this->timelineItemForNotification($notification);
@@ -1436,8 +1904,6 @@ require_once('LanguageHandler.php');
 		else if ($maxCharacters < 1) $maxCharacters = 4;
 		return (strlen($string) > $maxCharacters) ? substr($string, 0, $maxCharacters-3).'...' : $string;
 	}
-	
-
 
 }	
 	

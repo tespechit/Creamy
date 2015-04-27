@@ -47,14 +47,14 @@ reader = "Lector"
 guest = "Invitado"
 disable = "Deshabilitar"
 enable = "Habilitar"
-choose_action_user = "Elige una acción para"
+choose_action = "Elige una acción"
 edit_data = "Editar datos"
 change_password = "Cambiar contraseña"
 delete_user = "Eliminar usuario"
 access_denied = "Acceso denegado"
 you_dont_have_permission = "No tienes permisos para acceder a este contenido."
 warning = "¡Aviso!"
-error = "¡Error!"
+error = "Error"
 error_getting_message = "Error recuperando message"
 unable_get_message = "Ha sido imposible obtener el message. Por favor, inténtelo de nuevo más tarde. Si el problema persiste, consulte con el administrador."
 exit = "Salir"
@@ -207,15 +207,15 @@ new_task = "Nueva tarea"
 task_description = "Descripción de la tarea"
 assign_this_task_to = "Asignar esta tarea a..."
 create_task = "Crear tarea"
+modify_task = "Modificar tarea";
 modify_task_description = "Modificar la descripción de la tarea"
 insert_new_description = "Introduce una nueva descripción para la tarea y pulsa el botón 'modificar tarea'."
 new_description = "Nueva descripción"
-modify_taks = "Modificar tarea"
 unable_change_password = "Ha sido imposible cambiar la contraseña. Por favor, compruebe que la contraseña antigua es válida. ¿Ha olvidado su contraseña? Contacte con el administrador."
 error_changing_password ="Ocurrió un error al cambiar la contraseña. Por favor, inténtelo de nuevo."
 some_fields_missing = "Imposible procesar la petición. Faltan algunos campos importantes o están vacíos."
 unable_modify_task = "Ha sido imposible modificar los datos de la tarea. Por favor, contacte con el administrador."
-unable_create_customer = "Ha sido imposible crear el contacto o cliente. Por favor, contacto con el administrador."
+unable_create_customer = "Ha sido imposible crear el contacto o cliente. Por favor, compruebe que los datos son válidos y no existe un cliente con el mismo nombre."
 unable_create_user = "Ha sido imposible crear el usuario. Por favor, contacto con el administrador."
 unable_create_task = "Ha sido imposible crear la tarea. Por favor, contacte con el administrador."
 image_file_too_large = "El tamaño del fichero de imagen es demasiado grande. El máximo son 2MB."
@@ -258,18 +258,42 @@ choose_language = "Elige un lenguaje para Creamy:"
 you_dont_have_pending_tasks = "No tienes ninguna tarea pendiente en este momento."
 you_dont_have_completed_tasks = "No tienes ninguna tarea completada en este momento."
 today = "Hoy"
-
-
-
-
-
-
-
-
-
-
-
-
+access_creamy = "Acceder a Creamy"
+settings = "Ajustes"
+main_system_admin = "Administrador principal del sistema"
+modules = "Módulos"
+module_management = "Gestión de módulos"
+enable_modules = "Habilitar módulos";
+enable_statistics = "Habilitar estadísticas";
+general_settings = "Ajustes generales"
+unable_delete_main_admin = "Ha sido imposible borrar el usuario. La cuenta de administrador principal del sistema no puede ser eliminada."
+settings_successfully_changed = "Ajustes cambiados con éxito"
+error_changing_settings = "Ocurrió un error cambiando los ajustes. Por favor inténtelo más tarde.";
+error_accessing_database = "Error accediendo a la base de datos."
+customer_types = "Tipos de clientes"
+unable_delete_customer_type = "Hubo un error borrando el tipo de cliente. Por favor, inténtelo de nuevo más tarde."
+unable_delete_contacts_type = "Imposible borrar tipo de cliente. El tipo básico de contactos no puede ser eliminado."
+edit_customer_type = "Editar tipo de cliente"
+enter_new_name_customer_type = "Introduce un nuevo nombre para este tipo de cliente."
+error_editing_customer_name = "Error cambiando la descripción del cliente."
+new_customer_group = "Nuevo grupo de clientes"
+unable_add_customer_group = "Unable to add new customer group."
+update = "Actualizar"
+crm_update_available = "Hay una nueva versión de Creamy disponible. Por favor, actualícelo."
+crm_update_impossible = "Esta versión de Creamy está obsoleta, pero no es posible actualizar esta versión."
+crm_up_to_date = "Creamy está actualizado. No se requiere aplicar ninguna actualización."
+version = "Version"
+crm_update = "Actualización de Creamy"
+results = "Resultados"
+crm_update_succeed = "Actualización realizada con éxito. ¡Disfruta de Creamy!"
+crm_update_failed = "El proceso de actualización falló. Por favor revisa el resultado e informa al desarrollador."
+description = "Description"
+not_implemented = "Funcionalidad no implementada"
+uninstall = "Desinstalar"
+unable_enable_module = "Ocurrió un error tratando de activar el módulo. Por favor, inténtelo de nuevo."
+unable_disable_module = "Ocurrió un error tratando de desactivar el módulo. Por favor, inténtelo de nuevo."
+error_loading_module = "Error cargando módulo"
+unable_load_module_content = "Ocurrió un error tratando de cargar el contenido del módulo. Ha sido imposible encontrar el módulo solicitado, o éste no está preparado para mostrar contenido. Por favor, contacte con el autor."
 
 
 

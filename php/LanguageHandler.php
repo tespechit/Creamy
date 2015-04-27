@@ -27,8 +27,10 @@
 namespace creamy;
 
 require_once('CRMDefaults.php');
+require_once('DatabaseConnectorFactory.php');
 @include_once('Config.php');
 
+define('CRM_LANGUAGE_DEFAULT_LOCALE', 'en_US');
 define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 
 /**
@@ -54,11 +56,11 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
      * @staticvar LanguageHandler $instance The LanguageHandler instance of this class.
      * @return LanguageHandler The singleton instance.
      */
-    public static function getInstance($locale = NULL)
+    public static function getInstance($locale = null, $databaseConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL)
     {
         static $instance = null;
         if (null === $instance) {
-            $instance = new static($locale);
+            $instance = new static($locale, $databaseConnectorType);
         }
 
         return $instance;
@@ -68,23 +70,28 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
      * Protected constructor to prevent creating a new instance of the
      * *Singleton* via the `new` operator from outside of this class.
      */
-    protected function __construct($locale = NULL)
+    protected function __construct($locale = null, $databaseConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL)
     {
 		// initialize language and user locale
-		if (!empty($locale)) { $this->locale = $locale; }
-		else $this->locale = defined('CRM_LOCALE') ? CRM_LOCALE : "en_US";
-		if (!isset($this->locale)) {
-			 $this->locale = "en_US";
+		if (isset($locale)) { $this->locale = $locale; } // if specified, set this locale.
+		else if (\creamy\DatabaseConnectorFactory::instantiationAvailableForConnectorOfType($databaseConnectorType)) {
+			// else if we have access to database, check the CRM locale setting.
+			$dbConnector = \creamy\DatabaseConnectorFactory::getInstance()->getDatabaseConnectorOfType($databaseConnectorType);
+			$dbConnector->where("setting", CRM_SETTING_LOCALE);
+			if ($settingRow = $dbConnector->getOne(CRM_SETTINGS_TABLE_NAME)) { $this->locale = $settingRow["value"]; }
 		}
+		// if locale could not be stablished, fallback to default.
+		if (!isset($this->locale)) { $this->locale = CRM_LANGUAGE_DEFAULT_LOCALE; }
 		
 		// initialize map of language texts.
 		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$this->locale;
-		if (!file_exists($filepath)) {
-			// fallback to en_US installation (everybody knows english, don't they?)
+		$translations = $this->getTranslationsFromFile($filepath);
+		if (!isset($translations)) { // fallback to en_US installation (everybody knows english, don't they?)
 			$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."en_US";
 			$this->locale = "en_US";
+			$translations = $this->getTranslationsFromFile($filepath);
 		}
-		$this->texts = parse_ini_file($filepath) or array();
+		$this->texts = $translations;
     }
 
     /**
@@ -106,8 +113,37 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
     private function __wakeup()
     {
     }
-    	
-	/** Translation methods */
+    
+    /** Collection translation methods */
+    
+    /**
+	 * Parses a translation file and returns the results as an array.
+	 * @param String $filepath path for the file to parse.
+	 * @return array an associative array containing the translations found in $filename or null if the file couldn't be found.
+	 */
+    protected function getTranslationsFromFile($filepath) {
+	    if (file_exists($filepath)) { return parse_ini_file($filepath); }
+	    else return null;
+    }
+    
+    /**
+	 * Adds a set of translations from a custom file to this language handler.
+	 * If the file has conflicting or existing keys, they will be overwritten with the ones found in $filepath.
+	 * @param String $filepath path for the file to parse and extract more translations.
+	 * @return Bool true if the file was successfully added (even though it has no translations inside), false otherwise.
+	 */
+	public function addCustomTranslationsFromFile($filepath) {
+		if (file_exists($filepath)) { 
+			$translations = parse_ini_file($filepath);
+			if (isset($translations) && is_array($translations)) {
+				$this->texts = array_merge($this->texts, $translations);
+				return true;
+			}
+		}
+		return false;
+	}
+    
+	/** Localization methods */
 	
 	/**
 	 * Sets the locale of the LanguageHandler locale
@@ -146,6 +182,10 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 		else print $string;
 	}
 	
+	/** 
+	 * Gets the locale that's currently been used by this Language Handler.
+	 */
+	public function getLanguageHandlerLocale() { return $this->locale; }
 
 	/**
 	 * Translates a text, substituting all appearances of the terms passed in the "terms" parameter with their proper values in the translation table.
@@ -174,6 +214,22 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 		print $this->translationForTerms($string, $terms);
 	}
 	
+	/**
+	 * Gets an array with all the enabled languages in the CRM in the following form:
+	 * [ "en_US" => "en_US (american english)", "es_ES" => "es_ES (spanish)", ... ]
+	 */
+	public static function getAvailableLanguages() {
+		$files = scandir(realpath(dirname(__FILE__).DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."lang"));
+		$result = array();
+		foreach ($files as $file) {
+			if (!is_dir($file) && (!\creamy\CRMUtils::startsWith($file, "."))) {
+				$localeCodeForFile = str_replace("_", "-", $file);
+				$languageForLocale = utf8_decode(\Locale::getDisplayLanguage($localeCodeForFile));
+				$result[$file] = "$file ($languageForLocale)";
+			}
+		}
+		return $result;
+	}
 }
 
 ?>

@@ -27,7 +27,10 @@
 	require_once('./php/DbInstaller.php');
 	require_once('./php/LanguageHandler.php');
 	require_once('./php/RandomStringGenerator.php');
+	require_once('./php/CRMUtils.php');
 	
+	define('CRM_INSTALL_SKEL_CONFIG_FILE', 'skel/Config.php');
+
 	// language handler
 	$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 	$lh = \creamy\LanguageHandler::getInstance($locale);
@@ -63,11 +66,15 @@
 			// update LanguageHandler locale
 			error_log("Creamy install: Trying to set locale to $locale");
 			$lh->setLanguageHandlerLocale($locale);
-			
-			// generate a new config file for Creamy, incluying db information & timezone.
-			$configContent = file_get_contents(CRM_SKEL_CONFIG_FILE);			
+
+			// setup settings table.
 			$randomStringGenerator = new \creamy\RandomStringGenerator();
 			$crmSecurityCode = $randomStringGenerator->generate(40);
+			$dbInstaller->setupSettingTable($timezone, $desiredLanguage, $desiredLanguage);
+
+			
+			// generate a new config file for Creamy, incluying db information & timezone.
+			$configContent = file_get_contents(CRM_INSTALL_SKEL_CONFIG_FILE);			
 			$customConfig = "
 // database configuration
 define('DB_USERNAME', '$dbuser');
@@ -76,11 +83,6 @@ define('DB_HOST', '$dbhost');
 define('DB_NAME', '$dbname');
 define('DB_PORT', '3306');
 		
-// General configuration
-define('CRM_TIMEZONE', '$timezone');
-define('CRM_LOCALE', '$desiredLanguage');
-define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
-
 ".CRM_PHP_END_TAG;
 
 			$configContent = str_replace(CRM_PHP_END_TAG, $customConfig, $configContent);
@@ -94,7 +96,6 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 			$error = "";
 			$currentState = "step2";			
 			$_SESSION["installationStep"] = "step2";
-			$dbInstaller->closeDatabaseConnection();
 		} else {
 			$error = $dbInstaller->getLastErrorMessage();
 			$currentState = "step1";
@@ -137,7 +138,6 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						$currentState = "step2";
 						$_SESSION["installationStep"] = "step2";
 					}
-					$dbInstaller->closeDatabaseConnection();
 					
 					// store the admin email.
 					$configContent = file_get_contents(CRM_PHP_CONFIG_FILE);					
@@ -204,7 +204,6 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 				$currentState = "step_3";
 				$_SESSION["installationStep"] = "step_3";
 			}
-			$dbInstaller->closeDatabaseConnection();
 		}
 	} elseif (isset($_POST["submit_final_step"]) && $currentState == "final_step") { // final step: congratulations!
 		// create a new installed.txt file to register that we have correctly installed Creamy.
@@ -263,19 +262,9 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						<p><?php $lh->translateText("detected_timezone"); ?></p>
                         <?php
 		                    // Timezones
-		                    $utc = new DateTimeZone('UTC');
-							$dt = new DateTime('now', $utc);
-							
+		                    $tzs = \creamy\CRMUtils::getTimezonesAsArray();
 							print '<select name="userTimeZone" id="userTimeZone" class="form-control">';
-							foreach(DateTimeZone::listIdentifiers() as $tz) {
-							    $current_tz = new DateTimeZone($tz);
-							    $offset =  $current_tz->getOffset($dt);
-							    $transition =  $current_tz->getTransitions($dt->getTimestamp(), $dt->getTimestamp());
-							    $abbr = $transition[0]['abbr'];
-							
-								$formatted = sprintf('%+03d:%02u', floor($offset / 3600), floor(abs($offset) % 3600 / 60));
-							    print '<option value="' .$tz. '">' .$tz. ' [' .$abbr. ' '. $formatted. ']</option>';
-							}
+							foreach($tzs as $key => $value) { print '<option value="'.$key.'">'.$value.'</option>'; }
 							print '</select>';
 	                    ?>
                     </div>
@@ -283,15 +272,10 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						<p><?php $lh->translateText("choose_language"); ?></p>
 						<select name="desiredLanguage" id="desiredLanguage" class="form-control">
 							<?php
-							$files = scandir(dirname(__FILE__)."/lang");
-							foreach ($files as $file) {
-								if (!is_dir($file)) {
-									$localeCodeForFile = str_replace("_", "-", $file);
-									$languageForLocale = utf8_decode(Locale::getDisplayLanguage($localeCodeForFile));
-									$selectedByDefault = "";
-									if ($file == $locale) { $selectedByDefault = "selected"; }
-									print('<option value="'.$file.'" '.$selectedByDefault.'> '.$file.' ('.$languageForLocale.')</option>');
-								}
+							$locales = \creamy\LanguageHandler::getAvailableLanguages();
+							for ($locales as $key => $value) {
+								$selectedByDefault = ($key == $locale) ? "selected" : "";
+								print('<option value="'.$key.'" '.$selectedByDefault.'> '.$value.'</option>');
 							}
 							?>
 						</select>

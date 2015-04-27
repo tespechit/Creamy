@@ -28,6 +28,7 @@
 	
 	$result = NULL;
 	$error = NULL;
+	$success = false;
 	
 	if (isset($_POST["submit"])) {
 		require_once('./php/DbHandler.php');
@@ -49,6 +50,7 @@
 			if ($db->checkPasswordResetValidity($email, $date, $nonce, $code)) {
 				if ($db->changePasswordForUserIdentifiedByEmail($email, $password1)) {
 					$result = $lh->translationFor("password_reset_successfully");
+					$success = true;
 				} else $result = $lh->translationFor("password_reset_error");
 			}
 		} else {
@@ -105,14 +107,18 @@
                 </div>
             </form>
 			
-			<?php } else { ?>
-                <div class="body bg-gray">
-					<p><?php echo $result; ?></p>
-                	</div>
-			<?php } ?>
-			
-            
-            <div class="margin text-center">
+			<?php } else { 
+                print "<div class=\"body bg-gray\">\n";
+				print "<p>$result</p>\n";
+				if ($success == true) {
+                	print "<button class=\"btn bg-light-blue btn-block\" onclick=\"window.location.href='./login.php'\">
+                	".$lh->translationFor("access_creamy")."
+                	</button>";
+				}
+                print "</div>\n";
+			 } 
+			 ?>
+			<div class="margin text-center">
                 <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
                 <br/>
                 <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>

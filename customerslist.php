@@ -69,33 +69,7 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
 			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
@@ -130,7 +104,7 @@
                                 </div>
 								<?php } ?>
                                 <div class="box-body table-responsive">
-									<?php print $ui->getAllCustomersOfTypeAsTable($customerType); ?>
+									<?php print $ui->getEmptyCustomersList(); ?>
                                 </div><!-- /.box-body -->
                             </div><!-- /.box -->
                         </div>
@@ -156,7 +130,20 @@
         <!-- page script -->
         <script type="text/javascript">
             $(function() {
-                $("#contacts").dataTable();
+                $("#contacts").dataTable({
+	                "bProcessing": true,
+					"bServerSide": true,
+					"sAjaxSource": "./php/CustomerListJSON.php",
+					"fnServerParams": function (aoData) {
+			            aoData.push({
+			                "name": "customer_type",
+			                "value": "<?php echo $customerType; ?>"
+			            })
+		            },
+		            "oLanguage": {
+			            "sProcessing": "<i class='fa fa-refresh'> </i>"
+			        }
+                });
             });
         </script>
 
