@@ -108,6 +108,7 @@ define('CRM_TASKS_TABLE_NAME', "tasks");
 define('CRM_USERS_TABLE_NAME', "users");
 
 // settings constants
+define('CRM_SETTING_CONTEXT_CREAMY', "creamy");
 define('CRM_SETTING_CRM_VERSION', "crm_version");
 define('CRM_SETTING_ADMIN_USER', "admin_user");
 define('CRM_SETTING_INSTALLATION_DATE', "installation_date");
@@ -118,6 +119,13 @@ define('CRM_SETTING_CUSTOMER_LIST_FIELDS', "customer_list_fields");
 define('CRM_SETTING_TIMEZONE', "timezone");
 define('CRM_SETTING_LOCALE', "locale");
 define('CRM_SETTING_SECURITY_TOKEN', "security_token");
+
+define('CRM_SETTING_TYPE_STRING', "string");
+define('CRM_SETTING_TYPE_INT', "int");
+define('CRM_SETTING_TYPE_FLOAT', "float");
+define('CRM_SETTING_TYPE_BOOL', "bool");
+define('CRM_SETTING_TYPE_DATE', "date");
+
 
 // misc constants
 define ('CRM_DEFAULT_SUCCESS_RESPONSE', "success");

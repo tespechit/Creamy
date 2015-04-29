@@ -1,40 +1,41 @@
 <?php
-	/**
-		The MIT License (MIT)
-		
-		Copyright (c) 2015 Ignacio Nieto Carvajal
-		
-		Permission is hereby granted, free of charge, to any person obtaining a copy
-		of this software and associated documentation files (the "Software"), to deal
-		in the Software without restriction, including without limitation the rights
-		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-		copies of the Software, and to permit persons to whom the Software is
-		furnished to do so, subject to the following conditions:
-		
-		The above copyright notice and this permission notice shall be included in
-		all copies or substantial portions of the Software.
-		
-		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-		LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-		THE SOFTWARE.
-	*/
+/**
+	The MIT License (MIT)
 	
-	// check if Creamy has been installed.
-	require_once('./php/CRMDefaults.php');
-	if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
-		header("location: ./install.php");
-	}
+	Copyright (c) 2015 Ignacio Nieto Carvajal
 	
-	// initialize session and DDBB handler
-    require_once('./php/Session.php');
-	include_once('./php/UIHandler.php');
-	require_once('./php/LanguageHandler.php');
-	$ui = \creamy\UIHandler::getInstance();
-    $lh = \creamy\LanguageHandler::getInstance();
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+// check if Creamy has been installed.
+require_once('./php/CRMDefaults.php');
+if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
+	header("location: ./install.php");
+}
+
+// initialize session and DDBB handler
+require_once('./php/Session.php');
+include_once('./php/UIHandler.php');
+require_once('./php/LanguageHandler.php');
+$ui = \creamy\UIHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 ?>
 <html>
     <head>
@@ -61,10 +62,10 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
+		<?php print $ui->creamyHeader($user->getUserId(), $user->getUserRole(), $user->getUserName(), $user->getUserAvatar()); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -89,7 +90,7 @@
                             <div class="small-box bg-orange">
                                 <div class="inner">
                                     <h3>
-                                        <?php print $ui->generateLabelForTodayNotifications($_SESSION["userid"]);  ?>
+                                        <?php print $ui->generateLabelForTodayNotifications($user->getUserId());  ?>
                                     </h3>
                                     <p>
                                         <?php $lh->translateText("notifications"); ?>
@@ -172,7 +173,7 @@
                                 <div class="box-body">
                                     <form action="#" method="post" id="send-message-form" name="send-message-form">
                                         <div class="form-group">
-											<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
+											<?php print $ui->generateSendToUserSelect($user->getUserId()); ?>
                                         </div>
                                         <div class="form-group">
                                             <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
@@ -180,7 +181,7 @@
                                         <div>
                                             <textarea class="textarea" placeholder="<?php $lh->translateText("message"); ?>" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
                                         </div>
-                                        <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $_SESSION["userid"] ?>">
+                                        <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $user->getUserId(); ?>">
                                         <div id="messagesendingresult" name="messagesendingresult"></div>
 								</div>
                                 <div class="box-footer clearfix">
@@ -190,6 +191,8 @@
                             </div>
                         </section><!-- right col -->
                     </div><!-- /.row (main row) -->
+
+					<?php print $ui->hooksForDashboard(); ?>
 
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->

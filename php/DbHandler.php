@@ -264,7 +264,7 @@ class DbHandler {
     public function userExistsIdentifiedByName($name) {
 	    $this->dbConnector->where("name", $name);
 	    $this->dbConnector->get(CRM_USERS_TABLE_NAME);
-	    return ($this->dbConnector->count > 0);
+	    return ($this->dbConnector->getRowCount() > 0);
     }
 
     /**
@@ -275,7 +275,7 @@ class DbHandler {
     public function userExistsIdentifiedByEmail($email) {
 	    $this->dbConnector->where("email", $email);
 	    $this->dbConnector->get(CRM_USERS_TABLE_NAME);
-	    return ($this->dbConnector->count > 0);
+	    return ($this->dbConnector->getRowCount() > 0);
     }
 
     /**
@@ -346,16 +346,18 @@ class DbHandler {
 	/** Settings */
 
 	/** Returns the value for a setting with a given key */
-	public function getSettingValueForKey($key) {
+	public function getSettingValueForKey($key, $context = CRM_SETTING_CONTEXT_CREAMY) {
 		$this->dbConnector->where("setting", $key);
+		$this->dbConnector->where("context", $context);
 		if ($result = $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME)) {
 			return $result["value"];
 		} 
 		return NULL;
 	}
 	
-	public function setSettingValueForKey($key, $value) {
+	public function setSettingValueForKey($key, $value, $context = CRM_SETTING_CONTEXT_CREAMY) {
 		$this->dbConnector->where("setting", $key);
+		$this->dbConnector->where("context", $context);
 		$data = array("value" => $value);
 		if ($this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $data)) {
 			// update succeed.
@@ -363,7 +365,7 @@ class DbHandler {
 		} else { // unable to upload. Perhaps the key didn't exist?
 			// try to insert instead.
 			$this->dbConnector->where("setting", $key);
-			$data = array("setting" => $key, "value" => $value);
+			$data = array("setting" => $key, "context" => $context, "value" => $value);
 			return $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data);
 		}
 	}
@@ -459,7 +461,7 @@ class DbHandler {
 		}
 		
 		// perform query and execute results.
-		return $this->dbConnector->get($customerType, $numRows, $cols);
+		return $this->dbConnector->get($customerType, $numRows, $cols, true);
    	}
 	
 	/**
@@ -1323,7 +1325,14 @@ class DbHandler {
 	/**
 	 * Returns the number of affected/selected rows from the last query.
 	 */
-	public function rowCount() { return $this->dbConnector->count; }
+	public function rowCount() { return $this->dbConnector->getRowCount(); }
+	
+	/**
+	 * Returns the number of rows that would have been returned from the last query if there was no limit clause.
+	 * This number is useful for datatable pagination.
+	 * This number is only set if the variable $countFilteredResults is set to true in get/getOne/rawQuery.
+	 */
+	public function unlimitedRowCount() { return $this->dbConnector->getUnlimitedRowCount(); }
 	
 	/**
 	 * Checks if a given array only contains numeric values.

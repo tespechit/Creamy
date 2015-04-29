@@ -136,51 +136,52 @@ class DBInstaller {
 	
 	public function setupSettingTable($timezone, $locale, $securityToken) {
 		// create setting data table.
-		$fields = array("setting" => "VARCHAR(255) NOT NULL", "value" => "LONGTEXT");
+		$fields = array("setting" => "VARCHAR(255) NOT NULL", "context" => "VARCHAR(255) NOT NULL", "value" => "LONGTEXT");
 		if (!$this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting"])) { return false; }
 		
 		// fill the settings table.
 		
 		// admin account
-		$adminEmail = array("setting" => CRM_SETTING_ADMIN_USER, "value" => 1);
+		$adminEmail = array("setting" => CRM_SETTING_ADMIN_USER, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => 1);
 		$adminEmailFound = $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $adminEmail);
 
 		// crm version
-		$data = array("setting" => CRM_SETTING_CRM_VERSION, "value" => CRM_INSTALL_VERSION);
+		$data = array("setting" => CRM_SETTING_CRM_VERSION, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_INSTALL_VERSION);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// installation date. We try to get it from the Config.php file first
 		if ($timestamp = filemtime(dirname(__FILE__) . '/Config.php')) {
 			$dbDate = date("Y-m-d H:i:s", $timestamp);
 		} else { $dbDate = $this->dbConnector->now(); }
-		$data = array("setting" => CRM_SETTING_INSTALLATION_DATE, "value" => $dbDate);
+		$data = array("setting" => CRM_SETTING_INSTALLATION_DATE, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $dbDate);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// plugin system enabled (1 by default)
-		$data = array("setting" => CRM_SETTING_MODULE_SYSTEM_ENABLED, "value" => true);
+		$data = array("setting" => CRM_SETTING_MODULE_SYSTEM_ENABLED, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// statistics system enabled (1 by default)
-		$data = array("setting" => CRM_SETTING_STATISTICS_SYSTEM_ENABLED, "value" => true);
+		$data = array("setting" => CRM_SETTING_STATISTICS_SYSTEM_ENABLED, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// active plugins (empty by default)
-		$data = array("setting" => CRM_SETTING_ACTIVE_MODULES, "value" => "");
+		$data = array("setting" => CRM_SETTING_ACTIVE_MODULES, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => "");
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// customer list fields
-		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "value" => "name, email, phone, id_number");
+		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => "name, email, phone, id_number");
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// timezone
-		$data = array("setting" => CRM_SETTING_TIMEZONE, "value" => $timezone);
+		$data = array("setting" => CRM_SETTING_TIMEZONE, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $timezone);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// locale
-		$data = array("setting" => CRM_SETTING_LOCALE, "value" => $locale);
+		$data = array("setting" => CRM_SETTING_LOCALE, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $locale);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// security token
-		$data = array("setting" => CRM_SETTING_SECURITY_TOKEN, "value" => $securityToken);
+		$data = array("setting" => CRM_SETTING_SECURITY_TOKEN, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $securityToken);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		return true;

@@ -31,7 +31,7 @@ require_once('DatabaseConnectorFactory.php');
 @include_once('Config.php');
 
 define('CRM_LANGUAGE_DEFAULT_LOCALE', 'en_US');
-define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
+define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 
 /**
  * Class to handle language and translations. LanguageHandler uses the Singleton pattern, thus gets instanciated by the LanguageHandler::getInstante().
@@ -188,6 +188,28 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 	public function getLanguageHandlerLocale() { return $this->locale; }
 
 	/**
+	 * Returns the language name description for the LanguageHandler locale.
+	 */
+	public function getDisplayLanguage() { return \Locale::getDisplayLanguage($this->locale); }
+
+	/**
+	 * Gets the date format for the current locale, using "dd" for days, "mm" for months, "yyyy"
+	 * for years, and "/" as separator (i.e: dd/mm/yyyy or yyyy/mm/dd).
+	 */		
+	public function getDateFormatForCurrentLocale() {
+		// get basic format
+		$df = new \IntlDateFormatter($this->locale, \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE);
+		$fmt = $df->getPattern();
+		// apply needed transformations.
+		$fmt = strtolower($fmt);
+		if (substr_count($fmt, "m") == 1) $fmt = str_ireplace("m", "mm", $fmt);
+		if (substr_count($fmt, "d") == 1) $fmt = str_ireplace("d", "dd", $fmt);
+		if (substr_count($fmt, "y") == 1) $fmt = str_ireplace("y", "yyyy", $fmt);
+		else if (substr_count($fmt, "y") == 2) $fmt = str_ireplace("yy", "yyyy", $fmt);
+		return $fmt;
+	}
+
+	/**
 	 * Translates a text, substituting all appearances of the terms passed in the "terms" parameter with their proper values in the translation table.
 	 * @param $string String the text to translate.
 	 * @param $terms Array an array of strings containing the terms to find and replace in the String $string.
@@ -219,7 +241,7 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 	 * [ "en_US" => "en_US (american english)", "es_ES" => "es_ES (spanish)", ... ]
 	 */
 	public static function getAvailableLanguages() {
-		$files = scandir(realpath(dirname(__FILE__).DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."lang"));
+		$files = scandir(realpath(dirname(__FILE__).CRM_LANGUAGE_BASE_DIR));
 		$result = array();
 		foreach ($files as $file) {
 			if (!is_dir($file) && (!\creamy\CRMUtils::startsWith($file, "."))) {
@@ -229,6 +251,19 @@ define('CRM_LANGUAGE_BASE_DIR', '/../lang/');
 			}
 		}
 		return $result;
+	}
+	
+	/** Datatables */
+	public function urlForDatatablesTranslation() {
+		if ($language = $this->getDisplayLanguage()) {
+			$fileindisk = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."datatables".DIRECTORY_SEPARATOR.$language.".json";
+			if (file_exists($fileindisk)) {
+				require_once('./php/CRMUtils.php');
+				$langurl = \creamy\CRMUtils::getBasePathWithDirectoryOfURL(\creamy\CRMUtils::getCurrentURLPath())."lang".DIRECTORY_SEPARATOR."datatables".DIRECTORY_SEPARATOR.$language.".json";
+				return $langurl;
+			} 
+		}
+		return null;
 	}
 }
 

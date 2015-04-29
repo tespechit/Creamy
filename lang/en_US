@@ -294,4 +294,7 @@ unable_enable_module = "An error happened while trying to enable the module. Ple
 unable_disable_module = "An error happened while trying to disable the module. Please try again."
 error_loading_module = "Error loading module"
 unable_load_module_content = "An error happened while trying to load the main content of the module. I was unable to find the selected module, or it does not allow any content display. Please, contact the author."
-
+module_settings = "Module settings"
+save = "Save"
+unable_configure_module = "An error happened while configuring the settings of the module. Please, contact the author.";
+module_settings_updated = "Module settings successfully updated"

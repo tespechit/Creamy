@@ -8,7 +8,7 @@ see_more = "Ver más"
 see_customer = "Ver cliente"
 read_message = "Leer mensaje"
 customer = "Cliente"
-contact = "Contact"
+contact = "Contacto"
 customers = "Clientes"
 contacts = "Contactos"
 see_all = "Ver todos"
@@ -294,8 +294,10 @@ unable_enable_module = "Ocurrió un error tratando de activar el módulo. Por fa
 unable_disable_module = "Ocurrió un error tratando de desactivar el módulo. Por favor, inténtelo de nuevo."
 error_loading_module = "Error cargando módulo"
 unable_load_module_content = "Ocurrió un error tratando de cargar el contenido del módulo. Ha sido imposible encontrar el módulo solicitado, o éste no está preparado para mostrar contenido. Por favor, contacte con el autor."
-
-
+module_settings = "Ajustes del módulo"
+save = "Guardar"
+unable_configure_module = "Ocurrió un error configurando las preferencias del módulo. Por favor, contacte con el autor.";
+module_settings_updated = "Se actualizaron las preferencias del módulo correctamente."
 
 
 

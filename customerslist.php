@@ -132,17 +132,19 @@
             $(function() {
                 $("#contacts").dataTable({
 	                "bProcessing": true,
+	                "bPaginate": true,
 					"bServerSide": true,
 					"sAjaxSource": "./php/CustomerListJSON.php",
-					"fnServerParams": function (aoData) {
+					"fnServerParams": function (aoData) { // custom param: customer_type
 			            aoData.push({
 			                "name": "customer_type",
 			                "value": "<?php echo $customerType; ?>"
 			            })
 		            },
-		            "oLanguage": {
-			            "sProcessing": "<i class='fa fa-refresh'> </i>"
-			        }
+					<?php
+						$datatablesTranslationURL = $lh->urlForDatatablesTranslation();
+						if (isset($datatablesTranslationURL)) { print '"oLanguage": { "sUrl": "'.$datatablesTranslationURL.'" },'."\n"; } 
+					?>
                 });
             });
         </script>

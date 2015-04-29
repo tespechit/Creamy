@@ -178,7 +178,7 @@ require_once('ModuleHandler.php');
     }
     
     public function boxWithMessage($header_title, $message, $icon = NULL, $style = "PRIMARY") {
-	    $body_content = '<div class="callout callout-'.$style.'"><p>'.$body_text.'</p></div>';
+	    $body_content = '<div class="callout callout-'.$style.'"><p>'.$message.'</p></div>';
 	    return $this->boxWithContent($header_title, $body_content, NULL, $icon, $style);
     }
     
@@ -189,7 +189,7 @@ require_once('ModuleHandler.php');
     }
     
     public function boxWithQuote($title, $quote, $author, $icon = "quote-left", $style = null, $body_id = null, $additional_body_classes = "") {
-	    $body_content = '<blockquote><p>'.$quote.'</p><small>'.$author.'</small></blockquote>';
+	    $body_content = '<blockquote><p>'.$quote.'</p>'.(empty($author) ? "" : '<small>'.$author.'</small>').'</blockquote>';
 	    return $this->boxWithContent($title, $body_content, null, $icon, $style, $body_id, $additional_body_classes);
     }
     
@@ -320,31 +320,57 @@ require_once('ModuleHandler.php');
 	
     public function checkboxInputWithLabel($label, $id, $name, $enabled) {
 	    return '<div class="checkbox"><label for="'.$id.'">
-	    <input type="checkbox" id="'.$id.'" name="'.$name.'"'.$enabled.'/>'.$label.'</label></div>';
+	    <input type="checkbox" id="'.$id.'" name="'.$name.'"'.($enabled ? "checked": "").'/> '.$label.'</label></div>';
     }
     
-    public function selectWithLabel($label, $id, $name, $options, $selectedOption) {
+    public function selectWithLabel($label, $id, $name, $options, $selectedOption, $needsTranslation = false) {
 	    $selectCode = '<div class="form-group"><label>'.$label.'</label><select id="'.$id.'" name="'.$name.'" class="form-control">';
 	    foreach ($options as $key => $value) {
 		    $isSelected = ($selectedOption == $key) ? " selected" : "";
-		    $selectCode .= '<option value="'.$key.'" '.$isSelected.'>'.$value.'</option>';
+		    $selectCode .= '<option value="'.$key.'" '.$isSelected.'>'.($needsTranslation ? $this->lh->translationFor($value) : $value).'</option>';
 	    }
 		$selectCode .= '</select></div>';
 		return $selectCode;
     }
     
-    public function singleFormInputElement($id, $name, $type, $placeholder, $value = null) {
+    public function singleFormInputElement($id, $name, $type, $placeholder, $label = null, $value = null, $icon = null) {
 	    $iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
 	    $valueCode = empty($value) ? '' : ' value="'.$value.'"';
-	    return $iconCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
+	    $labelCode = $label ? '<label>'.$label.'</label>' : "";
+	    return $iconCode.$labelCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
     }
 
-	public function hiddenFormField($id) {
-		return '<input type="hidden" id="'.$id.'" name="'.$id.'" value="">';
+	public function maskedDateInputElement($id, $name, $dateFormat = "dd/mm/yyyy", $label = null, $value = null, $icon = null) {
+		// date value
+		$dateAsDMY = "";
+        if (isset($value)) { 
+            $time = strtotime($value);
+            $phpFormat = str_replace("dd", "d", $dateFormat);
+            $phpFormat = str_replace("mm", "m", $phpFormat);
+            $phpFormat = str_replace("yyyy", "Y", $phpFormat);
+            $dateAsDMY = date($phpFormat, $time); 
+        }
+        // icon and label
+		$iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
+	    $labelCode = $label ? '<label>'.$label.'</label>' : "";
+
+		// bild html code
+		$htmlCode = '<input name="'.$name.'" id="'.$id.'" type="text" class="form-control" data-inputmask="\'alias\': \''.$dateFormat.'\'" data-mask value="'.$dateAsDMY.'" placeholder="'.$dateFormat.'"/>';
+		// build JS code to turn an input text into a dateformat.
+		$jsIncludes = '<script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
+	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
+	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>';
+	    $jsActivation = $this->wrapOnDocumentReadyJS('$("#'.$id.'").inputmask("'.$dateFormat.'", {"placeholder": "'.$dateFormat.'"});');
+		
+		return $iconCode.$labelCode.$htmlCode."\n".$jsIncludes."\n".$jsActivation;
+	}
+
+	public function hiddenFormField($id, $value = "") {
+		return '<input type="hidden" id="'.$id.'" name="'.$id.'" value="'.$value.'">';
 	}
 
     public function singleFormInputGroup($inputElement) {
-	    return '<div class="form-group">'.$inputElement.'</div>';
+	    return '<div class="form-group"><div class="input-group">'.$inputElement.'</div></div>';
     }
     
     public function doubleFormInputGroup($firstInputElement, $secondInputElement, $sizeClass = "lg") {
@@ -487,6 +513,23 @@ require_once('ModuleHandler.php');
 		return $this->wrapOnDocumentReadyJS($js);
     }
     
+    /** Hooks */
+    
+    /**
+	 * Returns the hooks for the dashboard.
+	 */
+    public function hooksForDashboard() {
+	    $result = "";
+	    $mh = \creamy\ModuleHandler::getInstance();
+	    foreach ($mh->activeModulesInstances() as $instance) {
+			$hook = $instance->dashboardHook();
+			if (!empty($hook)) {
+				$result .= $this->fullRowWithContent($hook);
+			}
+	    }
+	    return $result;
+    }
+    
     /* Administration & user management */
     
     /** Returns the HTML form for modyfing the system settings */
@@ -524,6 +567,31 @@ require_once('ModuleHandler.php');
 		
 		return $form."</br>".$javascript;
     }
+    
+    /** Returns the HTML code for the input field associated with a module setting data type */
+    public function inputFieldForModuleSettingOfType($setting, $type, $currentValue) {
+	    if (is_array($type)) { // select type
+		    return $this->selectWithLabel($this->lh->translationFor($setting), $setting, $setting, $type, $currentValue);
+	    } else { // single input type: text, number, bool, date...
+		    switch ($type) {
+			    case CRM_SETTING_TYPE_STRING:
+				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "text", $this->lh->translationFor($setting), $this->lh->translationFor($setting), $currentValue));
+					break;
+				case CRM_SETTING_TYPE_INT:
+				case CRM_SETTING_TYPE_FLOAT:
+				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "number", $this->lh->translationFor($setting), $this->lh->translationFor($setting), $currentValue));
+					break;
+				case CRM_SETTING_TYPE_BOOL:
+					return $this->singleFormInputGroup($this->checkboxInputWithLabel($this->lh->translationFor($setting), $setting, $setting, (bool) $currentValue));
+					break;
+				case CRM_SETTING_TYPE_DATE:
+					$dateFormat = $this->lh->getDateFormatForCurrentLocale();
+				    return $this->singleFormInputGroup($this->maskedDateInputElement($setting, $setting, $dateFormat, $this->lh->translationFor($setting), $currentValue));
+					break;
+		    }
+	    }
+    }
+    
     
     /**
 	 * Generates the HTML code for a select with the human friendly descriptive names for the user roles.
@@ -1018,22 +1086,18 @@ require_once('ModuleHandler.php');
 		$numMessages = $this->db->getUnreadMessagesNumber($userid);
 		$numTasks = $this->db->getUnfinishedTasksNumber($userid);
 		$numNotifications = $this->db->getNumberOfTodayNotifications($userid);
+		$mh = \creamy\ModuleHandler::getInstance();
 		
 		$adminArea = "";
 		if ($userrole == CRM_DEFAULTS_USER_ROLE_ADMIN) {
-			$adminArea = '
-				<li class="treeview">
-                    <a href="#">
-                        <i class="fa fa-dashboard"></i> <span>'.$this->lh->translationFor("administration").'</span>
-                        <i class="fa fa-angle-left pull-right"></i>
-                    </a>
-                    <ul class="treeview-menu">
-                        <li><a href="./adminsettings.php"><i class="fa fa-gears"></i> '.$this->lh->translationFor("settings").'</a></li>
-                        <li><a href="./adminusers.php"><i class="fa fa-user"></i> '.$this->lh->translationFor("users").'</a></li>
-                        <li><a href="./adminmodules.php"><i class="fa fa-archive"></i> '.$this->lh->translationFor("modules").'</a></li>
-                        <li><a href="./admincustomers.php"><i class="fa fa-users"></i> '.$this->lh->translationFor("customers").'</a></li>
-                    </ul>
-                </li>';
+			$modulesWithSettings = $mh->modulesWithSettings();
+			$adminArea = '<li class="treeview"><a href="#"><i class="fa fa-dashboard"></i> <span>'.$this->lh->translationFor("administration").'</span><i class="fa fa-angle-left pull-right"></i></a><ul class="treeview-menu">';
+			$adminArea .= $this->getSidebarItem("./adminsettings.php", "gears", $this->lh->translationFor("settings")); // admin settings
+			$adminArea .= $this->getSidebarItem("./adminusers.php", "user", $this->lh->translationFor("users")); // admin settings
+			$adminArea .= $this->getSidebarItem("./adminmodules.php", "archive", $this->lh->translationFor("modules")); // admin settings
+			$adminArea .= $this->getSidebarItem("./admincustomers.php", "users", $this->lh->translationFor("customers")); // admin settings	
+			foreach ($modulesWithSettings as $k => $m) { $adminArea .= $this->getSidebarItem("./modulesettings.php?module_name=".urlencode($k), $m->mainPageViewIcon(), $m->mainPageViewTitle()); }
+	        $adminArea .= '</ul></li>';
 		}
 		
 		// get customer types
@@ -1069,7 +1133,7 @@ require_once('ModuleHandler.php');
         $result .= $this->getSidebarItem("./tasks.php", "tasks", $this->lh->translationFor("tasks"), $numTasks, "red");
         
         // suffix: modules
-        $activeModules = \creamy\ModuleHandler::getInstance()->activeModulesInstances();
+        $activeModules = $mh->activeModulesInstances();
         foreach ($activeModules as $shortName => $module) {
         	$result .= $this->getSidebarItem("./modulepage.php?module_name=".urlencode($shortName), $module->mainPageViewIcon(), $module->mainPageViewTitle(), $module->sidebarBadgeNumber());
         } 
@@ -1150,7 +1214,7 @@ require_once('ModuleHandler.php');
 		$modalTitle = $this->lh->translationFor("edit_customer_type");
 		$modalSubtitle = $this->lh->translationFor("enter_new_name_customer_type");
 		$name = $this->lh->translationFor("name");
-		$newnameInput = $this->singleFormInputGroup($this->singleFormInputElement("newname", "newname", "text required", $name, null));
+		$newnameInput = $this->singleFormInputGroup($this->singleFormInputElement("newname", "newname", "text required", $name));
 		$hiddenidinput = $this->hiddenFormField("customer-type-id");
 		$bodyInputs = $newnameInput.$hiddenidinput;
 		$msgDiv = $this->emptyMessageDivWithTag("editcustomermessage");
@@ -1172,7 +1236,7 @@ require_once('ModuleHandler.php');
 		$cg_text = $this->lh->translationFor("customer_group");
 		$hc_text = $this->lh->translationFor("new_customer_group");
 		$cr_text = $this->lh->translationFor("create");
-		$inputfield = $this->singleFormInputGroup($this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text, null));
+		$inputfield = $this->singleFormInputGroup($this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text));
 		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, "primary", "creationmessage");
 		
 		// javascript form submit.
