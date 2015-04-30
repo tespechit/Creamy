@@ -28,15 +28,10 @@ require_once('LanguageHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check admin privileges.
-$privileges = 0;
-if (isset($_SESSION["userrole"])) {
-	if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) {
-		$privileges = 1;
-	}
-}
-if ($privileges == 0) {
+if (!$user->userHasAdminPermission()) {
 	$lh->translateText("not_permission_edit_user_information");
 	exit;
 }

@@ -27,6 +27,7 @@ require_once('DbHandler.php');
 require_once('LanguageHandler.php');
 require('Session.php');
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -43,7 +44,7 @@ if ($validated == 1) {
 	// check password	
 	$taskid = $_POST["complete-task-taskid"];
 	$progress = $_POST["complete-task-progress"];
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	
 	$result = $db->setTaskCompletionStatus($taskid, $progress, $userid);
 	if ($result === true) {

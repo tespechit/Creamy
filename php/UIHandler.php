@@ -44,63 +44,6 @@ require_once('ModuleHandler.php');
 	// Database handler
 	private $db;
 	
-	/** Predefined skel text and code */
-    
-	private $contactsTablePrefix = "<table id=\"contacts\" class=\"table table-bordered table-striped\">
-	<thead>
-		<tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>phone</th>
-            <th>id_number</th>
-        </tr>
-    </thead>
-    <tbody>";
-	private $contactsTableSuffix = "</tbody>
-	<tfoot>
-            <tr>
-	            <th>Id</th>
-	            <th>name</th>
-	            <th>email</th>
-	            <th>phone</th>
-	            <th>id_number</th>
-            </tr>
-        </tfoot>
-    </table>";
-    
-	private $usersTablePrefix = "<table id=\"contacts\" class=\"table table-bordered table-striped\">
-	<thead>
-		<tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>creation_date</th>
-            <th>role</th>
-            <th>status</th>
-            <th>action</th>
-        </tr>
-    </thead>
-    <tbody>";
-	private $usersTableSuffix = "</tbody>
-	<tfoot>
-        <tr>
-            <th>Id</th>
-            <th>name</th>
-            <th>email</th>
-            <th>creation_date</th>
-            <th>role</th>
-            <th>status</th>
-            <th>action</th>
-        </tr>
-        </tfoot>
-    </table>";
-    private $taskTablePrefix = "<ul class=\"todo-list ui-sortable\">";
-    
-    private $taskTableSuffix = "</ul>";
-    
-    private $messageListPrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>selection</td><td>favorite</td><td>user</td><td>subject</td><td>date</td></tr></thead>';
-    
 	/** Creation and class lifetime management */
 
 	/**
@@ -654,7 +597,8 @@ require_once('ModuleHandler.php');
 	       return $this->calloutWarningMessage($this->lh->translationFor("no_users_in_list"));
        } else { 
 	       // we have some users, show a table
-		   $result = $this->lh->translationForTerms($this->usersTablePrefix, array("name", "email", "creation_date", "role", "status", "action"));
+	       $columns = array("id", "name", "email", "creation_date", "role", "status", "action");
+		   $result = $this->generateTableHeaderWithItems($columns, "users", "table-bordered table-striped", true);
 	       
 	       // iterate through all contacts
 	       foreach ($users as $userData) {
@@ -673,7 +617,7 @@ require_once('ModuleHandler.php');
 	       }
 	       
 	       // print suffix
-	       $result = $result.$this->lh->translationForTerms($this->usersTableSuffix, array("name", "email", "creation_date", "role", "status", "action")); 
+	       $result .= $this->generateTableFooterWithItems($columns, true);
 	       return $result; 
        }
 	}
@@ -714,15 +658,15 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML code for editing the profile of a user as  an HTML form. Depends on the user having the right permissions.
 	 * @param $usertoeditid ID of the user to edit
 	 * @param $requestinguserid ID of the user requesting the edit form for the user $usertoeditid
-	 * @param $requestinguserrole user role (permissions) for the user requesting the for, identified by $requestinguserid
+	 * @param $hasAdminPermissions true if the user has admin permissions.
 	 * @return A HTML containing the edit user form if permissions are correct, an error message otherwise.
 	 */
-	public function getEditUserForm($usertoeditid, $requestinguserid, $requestinguserrole) {
+	public function getEditUserForm($usertoeditid, $requestinguserid, $hasAdminPermissions) {
 		$userobj = NULL;
 		$errormessage = NULL;
 		
 		if (!empty($usertoeditid)) {
-			if (($requestinguserid == $usertoeditid) || (userHasAdminPermission($requestinguserrole))) { 
+			if (($requestinguserid == $usertoeditid) || ($hasAdminPermissions)) { 
     			// if it's the same user or we have admin privileges.
     			$userobj = $this->db->getDataForUser($usertoeditid);
 			} else {
@@ -738,7 +682,7 @@ require_once('ModuleHandler.php');
 				"<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>";
 			// if requesting user is admin, we can change the user role
 			$setUserRoleCode = "";
-			if (userHasAdminPermission($requestinguserrole)) {
+			if ($hasAdminPermissions) {
 				$userRolesAsFormSelect = $this->getUserRolesAsFormSelect($userobj["role"]);
 				$setUserRoleCode = '<div class="form-group"><label for="role">'.$this->lh->translationFor("user_role").'</label>'.$userRolesAsFormSelect.'</div>';
 			}	
@@ -853,10 +797,10 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML for the message notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	function getMessageNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
+	function getMessageNotifications($user) {
+		if (!$user->userHasBasicPermission()) return '';
 
-        $list = $this->db->getMessagesOfType($userid, MESSAGES_GET_UNREAD_MESSAGES);
+        $list = $this->db->getMessagesOfType($user->getUserId(), MESSAGES_GET_UNREAD_MESSAGES);
 		$numMessages = count($list);
 		
 		$result = '<li class="dropdown messages-menu">
@@ -920,10 +864,10 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML for the alert notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	public function getAlertNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
+	public function getAlertNotifications($user) {
+		if (!$user->userHasBasicPermission()) return '';
 		
-		$notifications = $this->db->getTodayNotifications($userid);
+		$notifications = $this->db->getTodayNotifications($user->getUserId());
 		if (empty($notifications)) $notificationNum = 0;
 		else $notificationNum = count($notifications);
 		
@@ -947,10 +891,10 @@ require_once('ModuleHandler.php');
         return $result;
 	}
 	
-	public function getTaskNotifications($userid, $userrole) {
-		if (!userHasBasicPermission($userrole)) return '';
+	public function getTaskNotifications($user) {
+		if (!$user->userHasBasicPermission()) return '';
 
-		$list = $this->db->getUnfinishedTasks($userid);
+		$list = $this->db->getUnfinishedTasks($user->getUserId());
 		$numTasks = count($list);
 		
 		$result = '<li class="dropdown tasks-menu">
@@ -1000,7 +944,7 @@ require_once('ModuleHandler.php');
 	/**
 	 * Returns the default creamy header for all pages.
 	 */
-	public function creamyHeader($userid, $userrole, $username, $avatar) {
+	public function creamyHeader($user) {
 		return '<header class="header">
 	            <a href="./index.php" class="logo">
 		            <img src="img/logoWhite.png" width="32" height="32">
@@ -1015,10 +959,10 @@ require_once('ModuleHandler.php');
 	                </a>
 	                <div class="navbar-right">
 	                    <ul class="nav navbar-nav">
-	                    		'.$this->getMessageNotifications($userid, $userrole).'  
-		                    	'.$this->getAlertNotifications($userid, $userrole).'
-		                    	'.$this->getTaskNotifications($userid, $userrole).'
-		                    	'.$this->getTopbarItems($userid, $username, $avatar, $userrole).'
+	                    		'.$this->getMessageNotifications($user).'  
+		                    	'.$this->getAlertNotifications($user).'
+		                    	'.$this->getTaskNotifications($user).'
+		                    	'.$this->getTopbarItems($user).'
 	                    </ul>
 	                </div>
 	            </nav>
@@ -1029,10 +973,10 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML for the user's topbar menu.
 	 * @param $userid the id of the user.
 	 */
-	public function getTopbarItems($userid, $username, $avatar, $userrole) {
+	public function getTopbarItems($user) {
 		// menu actions (only for users with permissions).
 		$menuActions = '';
-		if (userHasBasicPermission($userrole)) $menuActions = '<li class="user-body">
+		if ($user->userHasBasicPermission()) $menuActions = '<li class="user-body">
 									<div class="text-center">
 									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a>
 									</div>
@@ -1049,19 +993,19 @@ require_once('ModuleHandler.php');
 		
 		// change my data (only for users with permissions).
 		$changeMyData = '';
-		if (userHasBasicPermission($userrole)) 
+		if ($user->userHasBasicPermission()) 
 			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("my_profile").'</a></div>';
 		
 		return '<li class="dropdown user user-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="glyphicon glyphicon-user"></i>
-                                <span>'.$username.' <i class="caret"></i></span>
+                                <span>'.$user->getUserName().' <i class="caret"></i></span>
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="user-header bg-light-blue">
-                                    <img src="'.$avatar.'" class="img-circle" alt="User Image" />
+                                    <img src="'.$user->getUserAvatar().'" class="img-circle" alt="User Image" />
                                     <p>
-                                        '.$username.'
+                                        '.$user->getUserName().'
                                         <small>'.$this->lh->translationFor("nice_to_see_you_again").'</small>
                                     </p>
                                 </li>'.$menuActions.'
@@ -1122,20 +1066,20 @@ require_once('ModuleHandler.php');
 	        if (isset($customerType["table_name"]) && isset($customerType["description"])) {
 		        $customerTableName = $customerType["table_name"];
 		        $customerFriendlyName = $customerType["description"];
-		        $url = './customerslist.php?customer_type='.$customerTableName.'&customer_name='.$customerFriendlyName;
+		        $url = 'customerslist.php?customer_type='.$customerTableName.'&customer_name='.$customerFriendlyName;
 		        $result .= $this->getSidebarItem($url, "users", $customerFriendlyName);
 	        }
         }
 
         // ending: messages, notifications, tasks
-        $result .= $this->getSidebarItem("./messages.php", "envelope", $this->lh->translationFor("messages"), $numMessages);
-        $result .= $this->getSidebarItem("./notifications.php", "exclamation", $this->lh->translationFor("notifications"), $numNotifications, "orange");
-        $result .= $this->getSidebarItem("./tasks.php", "tasks", $this->lh->translationFor("tasks"), $numTasks, "red");
+        $result .= $this->getSidebarItem("messages.php", "envelope", $this->lh->translationFor("messages"), $numMessages);
+        $result .= $this->getSidebarItem("notifications.php", "exclamation", $this->lh->translationFor("notifications"), $numNotifications, "orange");
+        $result .= $this->getSidebarItem("tasks.php", "tasks", $this->lh->translationFor("tasks"), $numTasks, "red");
         
         // suffix: modules
         $activeModules = $mh->activeModulesInstances();
         foreach ($activeModules as $shortName => $module) {
-        	$result .= $this->getSidebarItem("./modulepage.php?module_name=".urlencode($shortName), $module->mainPageViewIcon(), $module->mainPageViewTitle(), $module->sidebarBadgeNumber());
+        	$result .= $this->getSidebarItem($mh->pageLinkForModule($shortName, null), $module->mainPageViewIcon(), $module->mainPageViewTitle(), $module->sidebarBadgeNumber());
         } 
         
 		$result .= $adminArea.'</ul></section></aside>';
@@ -1158,8 +1102,9 @@ require_once('ModuleHandler.php');
 	 * @param $customerType the type of customer
 	 */
    	private function getCustomerListAsTable($customers, $customerType) {
-	   	// print prefix
-       $result = $this->lh->translationForTerms($this->contactsTablePrefix, array("name", "email", "phone", "id_number"));
+	   // print prefix
+	   $columns = $this->db->getCustomerColumnsToBeShownInCustomerList($customerType);
+	   $result = $this->generateTableHeaderWithItems($columns, "contacts", "table-bordered table-striped", true);
        if (isset($customers)) {
 		   foreach ($customers as $customer) {
 		       $nameOrNonamed = $customer["name"];
@@ -1176,7 +1121,7 @@ require_once('ModuleHandler.php');
        }
        
        // print suffix
-       $result = $result.$this->lh->translationForTerms($this->contactsTableSuffix, array("name", "email", "phone", "id_number"));
+       $result .= $this->generateTableFooterWithItems($columns, true);
        return $result;
    	}
 
@@ -1277,8 +1222,9 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML code for the editing customer form.
 	 * @param customerId Int the id of the customer to edit
 	 * @param customerType String the table name (= customer type identifier) of the customer to edit. 
+	 * @param userHasWritePermission Bool true if the requesting user has write permissions.
 	 */
-	public function generateCustomerEditionForm($customerid, $customerType, $userrole) {
+	public function generateCustomerEditionForm($customerid, $customerType, $userHasWritePermissions) {
 		$customerobj = NULL;
 		$errormessage = NULL;
 		
@@ -1324,7 +1270,7 @@ require_once('ModuleHandler.php');
 
 			// buttons at bottom (only for writing+ permissions)
 			$buttons = "";
-			if (userHasWritePermission($userrole)) {
+			if ($userHasWritePermissions) {
 				$buttons = '<div class="modal-footer clearfix">
 	                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="'.
 	                        $customerid.'"><i class="fa fa-times"></i> '.$this->lh->translationFor("delete").'</button>
@@ -1521,14 +1467,14 @@ require_once('ModuleHandler.php');
 		$tasks = $this->db->getCompletedTasks($userid);
 		if (empty($tasks)) { return $this->calloutInfoMessage($this->lh->translationFor("you_dont_have_completed_tasks")); }
 		else {
-			$list = $this->taskTablePrefix;
+			$list = "<ul class=\"todo-list ui-sortable\">";
 			foreach ($tasks as $task) {
 				// generate row
 				$taskHTML = $this->getTaskAsIndividualRow($task);
 				$list = $list.$taskHTML;
 			}
 			
-			$list = $list.$this->taskTableSuffix;
+			$list = $list."</ul>";
 	    	return $list;
 		}
    	}
@@ -1538,18 +1484,18 @@ require_once('ModuleHandler.php');
 	 * @param $userid Int id of the user to retrieve the tasks from.
 	 * @return String the HTML representation of the user's tasks as a table.
 	 */
-	public function getUnfinishedTasksAsTable($userid, $userrole) { 
+	public function getUnfinishedTasksAsTable($userid) { 
 		$tasks = $this->db->getUnfinishedTasks($userid);
 		if (empty($tasks)) { return $this->calloutInfoMessage($this->lh->translationFor("you_dont_have_pending_tasks")); }
 		else {
-			$list = $this->taskTablePrefix;
+			$list = "<ul class=\"todo-list ui-sortable\">";
 			foreach ($tasks as $task) {
 				// generate row
 				$taskHTML = $this->getTaskAsIndividualRow($task);
 				$list = $list.$taskHTML;
 			}
 			
-			$list = $list.$this->taskTableSuffix;
+			$list = $list."</ul>";
 	    	return $list;
 		}
    	}
@@ -1589,7 +1535,8 @@ require_once('ModuleHandler.php');
 	 */
 	private function getMessageListAsTable($messages) {
 		// generate the table.
-		$result = $this->lh->translationForTerms($this->messageListPrefix, array("selection", "favorite", "user", "date", "subject"));
+		$tablePrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>selection</td><td>favorite</td><td>user</td><td>subject</td><td>date</td></tr></thead>';
+		$result = $this->lh->translationForTerms($tablePrefix, array("selection", "favorite", "user", "date", "subject"));
 		foreach ($messages as $message) {
 			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
 			else $result = $result.'<tr>';
@@ -1677,7 +1624,9 @@ require_once('ModuleHandler.php');
 	 * @return String the HTML with the list of message folders as <li> items.
 	 */
 	public function getMessageFoldersAsList($activefolder) {
-        $unreadMessages = $this->db->getUnreadMessagesNumber($_SESSION["userid"]);
+		require_once('Session.php');
+		$user = \creamy\CreamyUser::currentUser();
+        $unreadMessages = $this->db->getUnreadMessagesNumber($user->getUserId());
         $activeInbox = $activefolder == MESSAGES_GET_INBOX_MESSAGES ? 'class="active"' : '';
         $activeSent = $activefolder == MESSAGES_GET_SENT_MESSAGES ? 'class="active"' : '';
         $activeFavorite = $activefolder == MESSAGES_GET_FAVORITE_MESSAGES ? 'class="active"' : '';

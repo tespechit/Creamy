@@ -470,7 +470,12 @@ class DbHandler {
 	 * @return Array an array containing the columns to be shown in the customer list.
 	 */	
 	public function getCustomerColumnsToBeShownInCustomerList($customerType) {
-		return array("id", "name", "email", "phone", "id_number");
+		// try to get fields from database.
+		$setting = $this->getSettingValueForKey(CRM_SETTING_CUSTOMER_LIST_FIELDS);
+		if (isset($setting)) { return explode(",", $setting); }
+		
+		// fallback to default columns
+		return explode(",", CRM_SETTING_DEFAULT_CUSTOMER_LIST_FIELDS);
 	}
 	
 	/**
@@ -1278,16 +1283,7 @@ class DbHandler {
 			return $this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $moduleData);
 		} else { return false; }
 	}
-	
-	/** 
-	 * Returns true if the module system is enabled. 
-	 * @return true if the module system is enabled. False otherwise.
-	 */
-	public function moduleSystemEnabled() {
-		$this->dbConnector->where("setting", CRM_SETTING_MODULE_SYSTEM_ENABLED);
-		return $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME);
-	}
-	
+
 	/**
 	 * Modify the status (enabled/disabled) of a module.
 	 * @param String $moduleName the name of the module to enable/disable.

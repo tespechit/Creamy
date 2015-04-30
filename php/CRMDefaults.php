@@ -113,12 +113,14 @@ define('CRM_SETTING_CRM_VERSION', "crm_version");
 define('CRM_SETTING_ADMIN_USER', "admin_user");
 define('CRM_SETTING_INSTALLATION_DATE', "installation_date");
 define('CRM_SETTING_ACTIVE_MODULES', "active_modules");
-define('CRM_SETTING_MODULE_SYSTEM_ENABLED', "plugin_system_enabled");
+define('CRM_SETTING_MODULE_SYSTEM_ENABLED', "module_system_enabled");
 define('CRM_SETTING_STATISTICS_SYSTEM_ENABLED', "statistics_system_enabled");
 define('CRM_SETTING_CUSTOMER_LIST_FIELDS', "customer_list_fields");
 define('CRM_SETTING_TIMEZONE', "timezone");
 define('CRM_SETTING_LOCALE', "locale");
 define('CRM_SETTING_SECURITY_TOKEN', "security_token");
+
+define ('CRM_SETTING_DEFAULT_CUSTOMER_LIST_FIELDS', 'id,name,email,phone,id_number');
 
 define('CRM_SETTING_TYPE_STRING', "string");
 define('CRM_SETTING_TYPE_INT', "int");
@@ -129,30 +131,5 @@ define('CRM_SETTING_TYPE_DATE', "date");
 
 // misc constants
 define ('CRM_DEFAULT_SUCCESS_RESPONSE', "success");
-
-// user access functions
-function userHasAdminPermission($userrole) {
-	if (!isset($userrole)) return false;
-	if ($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) return true;
-	return false;
-}
-
-function userHasManagerPermission($userrole) {
-	if (!isset($userrole)) return false;
-	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER)) return true;
-	return false;
-}
-
-function userHasWritePermission($userrole) {
-	if (!isset($userrole)) return false;
-	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER)) return true;
-	return false;
-}
-
-function userHasBasicPermission($userrole) {
-	if (!isset($userrole)) return false;
-	if (($userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) || ($userrole === CRM_DEFAULTS_USER_ROLE_MANAGER) || ($userrole === CRM_DEFAULTS_USER_ROLE_WRITER) || ($userrole === CRM_DEFAULTS_USER_ROLE_READER)) return true;
-	return false;
-}
 
 ?>

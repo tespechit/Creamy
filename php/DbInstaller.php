@@ -169,7 +169,7 @@ class DBInstaller {
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// customer list fields
-		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => "name, email, phone, id_number");
+		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_SETTING_DEFAULT_CUSTOMER_LIST_FIELDS);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// timezone

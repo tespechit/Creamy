@@ -30,6 +30,7 @@
 
     $ui = \creamy\UIHandler::getInstance();
 	$lh = \creamy\LanguageHandler::getInstance();
+	$user = \creamy\CreamyUser::currentUser();
     
     // get the type of customers.
     $customerType = NULL;
@@ -69,9 +70,9 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
+		<?php print $ui->creamyHeader($user); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -90,7 +91,7 @@
                 <!-- Main content -->
                 <section class="content">
 	                <!-- check permissions -->
-	                <?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
+	                <?php if ($user->userHasBasicPermission()) { ?>
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="box">
@@ -98,7 +99,7 @@
                                     <h3 class="box-title"><?php print $customerName; ?></h3>
                                 </div><!-- /.box-header -->
                                 <?php 
-	                            if (userHasWritePermission($_SESSION["userrole"])) { ?>
+	                            if ($user->userHasWritePermission()) { ?>
 								<div class="box-tools" style="padding-left: 1%;">
                                    <a id="create-customer-trigger-button" href="<?php print $customerType; ?>" class="btn btn-success" data-toggle="modal" data-target="#create-client-dialog-modal"><?php print($lh->translationFor("add_to")." ".strtolower($customerName)); ?></a>
                                 </div>

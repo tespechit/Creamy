@@ -30,6 +30,11 @@ if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
 // UI handler
 require_once('UIHandler.php');
 if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
+
+// session
+require_once('Session.php');
+$user = \creamy\CreamyUser::currentUser();
+
 ?>
 
 <!-- COMPOSE MESSAGE MODAL -->
@@ -90,7 +95,7 @@ if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
             <form action="#" method="post" id="send-message-form" name="send-message-form">
                 <div class="modal-body">
                     <div class="form-group">
-						<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
+						<?php print $ui->generateSendToUserSelect($user->getUserId()); ?>
                     </div>
                     <div class="form-group">
                         <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
@@ -99,7 +104,7 @@ if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
                         <textarea name="message" id="message" class="form-control" placeholder="<?php $lh->translateText("message"); ?>" style="height: 120px;"></textarea>
                     </div>
                 </div>
-                <input type="hidden" id="fromuserid" name="fromuserid" value="<?php print $_SESSION["userid"]; ?>">
+                <input type="hidden" id="fromuserid" name="fromuserid" value="<?php print $user->getUserId(); ?>">
                 <div id="messagesendingresult" name="messagesendingresult">
                 </div>
                 <div class="modal-footer clearfix">

@@ -4,6 +4,7 @@ require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $reason = $lh->translationFor("unable_modify_user");
@@ -66,9 +67,9 @@ if ($validated == 1) {
 		
 	$result = $db->modifyUser($modifyid, $email, $phone, $userrole, $avatar);
 	if ($result === true) {
-		if ($modifyid == $_SESSION["userid"]) { // am I modifying myself?
+		if ($modifyid == $user->getUserId()) { // am I modifying myself?
 			// if so, update avatar (if needed).
-			if (!empty($avatar)) { $_SESSION["avatar"] = $avatar; }
+			if (!empty($avatar)) { $user->setUserAvatar($avatar); }
 		}
 		print "success"; 
 	} else { $lh->translateText("unable_modify_user"); };	

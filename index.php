@@ -62,7 +62,7 @@ $user = \creamy\CreamyUser::currentUser();
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-		<?php print $ui->creamyHeader($user->getUserId(), $user->getUserRole(), $user->getUserName(), $user->getUserAvatar()); ?>
+		<?php print $ui->creamyHeader($user); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>

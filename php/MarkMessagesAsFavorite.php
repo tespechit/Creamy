@@ -28,6 +28,7 @@ require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -45,7 +46,7 @@ if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
 	// check password	
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	$messageids = $_POST["messageids"];
 	$folder = $_POST["folder"];
 	$favorite = $_POST["favorite"];

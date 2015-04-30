@@ -27,6 +27,7 @@ require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -53,7 +54,7 @@ if ($validated == 1) {
 	$customerType = $_POST["customer_type"];
 	$customerType = stripslashes($customerType);
 	$customerType = $db->escape_string($customerType);
-	$createdByUser = $_SESSION["userid"];
+	$createdByUser = $user->getUserId();
 	
 	// get optional values
 	

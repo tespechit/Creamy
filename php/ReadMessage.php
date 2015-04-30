@@ -29,6 +29,7 @@
 	
 	$lh = \creamy\LanguageHandler::getInstance();
 	$ui = \creamy\UIHandler::getInstance();
+	$user = \creamy\CreamyUser::currentUser();
 	
 	// check required fields
 	$validated = 1;
@@ -42,7 +43,7 @@
 	if ($validated == 1) {
 	
 		// message parameters	
-		$userid = $_SESSION["userid"];
+		$userid = $user->getUserId();
 		$messageid = $_POST["messageid"];
 		$folder = $_POST["folder"];
 	

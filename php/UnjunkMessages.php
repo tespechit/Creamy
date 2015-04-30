@@ -26,7 +26,8 @@
 
 	require_once('DbHandler.php');
 	require('Session.php');
-	
+	$user = \creamy\CreamyUser::currentUser();
+
 	// check required fields
 	$validated = 1;
 	if (!isset($_POST["messageids"])) {
@@ -37,7 +38,7 @@
 		$db = new \creamy\DbHandler();
 	
 		// check password	
-		$userid = $_SESSION["userid"];
+		$userid = $user->getUserId();
 		$messageids = $_POST["messageids"];
 	
 		$result = $db->unjunkMessages($userid, $messageids);

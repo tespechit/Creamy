@@ -28,13 +28,10 @@
 	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
 
-	// DDBB & Language vars
+	// DDBB, User & Language vars
     $ui = \creamy\UIHandler::getInstance();
     $lh = \creamy\LanguageHandler::getInstance();
-    
-    // session vars
-	$userid = $_SESSION["userid"];
-	$userrole = $_SESSION["userrole"];
+	$user = \creamy\CreamyUser::currentUser();
 ?>
 <html>
     <head>
@@ -57,10 +54,10 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
+		<?php print $ui->creamyHeader($user); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
 
             <!-- Right side column. Contains the navbar and content of the page -->
@@ -80,7 +77,7 @@
                 <!-- Main content -->
                 <section class="content">
 	                
-				<?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
+				<?php if ($user->userHasBasicPermission()) { ?>
 
 				<!-- Unfinished tasks row -->
 				<div class="row">
@@ -92,7 +89,7 @@
                             </div><!-- /.box-header -->
                             <div class="box-body table-responsive" id="task-table-container">
 								<?php 
-									print $ui->getUnfinishedTasksAsTable($userid, $userrole); 
+									print $ui->getUnfinishedTasksAsTable($user->getUserId()); 
 								?>
                             </div><!-- /.box-body -->
 
@@ -113,7 +110,7 @@
                             </div>
                             <div class="box-body table-responsive" id="task-table-container" style="display: none;">
 								<?php 
-									print $ui->getCompletedTasksAsTable($userid, $userrole); 
+									print $ui->getCompletedTasksAsTable($user->getUserId(), $user->getUserRole()); 
 								?>
                             </div><!-- /.box-body -->
                         </div>
@@ -122,7 +119,7 @@
                 </div>
                     
                 <!-- Only users with write permission can create new tasks -->
-                <?php if (userHasWritePermission($_SESSION["userrole"])) { ?>
+                <?php if ($user->userHasWritePermission()) { ?>
                 
                 <!-- .row -->
                 <div class="row">
@@ -140,7 +137,7 @@
                                         <input type="text required" class="form-control" id="taskDescription" name="taskDescription" placeholder="<?php $lh->translateText("task_description"); ?>">
                                     </div>
                                     <!-- assign task to other users only if current user has manager privileges -->
-									<?php if (userHasManagerPermission($userrole)) { ?>
+									<?php if ($user->userHasManagerPermission()) { ?>
                                     <div class="form-group">
                                         <label for="touserid"><?php $lh->translateText("assign_this_task_to"); ?></label>
 										<?php print $ui->generateSendToUserSelect($_SESSION["userid"], true, $lh->translationFor("assign_this_task_to")); ?>

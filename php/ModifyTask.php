@@ -27,6 +27,7 @@ require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -43,7 +44,7 @@ if ($validated == 1) {
 	// check password	
 	$taskid = $_POST["edit-task-taskid"];
 	$description = $_POST["edit-task-description"];
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	
 	$result = $db->editTaskDescription($taskid, $description, $userid);
 	if ($result === true) {

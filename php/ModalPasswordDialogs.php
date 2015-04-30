@@ -24,6 +24,10 @@
 */
 require_once('LanguageHandler.php');
 if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
+
+require_once('Session.php');
+$user = \creamy\CreamyUser::currentUser();
+
 ?>
 <!-- CHANGE PASSWORD MODAL -->
 	<script src="js/jquery.validate.min.js" type="text/javascript"></script>
@@ -94,7 +98,7 @@ if (!isset($lh)) { $lh = \creamy\LanguageHandler::getInstance(); }
                                 <input name="new_password_2" id="new_password_2" type="password" class="form-control" placeholder="<?php $lh->translateText("insert_new_password_again"); ?>">
                             </div>
                         </div>
-						<input type="hidden" id="userid" name="userid" value="<?php print $_SESSION["userid"]; ?>">
+						<input type="hidden" id="userid" name="userid" value="<?php print $user->getUserId(); ?>">
 						<div id="changepasswordresult" name="changepasswordresult"></div>
                     </div>
                     <div class="modal-footer clearfix">

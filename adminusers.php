@@ -29,6 +29,7 @@
 
 	$ui = \creamy\UIHandler::getInstance();
 	$lh = \creamy\LanguageHandler::getInstance();
+	$user = \creamy\CreamyUser::currentUser();
 ?>
 <html>
     <head>
@@ -55,10 +56,10 @@
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
-		<?php print $ui->creamyHeader($_SESSION["userid"], $_SESSION["userrole"], $_SESSION["username"], $_SESSION["avatar"]); ?>
+		<?php print $ui->creamyHeader($user); ?>
         <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -76,7 +77,7 @@
 
                 <!-- Main content -->
                 <section class="content">
-                <?php if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) { ?>
+                <?php if ($user->userHasAdminPermission()) { ?>
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="box">
