@@ -105,8 +105,13 @@
                                 </div>
 								<?php } ?>
                                 <div class="box-body table-responsive">
-									<?php print $ui->getEmptyCustomersList(); ?>
+									<?php 
+										print $ui->getEmptyCustomersList($customerType);
+									?>
                                 </div><!-- /.box-body -->
+                                <div class="box-footer">
+								<?php print $ui->getCustomerListFooter($customerType); ?>
+                                </div>
                             </div><!-- /.box -->
                         </div>
                     </div>
@@ -130,6 +135,7 @@
 
         <!-- page script -->
         <script type="text/javascript">
+	        // load datatable of customer.
             $(function() {
                 $("#contacts").dataTable({
 	                "bProcessing": true,
@@ -146,8 +152,18 @@
 						$datatablesTranslationURL = $lh->urlForDatatablesTranslation();
 						if (isset($datatablesTranslationURL)) { print '"oLanguage": { "sUrl": "'.$datatablesTranslationURL.'" },'."\n"; } 
 					?>
-                });
-            });
+                });     
+			});
+            // function to delete a customer with the "delete" button.
+            function deleteCustomer(customerId, customerType) {
+				var r = confirm("¿Estás seguro? Esta acción no puede deshacerse");
+				if (r == true) {
+					$.post("./php/DeleteCustomer.php", { "customerid": customerId, "customer_type": customerType }, function(data){
+						if (data == "success") { location.reload(); }
+						else { alert(data); }
+					});
+				}
+            }
         </script>
 
     </body>

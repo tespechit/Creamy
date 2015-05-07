@@ -55,8 +55,9 @@ class DbHandler {
     function __construct($dbConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL) {
 		// Database connector
 		$this->dbConnector = \creamy\DatabaseConnectorFactory::getInstance()->getDatabaseConnectorOfType($dbConnectorType);
-		$locale = $this->getLocaleSetting();
+
 		// language handler
+		$locale = $this->getLocaleSetting();
 		$this->lh = \creamy\LanguageHandler::getInstance($locale, $dbConnectorType);
     
     }
@@ -590,7 +591,9 @@ class DbHandler {
      */
     public function getDataForCustomer($customerid, $customerType) {
 	    $this->dbConnector->where("id", $customerid);
-	    return $this->dbConnector->getOne($customerType);
+	    $result = $this->dbConnector->getOne($customerType);
+	    if (isset($result)) $result["customer_type"] = $customerType;
+	    return $result;
     }
     
     /**

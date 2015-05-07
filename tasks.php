@@ -164,7 +164,9 @@
 
                 </section><!-- /.content -->
 				
-				<?php } else { print $ui->getUnauthotizedAccessMessage(); } ?>
+				<?php } else { print $ui->getUnauthotizedAccessMessage(); } 
+				print $ui->getTasksActionFooter();
+				?>
            
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->

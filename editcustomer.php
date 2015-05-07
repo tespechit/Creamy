@@ -59,6 +59,12 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
+		<!-- Forms and actions -->
+		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+
     </head>
     <body class="skin-blue">
         <!-- header logo: style can be found in header.less -->
@@ -88,16 +94,12 @@
 
                 <!-- Main content -->
                 <section class="content">
-					<?php print $ui->generateCustomerEditionForm($customerid, $customerType, $user->userHasWritePermission()); ?>                	
+					<!-- standard custom edition form -->
+					<?php print $ui->generateCustomerEditionForm($customerid, $customerType, $user->userHasWritePermission()); ?>                					<!-- modules addons via hooks -->
+					<?php print $ui->customerDetailModuleHooks($customerid, $customerType); ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
-
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
-        <!-- Bootstrap WYSIHTML5 -->
-        <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
 
         <!-- AdminLTE App -->
         <script src="js/AdminLTE/app.js" type="text/javascript"></script>
@@ -108,8 +110,6 @@
 	    <script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
 	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
 	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>
-		<!-- Forms and actions -->
-		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
 			$(document).ready(function() {	
 				//Datemask dd/mm/yyyy
@@ -160,12 +160,6 @@
 				 });
 				 
 			});
-		</script>
-
-
-        <script>
-        	// load data.
-            $(".textarea").wysihtml5({"image": false});
 		</script>
 
     </body>

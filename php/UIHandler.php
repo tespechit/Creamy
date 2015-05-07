@@ -25,10 +25,14 @@
 
 namespace creamy;
 
+// dependencies
 require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('CRMUtils.php');
 require_once('ModuleHandler.php');
+
+// constants
+define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 
 /**
  *  UIHandler.
@@ -125,7 +129,7 @@ require_once('ModuleHandler.php');
 	    return $this->boxWithContent($header_title, $body_content, NULL, $icon, $style);
     }
     
-    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = null, $messagetag = "resultmessage") {
+    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 	    if (empty($submit_text)) { $submit_text = $this->lh->translationFor("accept"); }
 	    return '<div class="box box-primary"><div class="box-header"><h3 class="box-title">'.$header_title.'</h3></div>
 	    	   '.$this->formWithContent($id, $content, $submit_text, $messagetag).'</div>';
@@ -159,7 +163,19 @@ require_once('ModuleHandler.php');
 		$table .= "</tr></tfoot></table>";
 		return $table;
 	}
-    
+    	
+	/**
+	 * Returns a random UI style to use for a notification, button, background element or such.
+	 */
+	public function getRandomUIStyle() {
+		$number = rand(1,5);
+		if ($number == 1) return CRM_UI_STYLE_INFO;
+		else if ($number == 2) return CRM_UI_STYLE_DANGER;
+		else if ($number == 3) return CRM_UI_STYLE_WARNING;
+		else if ($number == 4) return CRM_UI_STYLE_SUCCESS;
+		else return CRM_UI_STYLE_DEFAULT;
+	}
+	
     /** Messages */
     
     public function dismissableAlertWithMessage($message, $success, $includeResultData = false) {
@@ -226,7 +242,7 @@ require_once('ModuleHandler.php');
 	
 	/** Forms */
 	
-	public function formWithContent($id, $content, $submit_text = null, $messagetag = "resultmessage", $action = "") {
+	public function formWithContent($id, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
 		return '<form role="form" id="'.$id.'" name="'.$id.'" method="post" action="'.$action.'" enctype="multipart/form-data">
             <div class="box-body">
             	'.$content.'
@@ -236,6 +252,11 @@ require_once('ModuleHandler.php');
                 <button type="submit" class="btn btn-primary">'.$submit_text.'</button>
             </div>
         </form>';
+	}
+	
+	public function formForCustomHook($id, $modulename, $hookname, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
+		$hiddenFields = $this->hiddenFormField("module_name", $modulename).$this->hiddenFormField("hook_name", $hookname);
+		return $this->formWithContent($id, $hiddenFields.$content, $submit_text, $messagetag, $action);
 	}
 	
 	public function modalFormStructure($modalid, $formid, $title, $subtitle, $body, $footer, $icon = null) {
@@ -276,14 +297,13 @@ require_once('ModuleHandler.php');
 		return $selectCode;
     }
     
-    public function singleFormInputElement($id, $name, $type, $placeholder, $label = null, $value = null, $icon = null) {
+    public function singleFormInputElement($id, $name, $type, $placeholder, $value = null, $icon = null) {
 	    $iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
 	    $valueCode = empty($value) ? '' : ' value="'.$value.'"';
-	    $labelCode = $label ? '<label>'.$label.'</label>' : "";
-	    return $iconCode.$labelCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
+	    return $iconCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
     }
 
-	public function maskedDateInputElement($id, $name, $dateFormat = "dd/mm/yyyy", $label = null, $value = null, $icon = null) {
+	public function maskedDateInputElement($id, $name, $dateFormat = "dd/mm/yyyy", $value = null, $icon = null) {
 		// date value
 		$dateAsDMY = "";
         if (isset($value)) { 
@@ -295,7 +315,6 @@ require_once('ModuleHandler.php');
         }
         // icon and label
 		$iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
-	    $labelCode = $label ? '<label>'.$label.'</label>' : "";
 
 		// bild html code
 		$htmlCode = '<input name="'.$name.'" id="'.$id.'" type="text" class="form-control" data-inputmask="\'alias\': \''.$dateFormat.'\'" data-mask value="'.$dateAsDMY.'" placeholder="'.$dateFormat.'"/>';
@@ -305,15 +324,16 @@ require_once('ModuleHandler.php');
 	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>';
 	    $jsActivation = $this->wrapOnDocumentReadyJS('$("#'.$id.'").inputmask("'.$dateFormat.'", {"placeholder": "'.$dateFormat.'"});');
 		
-		return $iconCode.$labelCode.$htmlCode."\n".$jsIncludes."\n".$jsActivation;
+		return $iconCode.$htmlCode."\n".$jsIncludes."\n".$jsActivation;
 	}
 
 	public function hiddenFormField($id, $value = "") {
 		return '<input type="hidden" id="'.$id.'" name="'.$id.'" value="'.$value.'">';
 	}
 
-    public function singleFormInputGroup($inputElement) {
-	    return '<div class="form-group"><div class="input-group">'.$inputElement.'</div></div>';
+    public function singleFormInputGroup($inputElement, $label = null) {
+	    $labelCode = isset($label) ? "<label>$label</label>" : "";
+	    return '<div class="form-group">'.$labelCode.'<div class="input-group">'.$inputElement.'</div></div>';
     }
     
     public function doubleFormInputGroup($firstInputElement, $secondInputElement, $sizeClass = "lg") {
@@ -334,21 +354,85 @@ require_once('ModuleHandler.php');
 	    return '<button type="submit" class="btn btn-primary pull-'.$position.'" '.$dismissCode.' id="'.$id.'"><i class="fa fa-check-circle"></i> '.$message.'</button>';
     }
     
+    /** Task list buttons */
+    
+    /**
+	 * Creates a hover action button to be put in a a task list, todo-list or similar.
+	 * If modaltarget is specified, the button will open a custom dialog with the given id.
+	 * @param String $classname name for the class.
+	 * @param Array $parameters An associative array of parameters to include (i.e: "user_id" => "1231").
+	 * @param String icon the font-awesome identifier for the icon.
+	 * @param String modaltarget if specified, id of the destination modal dialog to open.
+	 * @param String $linkClasses Additional classes for the HTML a link
+	 * @param String $iconClasses Additional classes for the font awesome icon i.
+	 */
+    public function hoverActionButton($classname, $icon, $hrefValue = "", $modaltarget = null, $linkClasses = "", $iconClasses = "", $otherParameters = null) {
+	    // build parameters and additional code
+	    $paramCode = "";
+	    if (isset($otherParameters)) foreach ($otherParameters as $key => $value) { $paramCode = "$key=\"$value\" "; }
+	    $modalCode = isset($modaltarget) ? "data-toggle=\"modal\" data-target=\"#$modaltarget\"" : "";
+	    // return the button action link
+	    return '<a class="'.$classname.' '.$linkClasses.'" href="'.$hrefValue.'" '.$paramCode.' '.$modalCode.'>
+	    		<i class="fa fa-'.$icon.' '.$iconClasses.'"></i></a>';
+    }
+    
     /** Pop-Up Action buttons */
     
     public function popupActionButton($title, $options, $style = CRM_UI_STYLE_DEFAULT) {
-	    $popup = '<div class="btn-group"><button type="button" class="btn btn-'.$style.' dropdown-toggle" data-toggle="dropdown">'.$title.'</button><ul class="dropdown-menu" role="menu">';
+	    // style code
+	    if (is_string($style)) { $styleCode = "btn btn-$style"; }
+	    else if (is_array($style)) {
+		    $styleCode = "btn";
+		    foreach ($style as $class) { $styleCode .= " btn-$class"; }
+	    } else { $styleCode = "btn btn-default"; }
+	    // popup prefix code
+	    $popup = '<div class="btn-group"><button type="button" class="'.$styleCode.' dropdown-toggle" data-toggle="dropdown">'.$title.'</button><ul class="dropdown-menu" role="menu">';
+	    // options
 	    foreach ($options as $option) { $popup .= $option; }
+	    // popup suffix code.
 	    $popup .= '</ul></div>';
 	    return $popup;
     }
     
-    public function optionForPopupButtonWithClass($class, $text, $parameter_value, $parameter_name = "href") {
+    public function actionForPopupButtonWithClass($class, $text, $parameter_value, $parameter_name = "href") {
 	    return '<li><a class="'.$class.'" '.$parameter_name.'="'.$parameter_value.'">'.$text.'</a></li>';
     }
     
+    public function actionForPopupButtonWithLink($url, $text, $class = null, $parameter_value = null, $parameter_name = null) {
+	    // do we need to specify a class?
+	    if (isset($class)) { $classCode = 'class="'.$class.'"'; } else { $classCode = ""; }
+	    // do we have an optional parameter?
+	    if (isset($parameter_value) && isset($parameter_name)) { $parameterCode = $parameter_name.'="'.$parameter_value.'"'; }
+	    else { $parameterCode = ""; }
+	    return '<li><a '.$classCode.' href="'.$url.'" '.$parameterCode.'>'.$text.'</a></li>';
+    }
+    
+    public function actionForPopupButtonWithOnClickCode($text, $jsFunction, $parameters = null, $class = null) {
+	    // do we need to specify a class?
+	    if (isset($class)) { $classCode = 'class="'.$class.'"'; } else { $classCode = ""; }
+	    // do we have an parameters?
+	    if (isset($parameters) && is_array($parameters)) { 
+		    $parameterCode = "";
+		    foreach ($parameters as $parameter) { $parameterCode .= "'$parameter',"; }
+		    $parameterCode = rtrim($parameterCode, ",");
+		} else { $parameterCode = ""; }
+	    return '<li><a href="#" '.$classCode.' onclick="'.$jsFunction.'('.$parameterCode.');">'.$text.'</a></li>';
+    } 
+    
     public function separatorForPopupButton() {
 	    return '<li class="divider"></li>';
+    }
+    
+    public function simpleLinkButton($id, $title, $url, $icon = null, $style = CRM_UI_STYLE_DEFAULT, $additionalClasses = null) {
+	    // style code.
+	    $styleCode = "";
+	    if (!empty($style)) {
+		    if (is_array($style)) { foreach ($style as $st) { $styleCode .= "btn-$style "; } }
+		    else if (is_string($style)) { $styleCode = "btn-$style"; }
+	    }
+	    return '<a id="'.$id.'" class="btn '.$styleCode.'" href="'.$url.'">'.$title.'</a>';
+
+
     }
     
     /** Javascript HTML code generation */
@@ -359,7 +443,7 @@ require_once('ModuleHandler.php');
 		    });</script>';
     }
     
-    public function formPostJS($formid, $phpfile, $successJS, $failureJS, $preambleJS = "", $successResult = "success") {
+    public function formPostJS($formid, $phpfile, $successJS, $failureJS, $preambleJS = "", $successResult=CRM_DEFAULT_SUCCESS_RESPONSE) {
 	    return $this->wrapOnDocumentReadyJS('$("#'.$formid.'").validate({
 			submitHandler: function(e) {
 				'.$preambleJS.'
@@ -376,12 +460,12 @@ require_once('ModuleHandler.php');
 		 });');
     }
     
-    public function fadingInMessageJSWithTag($tagname, $message) {
+    public function fadingInMessageJS($message, $tagname = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 	    return '$("#'.$tagname.'").html(\''.$message.'\');
 				$("#'.$tagname.'").fadeIn();';
     }
     
-    public function fadingOutMessageJSWithTag($tagname, $animated = false) {
+    public function fadingOutMessageJS($animated = false, $tagname = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 	    if ($animated) { return '$("#'.$tagname.'").fadeOut();'; }
 	    else { return '$("#'.$tagname.'").hide();'; }
     }
@@ -403,7 +487,6 @@ require_once('ModuleHandler.php');
 	    if (is_array($additionalParameters) && count($additionalParameters) > 0) {
 		    foreach ($additionalParameters as $apKey => $apValue) { $additionalString .= ", \"$apKey\": $apValue ";  }
 	    }
-	    
 	    
 	    // return the JS code
 	    return $this->wrapOnDocumentReadyJS(
@@ -462,16 +545,30 @@ require_once('ModuleHandler.php');
 	 * Returns the hooks for the dashboard.
 	 */
     public function hooksForDashboard() {
-	    $result = "";
-	    $mh = \creamy\ModuleHandler::getInstance();
-	    foreach ($mh->activeModulesInstances() as $instance) {
-			$hook = $instance->dashboardHook();
-			if (!empty($hook)) {
-				$result .= $this->fullRowWithContent($hook);
-			}
-	    }
-	    return $result;
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_DASHBOARD, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
     }
+    
+	/**
+	 * Generates the footer for the customer list screen, by invoking the different modules
+	 * CRM_MODULE_HOOK_CUSTOMER_LIST_FOOTER hook.
+	 */
+	public function getCustomerListFooter($customer_type) {
+		$mh = \creamy\ModuleHandler::getInstance();
+		$footer = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_CUSTOMER_LIST_FOOTER, array(CRM_MODULE_HOOK_PARAMETER_CUSTOMER_LIST_TYPE => $customer_type), CRM_MODULE_MERGING_STRATEGY_APPEND);
+		$js = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_CUSTOMER_LIST_ACTION, array(CRM_MODULE_HOOK_PARAMETER_CUSTOMER_LIST_TYPE => $customer_type), CRM_MODULE_MERGING_STRATEGY_APPEND);
+		return $footer.$js;
+	}	 
+	 
+
+    /**
+	 * Returns the hooks for the customer detail/edition screen.
+	 */
+	public function customerDetailModuleHooks($customerid, $customerType) {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_CUSTOMER_DETAIL, array(CRM_MODULE_HOOK_PARAMETER_CUSTOMER_LIST_ID => $customerid, CRM_MODULE_HOOK_PARAMETER_CUSTOMER_LIST_TYPE => $customerType),
+		 CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
     
     /* Administration & user management */
     
@@ -499,13 +596,13 @@ require_once('ModuleHandler.php');
 			  '.$this->selectWithLabel($tz_text, "timezone", "timezone", \creamy\CRMUtils::getTimezonesAsArray(), $tz).'
 			  '.$this->selectWithLabel($lo_text, "locale", "locale", \creamy\LanguageHandler::getAvailableLanguages(), $lo).'
 			  <div class="box-footer">
-			  '.$this->emptyMessageDivWithTag("resultmessage").'
+			  '.$this->emptyMessageDivWithTag(CRM_UI_DEFAULT_RESULT_MESSAGE_TAG).'
 			  <button type="submit" class="btn btn-info">'.$this->lh->translationFor("modify").'</button></form></div></div>';
 		
 		// javascript
 		$successJS = $this->reloadLocationJS();
-		$failureJS = $this->fadingInMessageJSWithTag("resultmessage", $this->dismissableAlertWithMessage($ko_text, false, true));
-		$preambleJS = $this->fadingOutMessageJSWithTag("resultmessage");
+		$failureJS = $this->fadingInMessageJS($this->dismissableAlertWithMessage($ko_text, false, true));
+		$preambleJS = $this->fadingOutMessageJS(false);
 		$javascript = $this->formPostJS("adminsettings", "./php/ModifySettings.php", $successJS, $failureJS, $preambleJS);
 		
 		return $form."</br>".$javascript;
@@ -518,18 +615,18 @@ require_once('ModuleHandler.php');
 	    } else { // single input type: text, number, bool, date...
 		    switch ($type) {
 			    case CRM_SETTING_TYPE_STRING:
-				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "text", $this->lh->translationFor($setting), $this->lh->translationFor($setting), $currentValue));
+				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "text", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
 					break;
 				case CRM_SETTING_TYPE_INT:
 				case CRM_SETTING_TYPE_FLOAT:
-				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "number", $this->lh->translationFor($setting), $this->lh->translationFor($setting), $currentValue));
+				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "number", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
 					break;
 				case CRM_SETTING_TYPE_BOOL:
 					return $this->singleFormInputGroup($this->checkboxInputWithLabel($this->lh->translationFor($setting), $setting, $setting, (bool) $currentValue));
 					break;
 				case CRM_SETTING_TYPE_DATE:
 					$dateFormat = $this->lh->getDateFormatForCurrentLocale();
-				    return $this->singleFormInputGroup($this->maskedDateInputElement($setting, $setting, $dateFormat, $this->lh->translationFor($setting), $currentValue));
+				    return $this->singleFormInputGroup($this->maskedDateInputElement($setting, $setting, $dateFormat, $currentValue), $this->lh->translationFor($setting));
 					break;
 		    }
 	    }
@@ -724,7 +821,7 @@ require_once('ModuleHandler.php');
                                         </div>
 										'.$setUserRoleCode.'
 	                                    <br>
-	                                    <div  id="resultmessage" name="resultmessage" style="display:none">
+	                                    <div  id="'.CRM_UI_DEFAULT_RESULT_MESSAGE_TAG.'" name="'.CRM_UI_DEFAULT_RESULT_MESSAGE_TAG.'" style="display:none">
 	                                    </div>
                                     </div><!-- /.box-body -->
                                     <div class="box-footer">
@@ -782,59 +879,65 @@ require_once('ModuleHandler.php');
 	
 	private function getActionButtonForModule($moduleShortName, $enabled) {
 		// build the options.
-		$ed_option = $enabled ? $this->optionForPopupButtonWithClass("disable_module", $this->lh->translationFor("disable"), $moduleShortName) : $this->optionForPopupButtonWithClass("enable_module", $this->lh->translationFor("enable"), $moduleShortName);
-		//$up_option = $this->optionForPopupButtonWithClass("update_module", $this->lh->translationFor("update"), $moduleShortName);
-		$un_option = $this->optionForPopupButtonWithClass("uninstall_module", $this->lh->translationFor("uninstall"), $moduleShortName);
+		$ed_option = $enabled ? $this->actionForPopupButtonWithClass("disable_module", $this->lh->translationFor("disable"), $moduleShortName) : $this->actionForPopupButtonWithClass("enable_module", $this->lh->translationFor("enable"), $moduleShortName);
+		//$up_option = $this->actionForPopupButtonWithClass("update_module", $this->lh->translationFor("update"), $moduleShortName);
+		$un_option = $this->actionForPopupButtonWithClass("uninstall_module", $this->lh->translationFor("uninstall"), $moduleShortName);
 		$options = array($ed_option, $un_option);
 		// build and return the popup action button.
 		return $this->popupActionButton($this->lh->translationFor("choose_action"), $options);
 	}
 
-
-	/** Notifications */
+	/** Header */
+	
+	/**
+	 * Returns the default creamy header for all pages.
+	 */
+	public function creamyHeader($user) {
+		// module topbar elements
+		$mh = \creamy\ModuleHandler::getInstance();
+		$moduleTopbarElements = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TOPBAR, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
+		// return header
+		return '<header class="header">
+	            <a href="./index.php" class="logo"><img src="img/logoWhite.png" width="32" height="32">Creamy</a>
+	            <nav class="navbar navbar-static-top" role="navigation">
+	                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
+	                    <span class="sr-only">Toggle navigation</span>
+	                    <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+	                </a>
+	                <div class="navbar-right">
+	                    <ul class="nav navbar-nav">
+	                    		'.$moduleTopbarElements.'
+	                    		'.$this->getTopbarMessagesMenu($user).'  
+		                    	'.$this->getTopbarAlertsMenu($user).'
+		                    	'.$this->getTopbarTasksMenu($user).'
+		                    	'.$this->getTopbarUserMenu($user).'
+	                    </ul>
+	                </div>
+	            </nav>
+	        </header>';
+	}
+	
+	/** Topbar Menu elements */
 
 	/**
 	 * Generates the HTML for the message notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	function getMessageNotifications($user) {
+	protected function getTopbarMessagesMenu($user) {
 		if (!$user->userHasBasicPermission()) return '';
 
         $list = $this->db->getMessagesOfType($user->getUserId(), MESSAGES_GET_UNREAD_MESSAGES);
 		$numMessages = count($list);
 		
-		$result = '<li class="dropdown messages-menu">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                <i class="fa fa-envelope"></i>
-                <span class="label label-success">'.$numMessages.'</span>
-            </a>
-            <ul class="dropdown-menu">
-                <li class="header">
-                '.$this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages").'
-                </li>
-                <li>
-					<ul class="menu">';
+		$headerText = $this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages");
+		$result = $this->getTopbarMenuHeader("envelope", $numMessages, CRM_UI_TOPBAR_MENU_STYLE_COMPLEX, $headerText, null, CRM_UI_STYLE_SUCCESS);
         
         foreach ($list as $message) {
 	        if (empty($message["remote_avatar"])) $remoteavatar = CRM_DEFAULTS_USER_AVATAR;
 	        else $remoteavatar = $message["remote_avatar"];
-	        $relativeTime = $this->relativeTime($message["date"], 1);
-	        $shortText = $this->substringUpTo($message["message"], 40);
-	        
-	        $result = $result.'
-	        <li><a href="messages.php">
-                    <div class="pull-left">
-                        <img src="'.$remoteavatar.'" class="img-circle" alt="User Image"/>
-                    </div>
-                    <h4>
-                    <small class="label"> <i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
-                        '.$message["remote_user"].' 
-                    </h4>
-                    <p>'.$shortText.'</p>
-                </a>
-            </li>';
+	        $result .= $this->getTopbarComplexElement($message["remote_user"], $message["message"], $message["date"], $remoteavatar, "messages.php");
         }
-        $result = $result.'</ul></li><li class="footer"><a href="messages.php">'.$this->lh->translationFor("see_all_messages").'</a></li></ul></li>';
+        $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_messages"), "messages.php");
         return $result;
 	}
 	
@@ -864,161 +967,124 @@ require_once('ModuleHandler.php');
 	 * Generates the HTML for the alert notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	public function getAlertNotifications($user) {
+	protected function getTopbarAlertsMenu($user) {
 		if (!$user->userHasBasicPermission()) return '';
 		
 		$notifications = $this->db->getTodayNotifications($user->getUserId());
 		if (empty($notifications)) $notificationNum = 0;
 		else $notificationNum = count($notifications);
 		
-		$result = '<li class="dropdown notifications-menu">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-warning"></i>
-                    <span class="label label-warning">'.$notificationNum.'</span>
-                </a>
-                <ul class="dropdown-menu">
-                    <li class="header">'.$this->lh->translationFor("you_have").' '.$notificationNum.' '.strtolower($this->lh->translationFor("notifications")).'</li><li>
-                        <ul class="menu">';
-                        
+		$headerText = $this->lh->translationFor("you_have").' '.$notificationNum.' '.strtolower($this->lh->translationFor("notifications"));
+		$result = $this->getTopbarMenuHeader("warning", $notificationNum, CRM_UI_TOPBAR_MENU_STYLE_SIMPLE, $headerText, null, CRM_UI_STYLE_WARNING);
+
         foreach ($notifications as $notification) {
-	        $result = $result.'<li style="text-align: left; !important">
-                                <a href="notifications.php">
-                                     <i class="fa '.$this->notificationIconForNotificationType($notification["type"]).' '.$this->getRandomColorForNotification().'"></i> '.$this->substringUpTo($notification["text"], 40).'
-                                </a>
-                            </li>';
+	        $result .= $this->getTopbarSimpleElement($notification["text"], $this->notificationIconForNotificationType($notification["type"]), "notifications.php", $this->getRandomUIStyle());
         }                                        
-        $result = $result.'</ul></li><li class="footer"><a href="notifications.php">'.$this->lh->translationFor("see_all_notifications").'</a></li></ul></li>';
+        $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_notifications"), "notifications.php");
         return $result;
 	}
 	
-	public function getTaskNotifications($user) {
+	protected function getTopbarTasksMenu($user) {
 		if (!$user->userHasBasicPermission()) return '';
 
 		$list = $this->db->getUnfinishedTasks($user->getUserId());
 		$numTasks = count($list);
 		
-		$result = '<li class="dropdown tasks-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="fa fa-tasks"></i>
-                                <span class="label label-danger">'.$numTasks.'</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="header">'.$this->lh->translationFor("you_have").' '.$numTasks.' '.$this->lh->translationFor("pending_tasks").'</li>
-                                <li>
-                                    <ul class="menu">';
+		$headerText = $this->lh->translationFor("you_have").' '.$numTasks.' '.$this->lh->translationFor("pending_tasks");
+		$result = $this->getTopbarMenuHeader("tasks", $numTasks, CRM_UI_TOPBAR_MENU_STYLE_DATE, $headerText, null, CRM_UI_STYLE_DANGER);
                                     
         foreach ($list as $task) {
-	        $shortText = $this->substringUpTo($task["description"], 35);
-	        $relativeTime = $this->relativeTime($task["creation_date"], 1);
-	        
-	        
-	        $result = $result.'<li><!-- Task item -->
-	            <a href="tasks.php">
-                    <h3>
-                        <p class="pull-left">'.$shortText.'</p>
-                        <small class="label label-warning"><i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
-                    </h3>
-	            </a>
-	        </li><!-- end task item -->';
+	        $result .= $this->getTopbarSimpleElementWithDate($task["description"], $task["creation_date"], "clock-o", "tasks.php", CRM_UI_STYLE_WARNING);
         }
                                     
-        $result = $result.'</ul></li><li class="footer"><a href="tasks.php">'.$this->lh->translationFor("see_all_tasks").'</a></li></ul></li>';
+        $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_tasks"), "tasks.php");
         return $result;
 
         return '';
     }
-	
-	/**
-	 * Returns a random color for a notification, between green, red, blue and yellow.
-	 */
-	private function getRandomColorForNotification() {
-		$number = rand(1,4);
-		if ($number == 1) return "info";
-		else if ($number == 2) return "danger";
-		else if ($number == 3) return "warning";
-		else return "success";
-	}
 
-	/** Basic UI Elements & structure */
-	
-	/**
-	 * Returns the default creamy header for all pages.
-	 */
-	public function creamyHeader($user) {
-		return '<header class="header">
-	            <a href="./index.php" class="logo">
-		            <img src="img/logoWhite.png" width="32" height="32">
-	                Creamy
-	            </a>
-	            <nav class="navbar navbar-static-top" role="navigation">
-	                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-	                    <span class="sr-only">Toggle navigation</span>
-	                    <span class="icon-bar"></span>
-	                    <span class="icon-bar"></span>
-	                    <span class="icon-bar"></span>
-	                </a>
-	                <div class="navbar-right">
-	                    <ul class="nav navbar-nav">
-	                    		'.$this->getMessageNotifications($user).'  
-		                    	'.$this->getAlertNotifications($user).'
-		                    	'.$this->getTaskNotifications($user).'
-		                    	'.$this->getTopbarItems($user).'
-	                    </ul>
-	                </div>
-	            </nav>
-	        </header>';
-	}
-	
 	/**
 	 * Generates the HTML for the user's topbar menu.
 	 * @param $userid the id of the user.
 	 */
-	public function getTopbarItems($user) {
-		// menu actions (only for users with permissions).
+	protected function getTopbarUserMenu($user) {
+		// menu actions & change my data(only for users with permissions).
 		$menuActions = '';
-		if ($user->userHasBasicPermission()) $menuActions = '<li class="user-body">
-									<div class="text-center">
-									    <a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a>
-									</div>
-									<div class="text-center">
-									    <a href="./messages.php">'.$this->lh->translationFor("messages").'</a>
-									</div>
-									<div class="text-center">
-									        <a href="./notificationes.php">'.$this->lh->translationFor("notifications").'</a>
-									    </div>
-									<div class="text-center">
-									        <a href="./tasks.php">'.$this->lh->translationFor("tasks").'</a>
-								    </div>
-								</li>';
-		
-		// change my data (only for users with permissions).
 		$changeMyData = '';
-		if ($user->userHasBasicPermission()) 
+		if ($user->userHasBasicPermission()) {
+			$menuActions = '<li class="user-body">
+				<div class="text-center"><a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a></div>
+				<div class="text-center"><a href="./messages.php">'.$this->lh->translationFor("messages").'</a></div>
+				<div class="text-center"><a href="./notificationes.php">'.$this->lh->translationFor("notifications").'</a></div>
+				<div class="text-center"><a href="./tasks.php">'.$this->lh->translationFor("tasks").'</a></div>
+			</li>';
 			$changeMyData = '<div class="pull-left"><a href="./edituser.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("my_profile").'</a></div>';
+		} 
 		
 		return '<li class="dropdown user user-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="glyphicon glyphicon-user"></i>
-                                <span>'.$user->getUserName().' <i class="caret"></i></span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="user-header bg-light-blue">
-                                    <img src="'.$user->getUserAvatar().'" class="img-circle" alt="User Image" />
-                                    <p>
-                                        '.$user->getUserName().'
-                                        <small>'.$this->lh->translationFor("nice_to_see_you_again").'</small>
-                                    </p>
-                                </li>'.$menuActions.'
-                                <li class="user-footer">
-                                    '.$changeMyData.'
-                                    <div class="pull-right">
-                                        <a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("exit").'</a>
-                                    </div>
-                                </li>
-                            </ul>
-                        </li>
-		';
+	                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+	                    <i class="glyphicon glyphicon-user"></i>
+	                    <span>'.$user->getUserName().' <i class="caret"></i></span>
+	                </a>
+	                <ul class="dropdown-menu">
+	                    <li class="user-header bg-light-blue">
+	                        <img src="'.$user->getUserAvatar().'" class="img-circle" alt="User Image" />
+	                        <p>'.$user->getUserName().'<small>'.$this->lh->translationFor("nice_to_see_you_again").'</small></p>
+	                    </li>'.$menuActions.'
+	                    <li class="user-footer">'.$changeMyData.'
+	                        <div class="pull-right"><a href="./logout.php" class="btn btn-default btn-flat">'.$this->lh->translationFor("exit").'</a></div>
+	                    </li>
+	                </ul>
+	            </li>';
 	}
+
+	public function getTopbarMenuHeader($icon, $badge, $menuStyle, $headerText = null, $headerLink = null, $badgeStyle = CRM_UI_STYLE_DEFAULT) {
+		// header text and link
+		if (!empty($headerText)) {
+			$linkPrefix = isset($headerLink) ? '<a href="'.$headerLink.'">' : '';
+			$linkSuffix = isset($headerLink) ? '</a>' : '';
+			$headerCode = '<li class="header">'.$linkPrefix.$headerText.$linkSuffix.'</li>';
+		} else { $headerCode = ""; }
+		
+		// return the topbar menu header
+		return '<li class="dropdown '.$menuStyle.'-menu"><a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-'.$icon.'"></i><span class="label label-'.$badgeStyle.'">'.$badge.'</span></a>
+					<ul class="dropdown-menu">'.$headerCode.'<li><ul class="menu">';
+	}
+
+	public function getTopbarMenuFooter($footerText, $footerLink = null) {
+		$linkPrefix = isset($footerLink) ? '<a href="'.$footerLink.'">' : '';
+		$linkSuffix = isset($footerLink) ? '</a>' : '';
+		return '</ul></li><li class="footer">'.$linkPrefix.$footerText.$linkSuffix.'</li></ul></li>';
+	}
+	
+	public function getTopbarSimpleElement($text, $icon, $link, $tint = CRM_UI_STYLE_DEFAULT) {
+		$shortText = $this->substringUpTo($text, 40);
+		return '<li style="text-align: left; !important;"><a href="'.$link.'"><i class="fa fa-'.$icon.' '.$tint.'"></i> '.$shortText.'</a></li>';
+	}
+	
+	public function getTopbarSimpleElementWithDate($text, $date, $icon, $link, $tint = CRM_UI_STYLE_DEFAULT) {
+		$shortText = $this->substringUpTo($text, 30);
+	    $relativeTime = $this->relativeTime($date, 1);
+		return '<li><a href="'.$link.'"><h3><p class="pull-left">'.$shortText.'</p><small class="label label-'.$tint.'"><i class="fa fa-'.$icon.'"></i> '.$relativeTime.'</small></h3></a></li>';
+	}
+	
+	public function getTopbarComplexElement($title, $text, $date, $image, $link) {
+		$shortTitle = $this->substringUpTo($title, 20);
+		$shortText = $this->substringUpTo($text, 40);
+	    $relativeTime = $this->relativeTime($date, 1);
+		return '<li><a href="'.$link.'">
+                    <div class="pull-left">
+                        <img src="'.$image.'" class="img-circle" alt="User Image"/>
+                    </div>
+                    <h4>'.$title.' 
+                    <small class="label"><i class="fa fa-clock-o"></i> '.$relativeTime.'</small>
+                    </h4>
+                    <p>'.$shortText.'</p>
+                </a>
+            </li>';
+	}
+
+	public function getTopbarCustomMenu($header, $elements, $footer) { return $header.$elements.$footer; }
 
 	/** Sidebar */
 	
@@ -1097,35 +1163,6 @@ require_once('ModuleHandler.php');
 	/** Customers */
    	
    	/**
-	 * Generates the HTML code for a table containing an array of contacts or customers.
-	 * @param $contacts Array the array with the objects representing the users.
-	 * @param $customerType the type of customer
-	 */
-   	private function getCustomerListAsTable($customers, $customerType) {
-	   // print prefix
-	   $columns = $this->db->getCustomerColumnsToBeShownInCustomerList($customerType);
-	   $result = $this->generateTableHeaderWithItems($columns, "contacts", "table-bordered table-striped", true);
-       if (isset($customers)) {
-		   foreach ($customers as $customer) {
-		       $nameOrNonamed = $customer["name"];
-		       if (empty ($nameOrNonamed) || strlen($nameOrNonamed) < 1) $nameOrNonamed = "(".$this->lh->translationFor("no_name").")";
-		       
-		       $result = $result."<tr>
-	                    <td>".$customer["id"]."</td>
-	                    <td><a href=\"editcustomer.php?customerid=".$customer["id"]."&customer_type=".$customerType."\" >".$nameOrNonamed."</a></td>
-	                    <td>".$customer["email"]."</td>
-	                    <td>".$customer["phone"]."</td>
-	                    <td>".$customer["id_number"]."</td>
-	                </tr>";
-	       }
-       }
-       
-       // print suffix
-       $result .= $this->generateTableFooterWithItems($columns, true);
-       return $result;
-   	}
-
-   	/**
 	 * Generates a HTML table with all customer types for the administration panel.
 	 */
 	public function getCustomerTypesAdminTable() {
@@ -1169,8 +1206,8 @@ require_once('ModuleHandler.php');
 		// validate form javascript
 		$successJS = $this->reloadLocationJS();
 		$em_text = $this->lh->translationFor("error_editing_customer_name");
-		$failureJS = $this->fadingInMessageJSWithTag("editcustomermessage", $this->dismissableAlertWithMessage($em_text, false, true));
-		$preambleJS = $this->fadingOutMessageJSWithTag("editcustomermessage", false);
+		$failureJS = $this->fadingInMessageJS($this->dismissableAlertWithMessage($em_text, false, true), "editcustomermessage");
+		$preambleJS = $this->fadingOutMessageJS(false, "editcustomermessage");
 		$javascript = $this->formPostJS("edit-customer-form", "./php/ModifyCustomerType.php", $successJS, $failureJS, $preambleJS);
 
 		return $table."\n".$editCustomerJS."\n".$deleteCustomerJS."\n".$modalForm."\n".$javascript;
@@ -1187,35 +1224,25 @@ require_once('ModuleHandler.php');
 		// javascript form submit.
 		$successJS = $this->reloadLocationJS();
 		$ua_text = $this->lh->translationFor("unable_add_customer_group");
-		$failureJS = $this->fadingInMessageJSWithTag("creationmessage", $this->dismissableAlertWithMessage($ua_text, false, true));
-		$preambleJS = $this->fadingOutMessageJSWithTag("creationmessage", false);
+		$failureJS = $this->fadingInMessageJS($this->dismissableAlertWithMessage($ua_text, false, true), "creationmessage");
+		$preambleJS = $this->fadingOutMessageJS(false, "creationmessage");
 		$javascript = $this->formPostJS("createcustomergroup", "./php/CreateCustomerGroup.php", $successJS, $failureJS, $preambleJS);
 		
 		return $formbox."\n".$javascript;
 	}
-
-  	/**
-	 * Generates the HTML with the HTML table for an array of contacts or customers.
-	 * @param $contacts Array the array with the objects representing the users.
-	 * @param $customerType the type of customer
-	 */
-	public function getAllCustomersOfTypeAsTable($customerType) {
-       $customers = $this->db->getAllCustomersOfType($customerType);
-       // is null?
-       if (is_null($customers)) { // error getting customers
-	       return $this->calloutErrorMessage($this->lh->translationFor("unable_get_customer_list"));
-       } else if (empty($customers)) { // no customers found
-	       return $this->calloutWarningMessage($this->lh->translationFor("no_customers_in_list"));
-       } else { // we have some customers, show a table
-		   return $this->getCustomerListAsTable($customers, $customerType);
-       }
-	}	
 	
 	/**
 	 * Generates the HTML with an empty table for a list of contacts or customers.
 	 */
-	public function getEmptyCustomersList() {
-		return $this->getCustomerListAsTable(null, null);
+	public function getEmptyCustomersList($customerType) {
+	   // print prefix
+	   $columns = $this->db->getCustomerColumnsToBeShownInCustomerList($customerType);
+	   $columns[] = $this->lh->translationFor("action");
+	   $result = $this->generateTableHeaderWithItems($columns, "contacts", "table-bordered table-striped", true);
+
+       // print suffix
+       $result .= $this->generateTableFooterWithItems($columns, true);
+       return $result;
 	}
 
    	/**
@@ -1445,15 +1472,15 @@ require_once('ModuleHandler.php');
 		// values dependent on completion of the task.
 		$doneOrNot = $completed == 100 ? 'class="done"' : '';
 		$completeActionCheckbox = $completed == 100 ? '' : '<input type="checkbox" value="" name="" style="position: absolute; opacity: 0;">';
+		// modules hovers.
+		$mh = \creamy\ModuleHandler::getInstance();
+		$moduleTaskHoverActions = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TASK_LIST_HOVER, array("taskid" => $task["id"]), CRM_MODULE_MERGING_STRATEGY_APPEND);
 		
-		return '<li id="'.$task["id"].'" '.$doneOrNot.'>
-			  	  '.$completeActionCheckbox.'
-				  <span class="text">'.$task["description"].'</span>
+		return '<li id="'.$task["id"].'" '.$doneOrNot.'>'.$completeActionCheckbox.'<span class="text">'.$task["description"].'</span>
 				  <small class="label label-warning pull-right"><i class="fa fa-clock-o"></i> '.$creationdate.'</small>
-				  <div class="tools">
-						<a class="edit-task-action" href="'.$task["id"].'" data-toggle="modal" data-target="#edit-task-dialog-modal">
-						<i class="fa fa-edit task-item"></i></a>
-						<a class="delete-task-action" href="'.$task["id"].'"><i class="fa fa-trash-o"></i></a>
+				  <div class="tools">'.$moduleTaskHoverActions.'
+				  	'.$this->hoverActionButton("edit-task-action", "edit", $task["id"], "edit-task-dialog-modal", null, "task-item").'
+				  	'.$this->hoverActionButton("delete-task-action", "trash-o", $task["id"]).'
 				  </div>
 			 </li>';
 	}
@@ -1499,6 +1526,14 @@ require_once('ModuleHandler.php');
 	    	return $list;
 		}
    	}
+	
+	/**
+	 * Returns the tasks footer action hooks for modules.
+	 */
+	public function getTasksActionFooter() {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TASK_LIST_ACTION, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
 	
 	/** Messages */
 
@@ -1713,10 +1748,10 @@ require_once('ModuleHandler.php');
 	 * @param $type String the type of notification.
 	 * @return String the string with the font-awesome icon for this notification type.
 	 */
-	private function notificationIconForNotificationType($type) {
-		if ($type == "contact") return "fa-user";
-		else if ($type == "message") return "fa-envelope";
-		else return "fa-calendar-o";
+	public function notificationIconForNotificationType($type) {
+		if ($type == "contact") return "user";
+		else if ($type == "message") return "envelope";
+		else return "calendar-o";
 	}
 	
 	/**
@@ -1724,10 +1759,10 @@ require_once('ModuleHandler.php');
 	 * @param $type String the type of notification.
 	 * @return String the string with the UI color for this notification type.
 	 */
-	private function notificationColorForNotificationType($type) {
-		if ($type == "contact") return "bg-aqua";
-		else if ($type == "message") return "bg-blue";
-		else return "bg-yellow";
+	public function notificationColorForNotificationType($type) {
+		if ($type == "contact") return "aqua";
+		else if ($type == "message") return "blue";
+		else return "yellow";
 	}
 	
 	/**
@@ -1735,7 +1770,7 @@ require_once('ModuleHandler.php');
 	 * @param $type String the type of notification.
 	 * @return String the string with the action button text for this notification type.
 	 */
-	private function actionButtonTextForNotificationType($type) {
+	public function actionButtonTextForNotificationType($type) {
 		if ($type == "contact") return $this->lh->translationFor("see_customer");
 		else if ($type == "message") return $this->lh->translationFor("read_message");
 		else return $this->lh->translationFor("see_more");
@@ -1747,7 +1782,7 @@ require_once('ModuleHandler.php');
 	 * @param $action String a URL with the action to perform for this notification.
 	 * @return String the string with the header text for this notification type.
 	 */
-	private function headerTextForNotificationType($type, $action) {
+	public function headerTextForNotificationType($type, $action) {
 		if ($type == "contact") 
 		return empty($action) ? $this->lh->translationFor("you_have_a_new")." ".$this->lh->translationFor("contact") : $this->lh->translationFor("you_have_a_new")." <a href=".$action.">".$this->lh->translationFor("contact")."</a>";
 		else if ($type == "message") 
@@ -1757,34 +1792,91 @@ require_once('ModuleHandler.php');
 	}
 	
 	/**
+	 * Generates the HTML code for a timeline item action button.
+	 * @param String $url 		the url to launch when pushing the button.
+	 * @param String $title 	title for the button.
+	 * @param String $style		Style for the button, one of CRM_UI_STYLE_*
+	 * @return String			The HTML for the button to include in the timeline item.
+	 */
+	public function timelineItemActionButton($url, $title, $style = CRM_UI_STYLE_DEFAULT) {
+		$actionHTML = '<div class="timeline-footer"><a class="btn btn-'.$style.' btn-xs" href="'.$url.'">'.$title.'</a></div>';
+	}
+	
+	
+	/**
+	 * Generates the HTML code for a timeline item with the given data.
+	 * @param String $title 		Title for the timeline item
+	 * @param String $content		Main content (text) for the timeline item.
+	 * @param String $date			Recognizable date for strtotime (see http://php.net/manual/es/datetime.formats.date.php).
+	 * @param String $url			If set, an action for the notification, use 
+	 * @param String $buttonTitle	Title for the button (if URL set).
+	 * @param String $icon			Icon for the notification item (default calendar).
+	 * @param String $buttonStyle	Style for the button, one of CRM_UI_STYLE_*
+	 * @param String $badgeColor	Color for the badge notification bubble (default yellow).
+	 * @return The HTML with the code of the timeline notification item to insert in the timeline list. 
+	 */
+	public function timelineItemWithData($title, $content, $date, $url = null, $buttonTitle, $icon = "calendar-o", $buttonStyle = CRM_UI_STYLE_DEFAULT, $badgeColor = "yellow") {
+		// parameters
+		$relativeTime = $this->relativeTime($date, 1);
+		$actionHTML = isset($url) ? $this->timelineItemActionButton($url, $buttonTitle, $buttonStyle) : "";
+		// return code.
+		return '<li><i class="fa fa-'.$icon.' bg-'.$badgeColor.'"></i>
+            <div class="timeline-item">
+                <span class="time"><i class="fa fa-clock-o"></i> '.$relativeTime.'</span>
+                <h3 class="timeline-header no-border">'.$title.'</h3>
+				<div class="timeline-body">'.$content.'</div>
+                '.$actionHTML.'
+            </div></li>';
+	}
+	
+	/**
+	 * Generates the HTML for the beginning of the timeline.
+	 */
+	protected function timelineStart($message, $includeInitialTimelineStructure = true, $color = "green") {
+		$tlCode = $includeInitialTimelineStructure ? '<ul class="timeline">' : '';
+		return $tlCode.'<li class="time-label"><span class="bg-'.$color.'">'.$message.'</span></li>';
+	}
+	
+	/**
+	 * Generates the HTML for a intermediate label in the timeline (used to 
+	 */
+	public function timelineIntermediateLabel($message, $color = "purple") {
+		return '<li class="time-label"><span class="bg-'.$color.'">'.$message.'</span></li>';
+	}
+	
+	/**
+	 * Generates the HTML for the timelabel ending section.
+	 */
+	public function timelineEnd($endingIcon = "clock-o") {
+		return '<li><i class="fa fa-'.$endingIcon.'"></i></li></ul>';
+	}
+	
+	/** 
+	 * Generates the HTML for an simple timeline item without icon, just a message.
+	 * @param String $message the message for the timeline item.	
+	 */
+	public function timelineItemWithMessage($title, $message, $style = CRM_UI_STYLE_INFO) {
+		$content = $this->calloutMessageWithTitle($title, $message, $style);
+		return '<li><div class="timeline-item">'.$content.'</div></li>';
+	}
+	
+	/**
 	 * Generates the HTML code for the given notification.
 	 * @param $notification Array an associative array object containing the notification data.
 	 * @return String a HTML representation of the notification.
 	 */
-	private function timelineItemForNotification($notification) {
+	public function timelineItemForNotification($notification) {
 		$type = $notification["type"];
 		$action = isset($notification["action"]) ? $notification["action"]: NULL;
 		$date = $notification["date"];
-		$texto = $notification["text"];
-		$actionHTML = "";
-		
-		if (!empty($action)) $actionHTML = '<div class="timeline-footer"><a class="btn btn-success btn-xs" href="'.$action.'">'.$this->actionButtonTextForNotificationType($type).'</a></div>';
-		
+		$content = $notification["text"];
+				
 		$color = $this->notificationColorForNotificationType($type);
 		$icon = $this->notificationIconForNotificationType($type);
-		$relativetime = $this->relativeTime($date, 1);
+		$title = $this->headerTextForNotificationType($type, $action);
+		$buttonTitle = $this->actionButtonTextForNotificationType($type);
 
-		return '<li>
-                    <i class="fa '.$icon.' '.$color.'"></i>
-                    <div class="timeline-item">
-                        <span class="time"><i class="fa fa-clock-o"></i> '.$relativetime.'</span>
-                        <h3 class="timeline-header no-border">'.$this->headerTextForNotificationType($type, $action).'</h3>
-						<div class="timeline-body">
-						'.$texto.'
-						</div>
-                        '.$actionHTML.'
-                    </div>
-                </li>';
+		return $this->timelineItemWithData($title, $content, $date, $action, $buttonTitle, $icon, CRM_UI_STYLE_SUCCESS, $color);
 	}
 	
 	/**
@@ -1795,46 +1887,52 @@ require_once('ModuleHandler.php');
 	public function getNotificationsAsTimeLine($userid) {
 		setlocale(LC_ALL, CRM_LOCALE);
 		$todayAsDate = strftime("%x");
-		$todayAsText = $this->lh->translationFor("today")." ($todayAsDate)";
+		$todayAsText = $this->lh->translationFor(CRM_NOTIFICATION_PERIOD_TODAY)." ($todayAsDate)";
 		
 		// today
-		$timeline = '<ul class="timeline">
-	                    <li class="time-label">
-	                        <span class="bg-green">
-	                            '.$todayAsText.'
-	                        </span>
-	                    </li>';
+		$timeline = $this->timelineStart($todayAsText);
 		
 		$notifications = $this->db->getTodayNotifications($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->calloutInfoMessage($this->lh->translationFor("no_notifications_today")).'</div></li>';
+			$title = $this->lh->translationFor("message");
+			$message = $this->lh->translationFor("no_notifications_today");
+			$timeline .= $this->timelineItemWithMessage($title, $message);
 		} else {
 			foreach ($notifications as $notification) {
-				$timeline = $timeline.$this->timelineItemForNotification($notification);
+				$timeline .= $this->timelineItemForNotification($notification);
 			}
 		}
+		// module notifications for today
+		$mh = \creamy\ModuleHandler::getInstance();
+		$modNots = $mh->applyHookOnActiveModules(
+			CRM_MODULE_HOOK_NOTIFICATIONS, 
+			array(CRM_NOTIFICATION_PERIOD => CRM_NOTIFICATION_PERIOD_TODAY), 
+			CRM_MODULE_MERGING_STRATEGY_APPEND);
+		if (isset($modNots)) { $timeline .= $modNots; }
 		
         // past week
-		$timeline = $timeline.'<li class="time-label">
-	                        <span class="bg-yellow">
-	                            '.$this->lh->translationFor("past_week").'
-	                        </span>
-	                    </li>';
+        $pastWeek = $this->lh->translationFor(CRM_NOTIFICATION_PERIOD_PASTWEEK);
+		$timeline .= $this->timelineIntermediateLabel($pastWeek);
 
         $notifications = $this->db->getNotificationsForPastWeek($userid);
 		if (empty($notifications)) {
-			$timeline = $timeline.'<li><div class="timeline-item">'.$this->calloutInfoMessage($this->lh->translationFor("no_notifications_past_week")).'</div></li>';
+			$title = $this->lh->translationFor("message");
+			$message = $this->lh->translationFor("no_notifications_past_week");
+			$timeline .= $this->timelineItemWithMessage($title, $message);
 		} else {
 			foreach ($notifications as $notification) {
-				$timeline = $timeline.$this->timelineItemForNotification($notification);
+				$timeline .= $this->timelineItemForNotification($notification);
 			}
 		}
+		// module notifications for past week
+		$modNots = $mh->applyHookOnActiveModules(
+			CRM_MODULE_HOOK_NOTIFICATIONS, 
+			array(CRM_NOTIFICATION_PERIOD => CRM_NOTIFICATION_PERIOD_PASTWEEK), 
+			CRM_MODULE_MERGING_STRATEGY_APPEND);
+		if (isset($modNots)) { $timeline .= $modNots; }
 
 		// end timeline
-		$timeline = $timeline.'<li>
-							      <i class="fa fa-clock-o"></i>
-						       </li>
-						      </ul>';
+		$timeline .= $this->timelineEnd();
         
         return $timeline;
 	}
@@ -1892,6 +1990,8 @@ require_once('ModuleHandler.php');
 	    $diff = ($now-$time);
 	    $secondsLeft = $diff;
 	
+		error_log("Mysql time: $mysqltime");
+		error_log("now: ".time());
 		if ($secondsLeft == 0) return "now";
 	
 	    for($i=6;$i>-1;$i--)

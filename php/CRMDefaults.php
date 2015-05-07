@@ -89,6 +89,16 @@ define ('CRM_UI_STYLE_DANGER', 'danger');
 define ('CRM_UI_STYLE_INFO', 'info');
 define ('CRM_UI_STYLE_WARNING', 'warning');
 
+define ('CRM_UI_TOPBAR_MENU_STYLE_SIMPLE', 'notifications');
+define ('CRM_UI_TOPBAR_MENU_STYLE_DATE', 'tasks');
+define ('CRM_UI_TOPBAR_MENU_STYLE_COMPLEX', 'messages');
+
+// timeline notification time
+define ('CRM_NOTIFICATION_PERIOD', 'period');
+define ('CRM_NOTIFICATION_PERIOD_TODAY', 'today');
+define ('CRM_NOTIFICATION_PERIOD_PASTWEEK', 'past_week');
+
+
 // installation constants.
 define ('CRM_INSTALL_STATE_SUCCESS', 1);
 define ('CRM_INSTALL_STATE_ERROR', 0);
