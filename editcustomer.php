@@ -46,12 +46,11 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Morris chart -->
-        <link href="css/morris/morris.css" rel="stylesheet" type="text/css" />
         <!-- bootstrap wysihtml5 - text editor -->
         <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -64,12 +63,18 @@
         <script src="js/jquery-ui.min.js" type="text/javascript"></script>
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+		<!-- InputMask -->
+	    <script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
+	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
+	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
 
     </head>
     <body class="skin-blue">
+        <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
@@ -95,21 +100,16 @@
                 <!-- Main content -->
                 <section class="content">
 					<!-- standard custom edition form -->
-					<?php print $ui->generateCustomerEditionForm($customerid, $customerType, $user->userHasWritePermission()); ?>                					<!-- modules addons via hooks -->
+					<?php print $ui->generateCustomerEditionForm($customerid, $customerType, $user->userHasWritePermission()); ?>                					
+					<!-- modules addons via hooks -->
 					<?php print $ui->customerDetailModuleHooks($customerid, $customerType); ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
 
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 
-		<!-- InputMask -->
-	    <script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
-	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
-	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>
 		<script type="text/javascript">
 			$(document).ready(function() {	
 				//Datemask dd/mm/yyyy

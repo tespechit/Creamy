@@ -224,107 +224,136 @@ define('DB_PORT', '3306');
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
-        <link href="./css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <!-- Creamy style -->
+        <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        
+        <!-- Javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/jstz-1.0.4.min.js" type="text/javascript"></script>
     </head>
-    <body>
-        <div class="form-box form-box-install" id="login-box">
+    
+    <!-- OLD -->
+    <body class="login-page">
+        <div class="login-box install-box" id="login-box">
 			<div class="margin text-center">
 				<img src="img/logo.png" width="64" height="64">
 			</div>
 	<?php if ($currentState == "already_installed") { ?>
-            <div class="header"><strong>Creamy</strong> <?php $lh->translateText("is_already_installed"); ?></div>
-            <div class="body bg-gray">
-	            <h3><?php $lh->translateText("oups"); ?></h3>
-	            <?php $lh->translateText("another_installation_creamy"); ?>
+			<div class="login-logo"><strong>Creamy</strong> <?php $lh->translateText("is_already_installed"); ?></div>
+            <div class="login-box-body">
+				<h3 class="login-box-msg"><?php $lh->translateText("oups"); ?></h3>
+	            <p class="login-box-msg"><?php $lh->translateText("another_installation_creamy"); ?></p>
+		          <div class="row">
+		            <div class="col-xs-3"></div>
+		            <div class="col-xs-6">
+		              <button type="submit" onclick="window.location.href='index.php';" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("back_to_creamy"); ?></button>
+		            </div><!-- /.col -->
+		            <div class="col-xs-3"></div>
+		          </div>
 			</div>
-            <div class="footer text-center">                                                               
-                <button type="submit" onclick="window.location.href='index.php';" class="btn bg-light-blue btn-block"><?php $lh->translateText("back_to_creamy"); ?></button>  
-            </div>
 	<?php } elseif ($currentState == "step1") { ?>
-            <div class="header"><?php $lh->translateText("installation_step_1_title"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("installation_step_1_title"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("welcome"); ?></h3>
 	            <p><?php $lh->translateText("installation_process_steps"); ?></p>
 	            <h3><?php $lh->translateText("database"); ?></h3>
 	            <p><?php $lh->translateText("your_crm_needs_a_database"); ?></p>
-	            <p style="color: red; margin-bottom: -20px;"><?php $lh->translateText("installation_warning"); ?></p>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
-                    <div class="form-group">
-                        <input type="text" name="dbhost" class="form-control" placeholder="<?php $lh->translateText("database_host"); ?>"/>
-                        <input type="text" name="dbname" class="form-control" placeholder="<?php $lh->translateText("database_name"); ?>"/>
-                        <input type="text" name="dbuser" class="form-control" placeholder="<?php $lh->translateText("database_user"); ?>"/>
-                        <input type="password" name="dbpass" class="form-control" placeholder="<?php $lh->translateText("database_password"); ?>"/>
-                   	</div>
+	            <p style="color: red; "><?php $lh->translateText("installation_warning"); ?></p>
+	            <form method="post">				
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbhost" placeholder="<?php $lh->translateText("database_host"); ?>"/>
+						<span class="glyphicon glyphicon-cloud form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbname" placeholder="<?php $lh->translateText("database_name"); ?>"/>
+						<span class="glyphicon glyphicon-credit-card form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbuser" placeholder="<?php $lh->translateText("database_user"); ?>"/>
+						<span class="glyphicon glyphicon-user form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="dbpass" placeholder="<?php $lh->translateText("database_password"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>
 					<div class="form-group">
 						<p><?php $lh->translateText("detected_timezone"); ?></p>
-                        <?php
+	                    <?php
 		                    // Timezones
 		                    $tzs = \creamy\CRMUtils::getTimezonesAsArray();
 							print '<select name="userTimeZone" id="userTimeZone" class="form-control">';
 							foreach($tzs as $key => $value) { print '<option value="'.$key.'">'.$value.'</option>'; }
 							print '</select>';
 	                    ?>
-                    </div>
-                    <div class="form-group">
+	                </div>
+	                <div class="form-group">
 						<p><?php $lh->translateText("choose_language"); ?></p>
 						<select name="desiredLanguage" id="desiredLanguage" class="form-control">
 							<?php
 							$locales = \creamy\LanguageHandler::getAvailableLanguages();
-							for ($locales as $key => $value) {
+							foreach ($locales as $key => $value) {
 								$selectedByDefault = ($key == $locale) ? "selected" : "";
 								print('<option value="'.$key.'" '.$selectedByDefault.'> '.$value.'</option>');
 							}
 							?>
 						</select>
-                    </div>       
-                	<div name="error-message" style="color: red;">
-                	<?php 
+	                </div>       
+	            	<div name="error-message" style="color: red;">
+	            	<?php 
 	                	if (isset($error)) print ($error); 
-                	?>
-                	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step1" id="submit_step1" class="btn bg-light-blue btn-block"><?php $lh->translateText("start"); ?></button>  
-                </div>
-            </form>
-        
-	<?php } elseif ($currentState == "step2") { ?>
-            <div class="header"><?php $lh->translateText("installation_step_2_title") ?></div>
-            <div class="body bg-gray">
-	            <h3><?php $lh->translateText("awesome"); ?></h3>
-	            <?php $lh->translateText("database_access_checked") ?>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
-                    <div class="form-group">
-                        <input type="text" name="adminName" class="form-control" placeholder="<?php $lh->translateText("admin_user_name") ?>"/>
-                        <input type="password" name="adminPassword" class="form-control" placeholder="<?php $lh->translateText("admin_user_password") ?>"/>
-                        <input type="password" name="adminPasswordCheck" class="form-control" placeholder="<?php $lh->translateText("admin_user_password_again") ?>"/>
-                        <input type="text" name="adminEmail" class="form-control" placeholder="<?php $lh->translateText("admin_user_email") ?>"/>
-                    </div>          
-                	<div name="error-message" style="color: red;">
-                	<?php 
-	                	if (isset($error)) print ($error); 
-                	?>
-                	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step2" id="submit_step2" class="btn bg-light-blue btn-block"><?php $lh->translateText("create_user") ?></button>  
-                </div>
-            </form>
+	            	?>
+	            	</div>
+	                <div class="row">
+						<div class="col-xs-4"></div>
+						<div class="col-xs-4"><button type="submit" name="submit_step1" id="submit_step1" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("start"); ?></button></div>
+						<div class="col-xs-4"></div>
+					</div>
+	            </form>
+        </div>
 
+	<?php } elseif ($currentState == "step2") { ?>
+			<div class="login-logo"><?php $lh->translateText("installation_step_2_title"); ?></div>
+            <div class="login-box-body">
+	            <h3><?php $lh->translateText("awesome"); ?></h3>
+	            <p><?php $lh->translateText("database_access_checked"); ?></p>
+	            <form method="post">				
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="adminName" placeholder="<?php $lh->translateText("admin_user_name"); ?>"/>
+						<span class="glyphicon glyphicon-user form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="adminEmail" placeholder="<?php $lh->translateText("admin_user_email"); ?>"/>
+						<span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="adminPassword" placeholder="<?php $lh->translateText("admin_user_password"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="adminPasswordCheck" placeholder="<?php $lh->translateText("admin_user_password_again"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>        
+                	<div name="error-message" style="color: red;">
+                	<?php 
+	                	if (isset($error)) print ($error); 
+                	?>
+                	</div>
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><button type="submit" name="submit_step2" id="submit_step2" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("create_user"); ?></button></div>
+						<div class="col-xs-3"></div>
+					</div>
+	            </form>
+            </div>
           
     <?php } elseif ($currentState == "step3") { ?>  
-            <div class="header"><?php $lh->translateText("installation_step_3_title"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("installation_step_3_title"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("perfect"); ?></h3>
-	            <?php $lh->translateText("lets_define_customers"); ?>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
+	            <p><?php $lh->translateText("lets_define_customers"); ?></p>
+	            <form method="post">				
 	                <input type="hidden" name="count" value="1" />
                     <div class="form-group">
                         <input type="radio" name="setup_customers" value="default" checked/> <?php $lh->translateText("contacts_and_clients_ok"); ?>
@@ -346,15 +375,16 @@ define('DB_PORT', '3306');
 	                	if (isset($error)) print ($error); 
                 	?>
                 	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step3" id="submit_step3" class="btn bg-light-blue btn-block"><?php $lh->translateText("create"); ?></button>  
-                </div>
-            </form>
-
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><button type="submit" name="submit_step3" id="submit_step3" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("create"); ?></button></div>
+						<div class="col-xs-3"></div>
+					</div>
+	            </form>
+            </div>
     <?php } elseif ($currentState == "final_step") { ?>  
-            <div class="header"><?php $lh->translateText("finished"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("finished"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("everythings_ready"); ?></h3>
 	            <p><?php $lh->translateText("ready_to_start_creamy"); ?></p>
 	        	<div name="error-message" style="color: red;">
@@ -362,10 +392,12 @@ define('DB_PORT', '3306');
 		            	if (isset($error)) print ($error); 
 		        	?>
 	        	</div>
-				<form method="post">				
-	                <div class="body bg-gray">
-	                    <button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></button>  
-	                </div>
+				<form method="post">	
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></button></div>
+						<div class="col-xs-3"></div>
+					</div>
 	            </form>
             </div>
         	
@@ -378,9 +410,6 @@ define('DB_PORT', '3306');
                 <button class="btn bg-aqua btn-circle" onclick="window.location.href='https://twitter.com/creamythecrm'"><i class="fa fa-twitter"></i></button>
             </div>
         </div>    
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jstz-1.0.4.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
 		$(document).ready(function(){
 			// detect timezone

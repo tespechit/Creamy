@@ -129,10 +129,10 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    return $this->boxWithContent($header_title, $body_content, NULL, $icon, $style);
     }
     
-    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
+    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = CRM_UI_STYLE_PRIMARY, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 	    if (empty($submit_text)) { $submit_text = $this->lh->translationFor("accept"); }
 	    return '<div class="box box-primary"><div class="box-header"><h3 class="box-title">'.$header_title.'</h3></div>
-	    	   '.$this->formWithContent($id, $content, $submit_text, $messagetag).'</div>';
+	    	   '.$this->formWithContent($id, $content, $submit_text, $style, $messagetag).'</div>';
     }
     
     public function boxWithQuote($title, $quote, $author, $icon = "quote-left", $style = null, $body_id = null, $additional_body_classes = "") {
@@ -140,10 +140,17 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    return $this->boxWithContent($title, $body_content, null, $icon, $style, $body_id, $additional_body_classes);
     }
     
+    public function infoBox($title, $subtitle, $url, $icon, $color, $colsize = 3) {
+	    return '<div class="col-md-'.$colsize.'"><div class="info-box"><a href="'.$url.'"><span class="info-box-icon bg-'.$color.'"><i class="fa fa-'.$icon.'"></i></span></a>
+	    	<div class="info-box-content"><span class="info-box-text">'.$title.'</span>
+			<span class="info-box-number">'.$subtitle.'</span></div></div></div>';
+    }
+    
     /** Tables */
 
-    public function generateTableHeaderWithItems($items, $id, $styles = "", $needsTranslation = true) {
-	    $table = "<table id=\"$id\" class=\"table $styles\"><thead><tr>";
+    public function generateTableHeaderWithItems($items, $id, $styles = "", $needsTranslation = true, $hideHeading = false) {
+	    $theadStyle = $hideHeading ? 'style="display: none;"' : '';
+	    $table = "<table id=\"$id\" class=\"table $styles\"><thead $theadStyle><tr>";
 	    if (is_array($items)) {
 		    foreach ($items as $item) {
 			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
@@ -153,8 +160,9 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		return $table;
     }
     
-    public function generateTableFooterWithItems($items, $needsTranslation = true) {
-	    $table = "</tbody><tfoot><tr>";
+    public function generateTableFooterWithItems($items, $needsTranslation = true, $hideHeading = false) {
+	    $theadStyle = $hideHeading ? 'style="display: none;"' : '';
+	    $table = "</tbody><tfoot $theadStyle><tr>";
 	    if (is_array($items)) {
 		    foreach ($items as $item) {
 			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
@@ -163,6 +171,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$table .= "</tr></tfoot></table>";
 		return $table;
 	}
+    
+    /** Style and color */
     	
 	/**
 	 * Returns a random UI style to use for a notification, button, background element or such.
@@ -175,7 +185,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		else if ($number == 4) return CRM_UI_STYLE_SUCCESS;
 		else return CRM_UI_STYLE_DEFAULT;
 	}
-	
+		
     /** Messages */
     
     public function dismissableAlertWithMessage($message, $success, $includeResultData = false) {
@@ -242,21 +252,21 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	
 	/** Forms */
 	
-	public function formWithContent($id, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
+	public function formWithContent($id, $content, $submit_text = null, $submitStyle = CRM_UI_STYLE_PRIMARY, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
 		return '<form role="form" id="'.$id.'" name="'.$id.'" method="post" action="'.$action.'" enctype="multipart/form-data">
             <div class="box-body">
             	'.$content.'
             </div>
             <div class="box-footer" id="form-footer">
             	'.$this->emptyMessageDivWithTag($messagetag).'
-                <button type="submit" class="btn btn-primary">'.$submit_text.'</button>
+                <button type="submit" class="btn btn-'.$submitStyle.'">'.$submit_text.'</button>
             </div>
         </form>';
 	}
 	
 	public function formForCustomHook($id, $modulename, $hookname, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
 		$hiddenFields = $this->hiddenFormField("module_name", $modulename).$this->hiddenFormField("hook_name", $hookname);
-		return $this->formWithContent($id, $hiddenFields.$content, $submit_text, $messagetag, $action);
+		return $this->formWithContent($id, $hiddenFields.$content, $submit_text, CRM_UI_STYLE_PRIMARY, $messagetag, $action);
 	}
 	
 	public function modalFormStructure($modalid, $formid, $title, $subtitle, $body, $footer, $icon = null) {
@@ -472,6 +482,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
     
     public function reloadLocationJS() { return 'location.reload();'; }
     
+    public function newLocationJS($url) { return 'window.location.href = "'.$url.'";'; }
+    
     public function showRetrievedErrorMessageAlertJS() { return 'alert(data);'; }
     
     public function showCustomErrorMessageAlertJS($msg) { return 'alert("'.$msg.'");'; }
@@ -503,6 +515,76 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			'.$confirmSuffix.'
 		 });');
     }
+    
+    /**
+	 * Creates a javascript javascript "reload with message" code, that will
+	 * reload the current page passing a custom message tag. 
+	 */
+	public function reloadWithMessageFunctionJS($messageVarName = "message") {
+		return 'function reloadWithMessage(message) {
+		    var url = window.location.href;
+			if (url.indexOf("?") > -1) { url += "&'.$messageVarName.'="+message;
+			} else{ url += "?'.$messageVarName.'="+message; }
+			window.location.href = url; 
+		}'."\n";
+	}
+	
+	/**
+	 * Generates an javascript calling to ReloadWithMessage function, generated
+	 * by reloadWithMessageFunctionJS() to reload the custom page sending a
+	 * custom message parameter.
+	 * Note: Message is not quoted inside call, you must do it yourself.
+	 */
+	public function reloadWithMessageCallJS($message) { return 'reloadWithMessage('.$message.');'; }
+    
+    /**
+	 * This function generates the javascript for the messages mailbox actions.
+	 * You must pass a class name for the button that triggers the action, a php
+	 * url for the Ajax request, a completion resultJS code and, optionally, if
+	 * you want to discern the failure from the success, a failureJS.
+	 * The function does the following assumptions:
+	 * - The result message div for showing the results has id messages-message-box
+	 * - The parameters to send to any function invoked by the php ajax script are
+	 *   messageids (containing a comma separated string array of message ids to act upon)
+	 *   and folder (containing the current folder identifier).
+	 * @param String $classname the name of the mailbox action class.
+	 * @param String $url the URL for the PHP that will receive the Ajax POST request.
+	 * @param String $resultJS The default javascript to execute (or the successful one if
+	 *        failureJS is also specified).
+	 * @param String $failureJS The failure javascript to execute, if left null, only the
+	 *        resultJS will be applied, without taking into account the result data.
+	 * @param Array $customParameters Associative array with custom parameters to add to the request.
+	 * @param Bool $confirmation If true, confirmation will be asked before applying the action.
+	 * @param Bool $checkSelectedMessages if true, no action will be taken if no messages are selected.
+	 */ 
+	public function mailboxAction($classname, $url, $resultJS, $failureJS = null, $customParameters = null, $confirmation = false, 
+								  $checkSelectedMessages = true) {
+		// check selected messages count?
+		$checkSelectedMessagesCode = $checkSelectedMessages ? 'if (selectedMessages.length < 1) { return; }' : '';
+		// needs confirmation?
+		$confirmPrefix = $confirmation ? 'var r = confirm("'.$this->lh->translationFor("are_you_sure").'"); if (r == true) {' : '';
+		$confirmSuffix = $confirmation ? '}' : '';
+		// success+failure or just result ?
+		if (empty($failureJS)) { $content = $resultJS; } 
+		else { $content = 'if (data == "'.CRM_DEFAULT_SUCCESS_RESPONSE.'") { '.$resultJS.' } else { '.$failureJS.' }'; }
+		// custom parameters
+		$paramCode = "";
+		if (is_array($customParameters) && count($customParameters)) {
+			foreach ($customParameters as $key => $value) { $paramCode .= ", \"$key\": \"$value\" "; }
+		}
+		
+		$result = '$(".'.$classname.'").click(function (e) {
+				    '.$checkSelectedMessagesCode.'
+					e.preventDefault();
+					'.$confirmPrefix.'
+					$("#messages-message-box").hide();
+					$.post("'.$url.'", { "messageids": selectedMessages, "folder": folder '.$paramCode.'}, function(data) {
+						'.$content.'
+					});
+					'.$confirmSuffix.'
+			    });';
+		return $result;
+	}
     
     // Assignment to variables from one place to a form destination.
     
@@ -559,7 +641,35 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$js = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_CUSTOMER_LIST_ACTION, array(CRM_MODULE_HOOK_PARAMETER_CUSTOMER_LIST_TYPE => $customer_type), CRM_MODULE_MERGING_STRATEGY_APPEND);
 		return $footer.$js;
 	}	 
+
+	/**
+	 * Generates the footer for the messages list screen, by invoking the different modules
+	 * CRM_MODULE_HOOK_MESSAGE_LIST_FOOTER & CRM_MODULE_HOOK_MESSAGE_LIST_ACTION hooks.
+	 */
+	public function getMessagesListActionJS($folder) {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_LIST_ACTION, array(CRM_MODULE_HOOK_PARAMETER_MESSAGES_FOLDER => $folder), CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}	 
 	 
+	public function getComposeMessageFooter() {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_COMPOSE_FOOTER, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
+	 
+	public function getComposeMessageActionJS() {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_COMPOSE_ACTION, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
+	 
+	public function getMessageDetailFooter($messageid, $folder) {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_DETAIL_FOOTER, array(CRM_MODULE_HOOK_PARAMETER_MESSAGE_ID => $messageid, CRM_MODULE_HOOK_PARAMETER_MESSAGES_FOLDER => $folder), CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
+	 
+	public function getMessageDetailActionJS($messageid, $folder) {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_DETAIL_ACTION, array(CRM_MODULE_HOOK_PARAMETER_MESSAGE_ID => $messageid, CRM_MODULE_HOOK_PARAMETER_MESSAGES_FOLDER => $folder), CRM_MODULE_MERGING_STRATEGY_APPEND);
+	}
 
     /**
 	 * Returns the hooks for the customer detail/edition screen.
@@ -577,6 +687,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		// current settings values
 	    $modulesEnabled = $this->db->getSettingValueForKey(CRM_SETTING_MODULE_SYSTEM_ENABLED) == true ? " checked" : "";
 	    $statsEnabled = $this->db->getSettingValueForKey(CRM_SETTING_STATISTICS_SYSTEM_ENABLED) ? " checked" : "";
+	    $baseURL = $this->db->getSettingValueForKey(CRM_SETTING_CRM_BASE_URL);
 	    $tz = $this->db->getSettingValueForKey(CRM_SETTING_TIMEZONE);
 	    $lo = $this->db->getSettingValueForKey(CRM_SETTING_LOCALE);
 	    
@@ -587,9 +698,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    $lo_text = $this->lh->translationFor("choose_language");
 	    $ok_text = $this->lh->translationFor("settings_successfully_changed");
 	    $ko_text = $this->lh->translationFor("error_changing_settings");
+	    $bu_text = $this->lh->translationFor("base_url");
 	    
 	    // form
 	    $form = '<div class="form-group"><form role="form" id="adminsettings" name="adminsettings" class="form">
+			  '.$this->singleFormInputGroup($this->singleFormInputElement("base_url", "base_url", "text", $bu_text, $baseURL, "globe"), $bu_text).'
 	    	  <label>'.$this->lh->translationFor("general_settings").'</label>
 			  '.$this->checkboxInputWithLabel($em_text, "enableModules", "enableModules", $modulesEnabled).'
 			  '.$this->checkboxInputWithLabel($es_text, "enableStatistics", "enableStatistics", $statsEnabled).'
@@ -597,7 +710,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			  '.$this->selectWithLabel($lo_text, "locale", "locale", \creamy\LanguageHandler::getAvailableLanguages(), $lo).'
 			  <div class="box-footer">
 			  '.$this->emptyMessageDivWithTag(CRM_UI_DEFAULT_RESULT_MESSAGE_TAG).'
-			  <button type="submit" class="btn btn-info">'.$this->lh->translationFor("modify").'</button></form></div></div>';
+			  <button type="submit" class="btn btn-primary">'.$this->lh->translationFor("modify").'</button></form></div></div>';
 		
 		// javascript
 		$successJS = $this->reloadLocationJS();
@@ -877,6 +990,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		return $table;
 	}
 	
+	public function getModuleHandlerLog() {
+		$mh = \creamy\ModuleHandler::getInstance();
+		return $mh->getModuleHandlerLog();
+	}
+	
 	private function getActionButtonForModule($moduleShortName, $enabled) {
 		// build the options.
 		$ed_option = $enabled ? $this->actionForPopupButtonWithClass("disable_module", $this->lh->translationFor("disable"), $moduleShortName) : $this->actionForPopupButtonWithClass("enable_module", $this->lh->translationFor("enable"), $moduleShortName);
@@ -897,24 +1015,33 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$mh = \creamy\ModuleHandler::getInstance();
 		$moduleTopbarElements = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TOPBAR, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
 		// return header
-		return '<header class="header">
-	            <a href="./index.php" class="logo"><img src="img/logoWhite.png" width="32" height="32">Creamy</a>
+		return '<header class="main-header">
+	            <a href="./index.php" class="logo"><img src="img/logoWhite.png" width="32" height="32"> Creamy</a>
 	            <nav class="navbar navbar-static-top" role="navigation">
-	                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
+	                <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
 	                    <span class="sr-only">Toggle navigation</span>
 	                    <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
 	                </a>
-	                <div class="navbar-right">
+	                <div class="navbar-custom-menu">
 	                    <ul class="nav navbar-nav">
 	                    		'.$moduleTopbarElements.'
 	                    		'.$this->getTopbarMessagesMenu($user).'  
-		                    	'.$this->getTopbarAlertsMenu($user).'
+		                    	'.$this->getTopbarNotificationsMenu($user).'
 		                    	'.$this->getTopbarTasksMenu($user).'
 		                    	'.$this->getTopbarUserMenu($user).'
 	                    </ul>
 	                </div>
 	            </nav>
 	        </header>';
+	}
+	
+	/**
+	 * Returns the default creamy footer for all pages.
+	 */
+	public function creamyFooter() {
+		$version = $this->db->getSettingValueForKey(CRM_SETTING_CRM_VERSION);
+		if (empty($version)) { $version = "unknown"; }
+		return '<footer class="main-footer"><div class="pull-right hidden-xs"><b>Version</b> '.$version.'</div><strong>Copyright &copy; 2014 <a href="http://digitalleaves.com">Digital Leaves</a> - <a href="http://woloweb.com">Woloweb</a>.</strong> All rights reserved.</footer>';
 	}
 	
 	/** Topbar Menu elements */
@@ -942,32 +1069,34 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	}
 	
 	/**
-	 * Generates the HTML containing the label for new notifications, i.e: "7 new", to show in the index box.
-	 * @param $userid Int the id of the user to retrieve the new notifications from.
+	 * Generates the HTML for the main info boxes of the dashboard.
 	 */
-	public function generateLabelForTodayNotifications($userid) {
-		return $this->db->getNumberOfTodayNotifications($userid)." ".$this->lh->translationFor("new");
-	}
+	public function dashboardInfoBoxes($userid) {
+		$boxes = "";
+		$firstCustomerType = $this->db->getFirstCustomerGroupTableName();
+		$columnSize = isset($firstCustomerType) ? 3 : 4;
 
-	/**
-	 * Generates the HTML containing the label for new contacts, i.e: "7 new", to show in the index box.
-	 */
-	public function generateLabelForNewContacts() {
-		return $this->db->getNumberOfNewContacts()." ".$this->lh->translationFor("new");
-	}
+		// new contacts
+		$contactsUrl = "./customerslist.php?customer_type=clients_1&customer_name=".urlencode($this->lh->translationFor("contacts"));
+		$boxes .= $this->infoBox($this->lh->translationFor("new_contacts"), $this->db->getNumberOfNewContacts(), $contactsUrl, "user-plus", "aqua", $columnSize);
+		// new customers
+		if (isset($firstCustomerType)) {
+			$customersURL = "./customerslist.php?customer_type=".$firstCustomerType["table_name"]."&customer_name=".urlencode($firstCustomerType["description"]);
+			$boxes .= $this->infoBox($this->lh->translationFor("new_customers"), $this->db->getNumberOfNewCustomers(), $customersURL, "users", "green",  $columnSize);
+		}
+		// notifications
+		$boxes .= $this->infoBox($this->lh->translationFor("notifications"), $this->db->getNumberOfTodayNotifications($userid), "notifications.php", "clock-o", "yellow", $columnSize);
+		// events today // TODO: Change
+		$boxes .= $this->infoBox($this->lh->translationFor("unfinished_tasks"), $this->db->getUnfinishedTasksNumber($userid), "tasks.php", "calendar", "red", $columnSize);
 
-	/**
-	 * Generates the HTML containing the label for new customers, i.e: "7 new", to show in the index box.
-	 */
-	public function generateLabelForNewCustomers() {
-		return $this->db->getNumberOfNewCustomers()." ".$this->lh->translationFor("new");
+		return $boxes;
 	}
 
 	/**
 	 * Generates the HTML for the alert notifications of a user as a dropdown list element to include in the top bar.
 	 * @param $userid the id of the user.
 	 */
-	protected function getTopbarAlertsMenu($user) {
+	protected function getTopbarNotificationsMenu($user) {
 		if (!$user->userHasBasicPermission()) return '';
 		
 		$notifications = $this->db->getTodayNotifications($user->getUserId());
@@ -1023,7 +1152,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		
 		return '<li class="dropdown user user-menu">
 	                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-	                    <i class="glyphicon glyphicon-user"></i>
+	                    <img src="'.$user->getUserAvatar().'" class="user-image" alt="User Image" />
 	                    <span>'.$user->getUserName().' <i class="caret"></i></span>
 	                </a>
 	                <ul class="dropdown-menu">
@@ -1065,7 +1194,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function getTopbarSimpleElementWithDate($text, $date, $icon, $link, $tint = CRM_UI_STYLE_DEFAULT) {
 		$shortText = $this->substringUpTo($text, 30);
 	    $relativeTime = $this->relativeTime($date, 1);
-		return '<li><a href="'.$link.'"><h3><p class="pull-left">'.$shortText.'</p><small class="label label-'.$tint.'"><i class="fa fa-'.$icon.'"></i> '.$relativeTime.'</small></h3></a></li>';
+		return '<li><a href="'.$link.'"><h3><p class="pull-left">'.$shortText.'</p><small class="label label-'.$tint.' pull-right"><i class="fa fa-'.$icon.'"></i> '.$relativeTime.'</small></h3></a></li>';
 	}
 	
 	public function getTopbarComplexElement($title, $text, $date, $image, $link) {
@@ -1114,7 +1243,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$customerTypes = $this->db->getCustomerTypes();
 		
 		// prefix: structure and home link
-		$result = '<aside class="left-side sidebar-offcanvas"><section class="sidebar">
+		$result = '<aside class="main-sidebar" sidebar-offcanvas"><section class="sidebar">
 	            <div class="user-panel">
 	                <div class="pull-left image">
 	                    <a href="edituser.php"><img src="'.$avatar.'" class="img-circle" alt="User Image" /></a>
@@ -1124,7 +1253,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	                    <a href="edituser.php"><i class="fa fa-circle text-success"></i> '.$this->lh->translationFor("online").'</a>
 	                </div>
 	            </div>
-	            <ul class="sidebar-menu">';
+	            <ul class="sidebar-menu"><li class="header">'.strtoupper($this->lh->translationFor("menu")).'</li>';
 	    // body: home and customer menus
         $result .= $this->getSidebarItem("./index.php", "bar-chart-o", $this->lh->translationFor("home"));
         // include a link for every customer type
@@ -1219,7 +1348,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$hc_text = $this->lh->translationFor("new_customer_group");
 		$cr_text = $this->lh->translationFor("create");
 		$inputfield = $this->singleFormInputGroup($this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text));
-		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, "primary", "creationmessage");
+		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, CRM_UI_STYLE_PRIMARY, "creationmessage");
 		
 		// javascript form submit.
 		$successJS = $this->reloadLocationJS();
@@ -1539,24 +1668,29 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 
 	/**
 	 * Generates the list of users $myuserid can send message to or assign a task to as a HTML form SELECT.
-	 * @param Int $myuserid id of the user that wants to send messages, all other user's ids will be returned.
-	 * @param Boolean $includeSelf if true, $myuserid will appear listed in the options. If false (default), $myuserid will not be included in the options. If this parameter is set to true, the default option will be the $myuserid
-	 * @param String $customMessage The custome message to ask for a selection in the SELECT, default is "send this message to...".
+	 * @param Int $myuserid 		id of the user that wants to send messages, all other user's ids will be returned.
+	 * @param Boolean $includeSelf 	if true, $myuserid will appear listed in the options. If false (default), $myuserid will not be included in the options. If this parameter is set to true, the default option will be the $myuserid
+	 * @param String $customMessage The custom message to ask for a selection in the SELECT, default is "send this message to...".
+	 * @param String $selectedUser	If defined, this user will appear as selected by default.
 	 * @return the list of users $myuserid can send mail to (all valid users except $myuserid unless $includeSelf==true) as a HTML form SELECT.
 	 */
-	public function generateSendToUserSelect($myuserid, $includeSelf = false, $customMessage = NULL) {
+	public function generateSendToUserSelect($myuserid, $includeSelf = false, $customMessage = NULL, $selectedUser = null) {
 		// perform query of users.
 		if (empty($customMessage)) $customMessage = $this->lh->translationFor("send_this_message_to");
 		$usersarray = $this->db->getAllEnabledUsers();
 
 		// iterate through all users and generate the select
-		$response = '<select class="form-control" id="touserid" name="touserid">\n\t<option value="0">'.$customMessage.'</option>\n';
+		$response = '<select class="form-control required" id="touserid" name="touserid"><option value="0">'.$customMessage.'</option>';
 		foreach ($usersarray as $userobj) {
 			// don't include ourselves.
 			if ($userobj["id"] != $myuserid) {
-				$response = $response.'\t<option value="'.$userobj["id"].'">'.$userobj["name"].'</option>\n';
-			} else if ($includeSelf === true) { // assign to myself by default
-				$response = $response.'\t<option value="'.$userobj["id"].'" selected="true">myself</option>\n';
+				$selectedUserCode = "";
+				error_log("Analizando usuario ".$userobj["id"].", selected user is $selectedUser");
+				if (isset($selectedUser) && ($selectedUser == $userobj["id"])) { $selectedUserCode = 'selected="true"'; }
+				$response = $response.'<option value="'.$userobj["id"].'" '.$selectedUserCode.' >'.$userobj["name"].'</option>';
+			} else if ($includeSelf === true) { // assign to myself by default unless another $selectedUser has been specified.
+				$selfSelectedCode = isset($selectedUser) ? "" : 'selected="true"';
+				$response = $response.'<option value="'.$userobj["id"].'" '.$selfSelectedCode.'>myself</option>';
 			}	
 		}
 		$response = $response.'</select>';
@@ -1568,29 +1702,66 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	 * @param Array $messages the list of messages.
 	 * @return the HTML code with the list of messages as a HTML table. 
 	 */
-	private function getMessageListAsTable($messages) {
-		// generate the table.
-		$tablePrefix = '<table class="table mailbox table-responsive" id="messagestable" name="messagestable"><thead><tr><td>selection</td><td>favorite</td><td>user</td><td>subject</td><td>date</td></tr></thead>';
-		$result = $this->lh->translationForTerms($tablePrefix, array("selection", "favorite", "user", "date", "subject"));
+	private function getMessageListAsTable($messages, $folder) {
+		$columns = array("", "favorite", "name", "subject", "attachment", "date");
+		$table = $this->generateTableHeaderWithItems($columns, "messagestable", "table-hover table-striped mailbox table-mailbox", true, true);
 		foreach ($messages as $message) {
-			if ($message["message_read"] == 0) $result = $result.'<tr class="unread">';
-			else $result = $result.'<tr>';
+			if ($message["message_read"] == 0) $table .= '<tr class="unread">';
+			else $table .= '<tr>';
 						
 			// variables and html text depending on the message
 			$favouriteHTML = "-o"; if ($message["favorite"] == 1) $favouriteHTML = "";
-			$messageLink = '<a href="'.$message["id"].'" class="show-message-link">';
-			
-			$result = $result.'<td class="small-col"><input type="checkbox" class="message-selection-checkbox" value="'.$message["id"].'"/></td>';
-			$result = $result.'<td class="small-col"><i class="fa fa-star'.$favouriteHTML.'" id="'.$message["id"].'"></i></td>';
-			$result = $result.'<td class="name">'.$messageLink.$message["remote_user"].'</a></td>';
-			$result = $result.'<td class="subject">'.$messageLink.$message["subject"].'</a></td>';
-			$result = $result.'<td class="time">'.$this->relativeTime($message["date"]).'</td>';
-			
-			$result = $result."</tr>";
-		}
-		$result = $result."</table>";
-		return $result;		
+			$messageLink = '<a href="readmail.php?folder='.$folder.'&message_id='.$message["id"].'">';
+
+			$table .= '<td><input type="checkbox" class="message-selection-checkbox" value="'.$message["id"].'"/></td>';
+			$table .= '<td class="mailbox-star"><i class="fa fa-star'.$favouriteHTML.'" id="'.$message["id"].'"></i></td>';
+			$table .= '<td class="mailbox-name">'.$messageLink.$message["remote_user"].'</a></td>';
+			$table .= '<td class="mailbox-subject">'.$message["subject"].'</td>';
+			$table .= '<td class="mailbox-attachment"></td>'; //<i class="fa fa-paperclip"></i></td>';
+			$table .= '<td class="mailbox-date pull-right">'.$this->relativeTime($message["date"]).'</td>';
+			$table .= '</tr>';
+		}		
+		$table .= $this->generateTableFooterWithItems($columns, true, true);
+		return $table;
 	}	
+	
+	/**
+	 * Generates the HTML for a mailbox button.
+	 */
+	public function generateMailBoxButton($buttonClass, $icon, $param, $value) {
+		return '<button class="btn btn-default btn-sm '.$buttonClass.'" '.$param.'="'.$value.'"><i class="fa fa-'.$icon.'"></i></button>';
+	}
+	
+	/**
+	 * Generates the button group for the mailbox messages table
+	 */
+	public function getMailboxButtons($folder) {
+		// send to trash or recover from trash ?
+		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
+			$trashOrRecover = '<button class="btn btn-default btn-sm messages-restore-message"><i class="fa fa-undo"></i></button>';
+		} else { 
+			$trashOrRecover = '<button class="btn btn-default btn-sm messages-send-to-junk"><i class="fa fa-trash-o"></i></button>'; 
+		}
+		
+		// basic buttons
+		$buttons = '<button class="btn btn-default btn-sm checkbox-toggle"><i class="fa fa-square-o"></i></button>                    
+		<div class="btn-group">
+		  <button class="btn btn-default btn-sm messages-mark-as-favorite"><i class="fa fa-star"></i></button>
+		  <button class="btn btn-default btn-sm messages-mark-as-read"><i class="fa fa-eye"></i></button>
+		  <button class="btn btn-default btn-sm messages-mark-as-unread"><i class="fa fa-eye-slash"></i></button>
+		  '.$trashOrRecover.'
+		  <button class="btn btn-default btn-sm messages-delete-permanently"><i class="fa fa-times"></i></button>';
+		// module buttons
+		$mh = \creamy\ModuleHandler::getInstance();
+		$buttons .= $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_MESSAGE_LIST_FOOTER, array("folder" => $folder), CRM_MODULE_MERGING_STRATEGY_APPEND);
+		// chevrons
+		$buttons .= '</div><div class="pull-right"><div class="btn-group">
+			<button class="btn btn-default btn-sm mailbox-prev"><i class="fa fa-chevron-left"></i></button>
+			<button class="btn btn-default btn-sm mailbox-next"><i class="fa fa-chevron-right"></i></button>
+		</div></div>';
+		
+		return $buttons;
+	}
 	
 	/**
 	 * Generates a HTML table with all inbox messages of a user.
@@ -1650,7 +1821,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function getMessagesFromFolderAsTable($userid, $folder) {
 		$messages = $this->db->getMessagesOfType($userid, $folder);
 		if ($messages == NULL) return $this->calloutInfoMessage($this->lh->translationFor("no_messages_in_list"));
-		else return $this->getMessageListAsTable($messages);
+		else return $this->getMessageListAsTable($messages, $folder);
 	}
 	
 	/**
@@ -1661,17 +1832,22 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function getMessageFoldersAsList($activefolder) {
 		require_once('Session.php');
 		$user = \creamy\CreamyUser::currentUser();
+		// info for active folder and unread messages
         $unreadMessages = $this->db->getUnreadMessagesNumber($user->getUserId());
-        $activeInbox = $activefolder == MESSAGES_GET_INBOX_MESSAGES ? 'class="active"' : '';
-        $activeSent = $activefolder == MESSAGES_GET_SENT_MESSAGES ? 'class="active"' : '';
-        $activeFavorite = $activefolder == MESSAGES_GET_FAVORITE_MESSAGES ? 'class="active"' : '';
-        $activeDeleted = $activefolder == MESSAGES_GET_DELETED_MESSAGES ? 'class="active"' : '';
+        $aInbox = $activefolder == MESSAGES_GET_INBOX_MESSAGES ? 'class="active"' : '';
+        $aSent = $activefolder == MESSAGES_GET_SENT_MESSAGES ? 'class="active"' : '';
+        $aFav = $activefolder == MESSAGES_GET_FAVORITE_MESSAGES ? 'class="active"' : '';
+        $aDel = $activefolder == MESSAGES_GET_DELETED_MESSAGES ? 'class="active"' : '';
         
-		return '<li class="header">'.$this->lh->translationFor("folders").'</li>
-        <li '.$activeInbox.'><a href="messages.php?folder=0"><i class="fa fa-inbox"></i> '.$this->lh->translationFor("inbox").' ('.$unreadMessages.')</a></li>
-        <li '.$activeSent.'><a href="messages.php?folder=3"><i class="fa fa-mail-forward"></i> '.$this->lh->translationFor("sent").'</a></li>
-        <li '.$activeFavorite.'><a href="messages.php?folder=4"><i class="fa fa-star"></i> '.$this->lh->translationFor("favorites").'</a></li>
-        <li '.$activeDeleted.'><a href="messages.php?folder=2"><i class="fa fa-folder"></i> '.$this->lh->translationFor("trash").'</a></li>';
+        return '<ul class="nav nav-pills nav-stacked">
+			<li '.$aInbox.'><a href="messages.php?folder=0">
+				<i class="fa fa-inbox"></i> '.$this->lh->translationFor("inbox").' 
+				<span class="label label-primary pull-right">'.$unreadMessages.'</span></a>
+			</li>
+			<li '.$aSent.'><a href="messages.php?folder=3"><i class="fa fa-envelope-o"></i> '.$this->lh->translationFor("sent").'</a></li>
+			<li '.$aFav.'><a href="messages.php?folder=4"><i class="fa fa-star"></i> '.$this->lh->translationFor("favorites").'</a></li>
+			<li '.$aDel.'><a href="messages.php?folder=2"><i class="fa fa-trash-o"></i> '.$this->lh->translationFor("trash").'</a></li>
+		</ul>';
 	}
 
 	/**
@@ -1740,6 +1916,62 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
     	}
 
 	} // end function
+
+	/**
+	 * Generates the HTML code for showing the attachements of a given message.
+	 * @param Int $messageid 	identifier for the message.
+	 * @param Int $folderid 	identifier for the folder.
+	 * @param Int $userid 		identifier for the user.
+	 * @return String The HTML code containing the code for the attachements.
+	 */
+	public function attachementsSectionForMessage($messageid, $folderid) {
+		$attachements = $this->db->getMessageAttachements($messageid, $folderid);
+		if (!isset($attachements) || count($attachements) < 1) { return ""; }
+		
+		$code = '<div class="box-footer non-printable"><ul class="mailbox-attachments clearfix">';
+		foreach ($attachements as $attachement) {
+			// icon/image
+			$icon = $this->getFiletypeIconForFile($attachement["filepath"]);
+			if ($icon != CRM_FILETYPE_IMAGE) {
+				$hasImageCode = "";
+				$iconCode = '<i class="fa fa-'.$icon.'"></i>';
+				$attIcon = "paperclip";
+			} else {
+				$hasImageCode = "has-img";
+				$iconCode = '<img src="'.$attachement["filepath"].'" alt="'.$this->lh->translationFor("attachement").'"/>';
+				$attIcon = "camera";
+			}
+			// code
+			$basename = basename($attachement["filepath"]);
+			$code .= '<li><span class="mailbox-attachment-icon '.$hasImageCode.'">'.$iconCode.'</span>
+                      <div class="mailbox-attachment-info">
+                        <a href="'.$attachement["filepath"].'" target="_blank" class="mailbox-attachment-name">
+                        <i class="fa fa-'.$attIcon.'"></i> '.$basename.'</a>
+                        <span class="mailbox-attachment-size">
+                          '.$attachement["filesize"].'
+                          <a href="'.$attachement["filepath"].'" target="_blank" class="btn btn-default btn-xs pull-right"><i class="fa fa-cloud-download"></i></a>
+                        </span>
+                      </div>
+                    </li>';			
+		}
+		$code .= '</ul></div>';
+		return $code;
+	}
+
+	/** 
+	 * returns the filetype icon for a given file. This filetype can be used added to fa-
+	 * for the icon representation of a file.	
+	 */
+	public function getFiletypeIconForFile($filename) {
+		$mimetype = mime_content_type($filename);
+		if (\creamy\CRMUtils::startsWith($mimetype, "image/")) { return CRM_FILETYPE_IMAGE; }
+		else if ($mimetype == "application/pdf") { return CRM_FILETYPE_PDF; }
+		else if ($mimetype == "application/zip") { return CRM_FILETYPE_ZIP; }
+		else if ($mimetype == "text/plain") { return CRM_FILETYPE_TXT; }
+		else if ($mimetype == "text/html") { return CRM_FILETYPE_HTML; }
+		else if (\creamy\CRMUtils::startsWith($mimetype, "video/")) { return CRM_FILETYPE_VIDEO; }
+		else { return CRM_FILETYPE_UNKNOWN; }
+	}
 
 	/** Notifications */
 
@@ -1939,30 +2171,82 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 
 	/** Statistics */
 
-	/** 
-	 * Generates the HTML to be used as input for the statistics table generated by JS in index.php
-	*/
-	public function getStatisticsData() {
-		// format: {y: '2011 Q1', item1: 2666, item2: 2666},
-		$statistics = "";
+	protected function datasetWithLabel($label, $data, $color = null) {
+		if (!isset($color)) $color = \creamy\CRMUtils::randomRGBAColor(false);
+		return '{ label: "'.$label.'", 
+			fillColor: "'.$this->rgbaColorFromComponents($color, "0.9").'",
+	        strokeColor: "'.$this->rgbaColorFromComponents($color, "0.9").'",
+	        pointColor: "'.$this->rgbaColorFromComponents($color, "1.0").'",
+	        pointStrokeColor: "'.$this->rgbaColorFromComponents($color, "1.0").'",
+	        pointHighlightFill: "#fff",
+	        pointHighlightStroke: "'.$this->rgbaColorFromComponents($color, "1.0").'",
+	        data: ['.implode(",", $data).'] },';
+	}
+		
+	public function generateLineChartStatisticsData($colors = null) {
+		// initialize values
+		$labels = "labels: [";
+		$datasets = "datasets: [";
+		$data = array();
 		$statsArray = $this->db->getLastCustomerStatistics();
+		$customerTypes = $this->db->getCustomerTypes();
+
+		// create the empty data fields.
+		foreach ($customerTypes as $customerType) { $data[$customerType["table_name"]] = array(); }
+		
+		// iterate through all customers
 		foreach ($statsArray as $obj) {
-			$formattedDate = date("Y-m",strtotime($obj['timestamp']));
-			$numContacts = $obj["clients_1"];
-			$numCustomers = 0;
-			$customerTypes = $this->db->getCustomerTypes();
-			foreach ($customerTypes as $customerType) {
-				$customerTableName = $customerType["table_name"];
-				if ($customerTableName !== "clients_1") { // do not include contacts in the customers row
-					if (isset($obj[$customerTableName])) $numCustomers += $obj[$customerTableName];
-				}
-			}
-			// add the statistics line
-			$statistics = $statistics . "{y: '$formattedDate', item1: $numContacts, item2: $numCustomers}, ";
+			// store labels
+			$formattedDate = date("Y-m-d",strtotime($obj['timestamp']));
+			$labels .= '"'.$formattedDate.'",';
+				
+			// store customer number
+			foreach ($customerTypes as $customerType) { $data[$customerType["table_name"]][] = $obj[$customerType["table_name"]] or 0; }
 		}
-		return $statistics;
+		// finish data
+		$labels = rtrim($labels, ",")."],";
+		$i = 0;
+		foreach ($customerTypes as $customerType) { 
+			$color = isset($colors[$i]) ? $colors[$i] : null;
+			$datasets .= $this->datasetWithLabel($customerType["description"], $data[$customerType["table_name"]], $color); 
+			$i++;
+		}
+		$datasets = rtrim($datasets, ",")."]";
+
+		return $labels."\n".$datasets;
+	}
+
+	protected function pieDataWithLabelAndNumber($label, $number, $color = null) {
+		if (!isset($color)) $color = \creamy\CRMUtils::randomRGBAColor(false);
+		return '{ value: '.$number.', color: "'.$this->rgbaColorFromComponents($color, "1.0").'", highlight: "'.$this->rgbaColorFromComponents($color, "1.0").'", label: "'.$label.'" },';
 	}
 	
+	public function generatePieChartStatisticsData($colors = null) {
+		$result = "";
+		$customerTypes = $this->db->getCustomerTypes();
+		$i = 0;
+		foreach ($customerTypes as $customerType) {
+			$num = $this->db->getNumberOfClientsFromTable($customerType["table_name"]);
+			$color = isset($colors[$i]) ? $colors[$i] : null;
+			$result .= $this->pieDataWithLabelAndNumber($customerType["description"], $num, $color);
+			$i++;
+		}
+		return $result;
+	}
+
+	public function generateStatisticsColors() {
+		$num = $this->db->getNumberOfCustomerTypes();
+		$result = array();
+		for ($i = 0; $i < $num; $i++) { 
+			$result[] = \creamy\CRMUtils::randomRGBAColor(false);
+		}
+		return $result;
+	}
+
+	public function rgbaColorFromComponents($components, $alpha = "1.0") {
+		return "rgba(".$components["r"].", ".$components["g"].", ".$components["b"].", ".(isset($components["a"]) ? $components["a"] : $alpha).")";
+	} 
+
 	/** Utility functions */
 
 	/**
@@ -1972,7 +2256,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	 *        i.e: 3 days, 4 hours, 1 minute and 20 seconds with $maxdepth=2 would be 3 days, 4 hours.
 	 * @return String the string representation of the time relative to the current date.
 	 */
-	private function relativeTime($mysqltime, $maxdepth = 1) {
+	public function relativeTime($mysqltime, $maxdepth = 1) {
 		$time = strtotime(str_replace('/','-', $mysqltime));
 	    $d[0] = array(1,$this->lh->translationFor("second"));
 	    $d[1] = array(60,$this->lh->translationFor("minute"));
@@ -1990,8 +2274,6 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    $diff = ($now-$time);
 	    $secondsLeft = $diff;
 	
-		error_log("Mysql time: $mysqltime");
-		error_log("now: ".time());
 		if ($secondsLeft == 0) return "now";
 	
 	    for($i=6;$i>-1;$i--)

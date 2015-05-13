@@ -57,9 +57,10 @@
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- DATA TABLES -->
-        <link href="./css/datatables/dataTables.bootstrap.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
-        <link href="./css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/datatables/dataTables.bootstrap.css" rel="stylesheet" type="text/css" />
+        <!-- Creamy style -->
+        <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -67,11 +68,18 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <!-- DATA TABES SCRIPT -->
+        <script src="./js/plugins/datatables/jquery.dataTables.js" type="text/javascript"></script>
+        <script src="./js/plugins/datatables/dataTables.bootstrap.js" type="text/javascript"></script>
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
     </head>
     <body class="skin-blue">
+        <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
 			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
@@ -121,14 +129,6 @@
             </aside><!-- /.right-side -->
         </div><!-- ./wrapper -->
 
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <!-- DATA TABES SCRIPT -->
-        <script src="./js/plugins/datatables/jquery.dataTables.js" type="text/javascript"></script>
-        <script src="./js/plugins/datatables/dataTables.bootstrap.js" type="text/javascript"></script>
-        <!-- AdminLTE App -->
-        <script src="./js/AdminLTE/app.js" type="text/javascript"></script>
-        <!-- Modal Dialogs -->
         <!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 		<?php include_once "./php/CustomerDialogs.php" ?>

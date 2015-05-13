@@ -34,10 +34,11 @@
 
 // global constants
 define('CRM_INSTALL_VERSION', '1.0');
-define('CRM_INSTALLED_FILE', './installed.txt');
+define('CRM_INSTALLED_FILE', 'installed.txt');
 define('CRM_GETTING_STARTED_FILE', './help/gettingstarted.html');
-define('CRM_RECOVERY_EMAIL_FILE', '../skel/recoveryEmail.html');
-define('CRM_PHP_CONFIG_FILE', 'php/Config.php');
+define('CRM_SKEL_DIRECTORY', 'skel');
+define('CRM_RECOVERY_EMAIL_FILE', 'recoveryEmail.html');
+define('CRM_PHP_CONFIG_FILE', 'php'.DIRECTORY_SEPARATOR.'Config.php');
 define('CRM_PHP_BEGIN_TAG', '<?php');
 define('CRM_PHP_END_TAG', '?>');
 
@@ -56,6 +57,10 @@ define ('AVATAR_IMAGE_FILENAME_PREFIX', 'avatar');
 define ('AVATAR_IMAGE_FILENAME_EXTENSION', 'jpg');
 define ('AVATAR_IMAGE_FILEDIR', '../img/avatars/');
 define ('AVATAR_IMAGE_DEFAULT_FILEDIR', '../img/avatars/default/');
+
+// file constants
+define ('CRM_UPLOADS_DIRNAME', 'uploads');
+define ('CRM_UPLOAD_FILENAME_LENGTH', 40);
 
 // task constants
 define ('TASK_GENERAL_INFO_FORMAT', 'task-general-info');
@@ -98,7 +103,6 @@ define ('CRM_NOTIFICATION_PERIOD', 'period');
 define ('CRM_NOTIFICATION_PERIOD_TODAY', 'today');
 define ('CRM_NOTIFICATION_PERIOD_PASTWEEK', 'past_week');
 
-
 // installation constants.
 define ('CRM_INSTALL_STATE_SUCCESS', 1);
 define ('CRM_INSTALL_STATE_ERROR', 0);
@@ -116,10 +120,23 @@ define('CRM_SETTINGS_TABLE_NAME', "settings");
 define('CRM_STATISTICS_TABLE_NAME', "statistics");
 define('CRM_TASKS_TABLE_NAME', "tasks");
 define('CRM_USERS_TABLE_NAME', "users");
+define('CRM_ATTACHEMENTS_TABLE_NAME', "attachements");
+
+// File constants
+define('CRM_MAX_ATTACHEMENT_FILESIZE', 2);
+define('CRM_FILETYPE_PDF', "file-pdf-o");
+define('CRM_FILETYPE_IMAGE', "file-image-o");
+define('CRM_FILETYPE_ZIP', "file-zip-o");
+define('CRM_FILETYPE_TXT', "file-text-o");
+define('CRM_FILETYPE_VIDEO', "file-video-o");
+define('CRM_FILETYPE_HTML', "file-code-o");
+define('CRM_FILETYPE_UNKNOWN', "file-o");
+
 
 // settings constants
 define('CRM_SETTING_CONTEXT_CREAMY', "creamy");
 define('CRM_SETTING_CRM_VERSION', "crm_version");
+define('CRM_SETTING_CRM_BASE_URL', "base_url");
 define('CRM_SETTING_ADMIN_USER', "admin_user");
 define('CRM_SETTING_INSTALLATION_DATE', "installation_date");
 define('CRM_SETTING_ACTIVE_MODULES', "active_modules");

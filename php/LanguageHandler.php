@@ -27,11 +27,12 @@
 namespace creamy;
 
 require_once('CRMDefaults.php');
+require_once('CRMUtils.php');
 require_once('DatabaseConnectorFactory.php');
 @include_once('Config.php');
 
 define('CRM_LANGUAGE_DEFAULT_LOCALE', 'en_US');
-define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
+define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 
 /**
  * Class to handle language and translations. LanguageHandler uses the Singleton pattern, thus gets instanciated by the LanguageHandler::getInstante().
@@ -84,10 +85,10 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'la
 		if (!isset($this->locale)) { $this->locale = CRM_LANGUAGE_DEFAULT_LOCALE; }
 		
 		// initialize map of language texts.
-		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$this->locale;
+		$filepath = dirname(dirname(__FILE__)).CRM_LANGUAGE_BASE_DIR.$this->locale;
 		$translations = $this->getTranslationsFromFile($filepath);
 		if (!isset($translations)) { // fallback to en_US installation (everybody knows english, don't they?)
-			$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."en_US";
+			$filepath = dirname(dirname(__FILE__)).CRM_LANGUAGE_BASE_DIR."en_US";
 			$this->locale = "en_US";
 			$translations = $this->getTranslationsFromFile($filepath);
 		}
@@ -150,10 +151,10 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'la
 	 * $locale String locale to set. If a language file for the specified language does not exists, the language will default to en_US.
 	 */
 	public function setLanguageHandlerLocale($locale) {
-		$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR.$locale;
+		$filepath = dirname(dirname(__FILE__)).CRM_LANGUAGE_BASE_DIR.$locale;
 		if (!file_exists($filepath)) {
 			// fallback to en_US installation (everybody knows english, don't they?)
-			$filepath = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."en_US";
+			$filepath = dirname(dirname(__FILE__)).CRM_LANGUAGE_BASE_DIR."en_US";
 			$this->locale = "en_US";
 		} else {
 			$this->locale = $locale;
@@ -241,7 +242,7 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'la
 	 * [ "en_US" => "en_US (american english)", "es_ES" => "es_ES (spanish)", ... ]
 	 */
 	public static function getAvailableLanguages() {
-		$files = scandir(realpath(dirname(__FILE__).CRM_LANGUAGE_BASE_DIR));
+		$files = scandir(\creamy\CRMUtils::creamyBaseDirectoryPath(false).CRM_LANGUAGE_BASE_DIR);
 		$result = array();
 		foreach ($files as $file) {
 			if (!is_dir($file) && (!\creamy\CRMUtils::startsWith($file, "."))) {
@@ -256,10 +257,10 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'la
 	/** Datatables */
 	public function urlForDatatablesTranslation() {
 		if ($language = $this->getDisplayLanguage()) {
-			$fileindisk = dirname(__FILE__).CRM_LANGUAGE_BASE_DIR."datatables".DIRECTORY_SEPARATOR.$language.".json";
+			$fileindisk = \creamy\CRMUtils::creamyBaseDirectoryPath(false).CRM_LANGUAGE_BASE_DIR."datatables".DIRECTORY_SEPARATOR.$language.".json";
 			if (file_exists($fileindisk)) {
 				require_once('./php/CRMUtils.php');
-				$langurl = \creamy\CRMUtils::getBasePathWithDirectoryOfURL(\creamy\CRMUtils::getCurrentURLPath())."lang".DIRECTORY_SEPARATOR."datatables".DIRECTORY_SEPARATOR.$language.".json";
+				$langurl = \creamy\CRMUtils::creamyBaseURL()."/lang/datatables/".$language.".json";
 				return $langurl;
 			} 
 		}

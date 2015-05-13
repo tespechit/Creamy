@@ -251,6 +251,7 @@ messages_recovered_trash = "mensajes correctamente recuperados de la papelera"
 data_successfully_modified = "Datos modificados correctamente"
 error_modifying_data = "Error modificando datos"
 customer_successfully_deleted = "Cliente borrado correctamente"
+message_successfully_deleted = "Mensaje borrado correctamente"
 message_successfully_sent = "Mensaje enviado correctamente"
 new_contact_added = "Añadido nuevo contacto."
 unable_create_triggers = "Ha sido imposible crear los triggers para las notificaciones de la base de datos. El usuario tiene que tener permiso para crear los triggers."
@@ -299,11 +300,25 @@ module_settings = "Ajustes del módulo"
 save = "Guardar"
 unable_configure_module = "Ocurrió un error configurando las preferencias del módulo. Por favor, contacte con el autor.";
 module_settings_updated = "Se actualizaron las preferencias del módulo correctamente."
-
-
-
-
-
-
+menu = "Menú"
+attachment = "Adjunto"
+attachments = "Adjuntos"
+unknown = "Desconocido"
+write_your_message_here = "Escribe tu mensaje aquí..."
+compose_new_message = "Escribir nuevo mensaje"
+back_to_inbox = "Volver a mensajes"
+max = "Máximo"
+discard = "Descartar"
+external_message_recipients = "Destinatarios externos del mensaje (optional)"
+you_must_choose_user = "Debes elegir usuario al que enviarle el mensaje"
+base_url = "URL base"
+original_message_from = "En respuesta a un mensaje de"
+new_contacts = "Nuevos contactos"
+new_customers = "Nuevos clientes"
+current_customer_distribution = "Distribución actual de clientes"
+username_or_email = "Nombre de usuario o email"
+sign_in = "Introduce tus credenciales para comenzar"
+want_to_try_again = "¿Quieres probar otra vez?"
+not_looking_for = "¿No es lo que querías?"
 
 

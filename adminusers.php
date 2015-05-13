@@ -40,12 +40,11 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Morris chart -->
-        <link href="css/morris/morris.css" rel="stylesheet" type="text/css" />
         <!-- bootstrap wysihtml5 - text editor -->
         <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -53,11 +52,19 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
+        <!-- Bootstrap WYSIHTML5 -->
+        <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
+
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
     </head>
     <body class="skin-blue">
+        <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
@@ -206,60 +213,8 @@
 	        </div><!-- /.modal-dialog -->
 	    </div><!-- /.modal -->
 
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
-        <!-- Bootstrap WYSIHTML5 -->
-        <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
-
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
-		<script type="text/javascript">
-			$(document).ready(function() {
-
-			/** 
-			 * Sends a message
-		 	 */
-			$("#send-message-form").validate({
-				rules: {
-					subject: "required",
-					message: "required",
-					touserid: {
-					  	required: true,
-					  	min: 1,
-		        		number: true
-					}
-				},
-			    messages: {
-			        touserid: "You must choose a user to send the message to",
-				},
-				submitHandler: function() {
-					//submit the form
-						$("#messagesendingresult").html();
-						$("#messagesendingresult").hide();
-						$.post("./php/SendMessage.php", //post
-						$("#send-message-form").serialize(), 
-							function(data){
-								//if message is sent
-								if (data == 'success') {
-									$("#messagesendingresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("message_successfully_sent"); ?>');
-									$("#messagesendingresult").fadeIn(); //show confirmation message
-									$("#send-message-form")[0].reset();
-			
-								} else {
-									$("#messagesendingresult").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_send_message"); ?>: '+ data);
-									$("#messagesendingresult").fadeIn(); //show confirmation message
-								}
-								//
-							});
-					return false; //don't let the form refresh the page...
-				}					
-			});
-			 
-		});
-		</script>
 
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
@@ -408,7 +363,7 @@
 
         <script>
         	// load data.
-            $(".textarea").wysihtml5({"image": false});
+            $(".textarea").wysihtml5();
 		</script>
 
     </body>

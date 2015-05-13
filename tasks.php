@@ -42,8 +42,9 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -51,14 +52,24 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+
+		<!-- Javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <!-- iCheck -->
+        <script src="js/plugins/iCheck/icheck.min.js" type="text/javascript"></script>
+		<!-- Forms and actions -->
+		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
+
     </head>
     <body class="skin-blue">
+        <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
 			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
-
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -205,16 +216,6 @@
 
 	<!-- END TASK DIALOGS -->
 
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
-        <!-- Bootstrap slider -->
-        <script src="js/plugins/bootstrap-slider/bootstrap-slider.js" type="text/javascript"></script>
-        <!-- iCheck -->
-        <script src="js/plugins/iCheck/icheck.min.js" type="text/javascript"></script>
-		<!-- Forms and actions -->
-		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
 			$(document).ready(function() {
 			/** 

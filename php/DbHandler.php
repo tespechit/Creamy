@@ -152,14 +152,49 @@ class DbHandler {
 	 }
 
     /**
-     * Checking user login
+     * Checking user login by name
      * @param String $name User login name
      * @param String $password User login password
      * @return object an associative array containing the user's data if credentials are valid and login succeed, NULL otherwise.
      */
-    public function checkLogin($name, $password) {
+    public function checkLoginByName($name, $password) {
         // fetching user by name and password
         $this->dbConnector->where("name", $name);
+        $userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
+
+		if ($userobj) { // first match valid?
+			$password_hash = $userobj["password_hash"];
+			$status = $userobj["status"];
+			if ($status == 1) { // user is active
+				if (\creamy\PassHash::check_password($password_hash, $password)) {
+	                // User password is correct. return some interesting fields...
+	                $arr = array();
+	                $arr["id"] = $userobj["id"];
+	                $arr["name"] = $userobj["name"];
+	                $arr["email"] = $userobj["email"];
+	                $arr["role"] = $userobj["role"];
+	                $arr["avatar"] = $userobj["avatar"];
+	                
+	                return $arr;
+	            } else {
+	                // user password is incorrect
+	                return NULL;
+	            }
+			} else return NULL;
+		} else {
+			return NULL;
+		}
+    }
+    
+    /**
+     * Checking user login by email
+     * @param String $email User email
+     * @param String $password User login password
+     * @return object an associative array containing the user's data if credentials are valid and login succeed, NULL otherwise.
+     */
+    public function checkLoginByEmail($email, $password) {
+        // fetching user by name and password
+        $this->dbConnector->where("email", $email);
         $userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
 
 		if ($userobj) { // first match valid?
@@ -480,6 +515,14 @@ class DbHandler {
 	}
 	
 	/**
+	 * Gets the first groups of customers other than contacts. If no other customer group is found, returns null.
+	 */
+	public function getFirstCustomerGroupTableName() {
+		$this->dbConnector->where("table_name", "clients_1", "!=");
+		return $this->dbConnector->getOne(CRM_CUSTOMER_TYPES_TABLE_NAME);
+	}
+	
+	/**
 	 * Creates a new customer
 	 * @param $customerType String type of customer (= table where to insert the new customer).
 	 * @param $name String name for the new customer
@@ -723,6 +766,13 @@ class DbHandler {
 	}
 	
 	/**
+	 * Returns the number of customer types.
+	 */
+	public function getNumberOfCustomerTypes() {
+		return $this->dbConnector->getValue(CRM_CUSTOMER_TYPES_TABLE_NAME, "count(*)");
+	}
+	
+	/**
 	 * Retrieves the customer "human friendly" description name for a customer type.
 	 * @param $customerType String customer type ( = table name).
 	 * @return String a human friendly description of this customer type.
@@ -844,19 +894,24 @@ class DbHandler {
 	
 	/**
 	 * Sends a message from one user to another.
-	 * @param Int $fromuserid id of the user sending the message.
-	 * @param Int $touserid id of the user to send the message to.
-	 * @param String $subject subject of the message to send.
-	 * @param String $message body of the message to send (text/rich html).
-	 * @return boolean true if successful, false otherwise
+	 * @param Int $fromuserid 				id of the user sending the message.
+	 * @param Int $touserid 				id of the user to send the message to.
+	 * @param String $subject 				A valid RFC 2047 subject. See http://www.faqs.org/rfcs/rfc2047
+	 * @param String $message 				body of the message to send (text/rich html).
+	 * @param Array $attachements 			array of $_FILES with the attachements.
+	 * @param String $attachementTag		Tag that contains the attachement files in the $_FILES array.
+	 * @param Array $external_recipients 	A valid RFC 2822 recipients set. See http://www.faqs.org/rfcs/rfc2822
+	 * @return boolean 						true if successful, false otherwise
 	 */
-	public function sendMessage($fromuserid, $touserid, $subject, $message) {
+	public function sendMessage($fromuserid, $touserid, $subject, $message, $attachements, $external_recipients = null, $attachementTag) {
 		// sanity checks
 		if (empty($fromuserid) || empty($touserid)) return false;
 		if (empty($subject)) $subject = "(".$this->lh->translationFor("no_subject").")";
 		if (empty($message)) $message = "(".$this->lh->translationFor("no_message").")";
 		
-		// insert the new message in the inbox of the receiving user.
+		// 1st try to store the inbox message for the target user. Start transaction because we could have attachements.
+		$this->dbConnector->startTransaction();		
+		// message data.
 		$data = array(
 			"user_from" => $fromuserid,
 			"user_to" => $touserid,
@@ -866,11 +921,75 @@ class DbHandler {
 			"message_read" => 0,
 			"favorite" => 0
 		);
-		if (!$this->dbConnector->insert(CRM_MESSAGES_INBOX_TABLE_NAME, $data)) { return false; }
-				
+
+		// insert the new message in the inbox of the receiving user.
+		$inboxmsgid = $this->dbConnector->insert(CRM_MESSAGES_INBOX_TABLE_NAME, $data);
+		if (!$inboxmsgid) { $this->dbConnector->rollback(); return false; }
+		
 		// insert the new message in the outbox of the sending user.
 		$data["message_read"] = 1;
-		return $this->dbConnector->insert(CRM_MESSAGES_OUTBOX_TABLE_NAME, $data);
+		$outboxmsgid = $this->dbConnector->insert(CRM_MESSAGES_OUTBOX_TABLE_NAME, $data);
+		if (!$outboxmsgid) { $this->dbConnector->rollback(); return false; }
+	
+		// insert attachements (if any).
+		if (!$this->addAttachementsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachements, $attachementTag)) {
+			$this->dbConnector->rollback();
+			return false;			
+		}
+		// success! commit transactions.
+		$this->dbConnector->commit();
+	
+		// send to external recipients (if any).
+		if (!empty($external_recipients)) {
+			require_once('MailHandler.php');
+			\creamy\MailHandler::getInstance()->sendMailWithAttachements($external_recipients, $subject, $message, $attachements, $attachementTag);
+		}
+		return true; // because we stored the message in our database successfully anyway. 
+	}
+	
+	/**
+	 * Adds the attachements for a given message idenfitied by messageid, from user fromuserid and to
+	 * user touserid. This method will create a new file in the /uploads directory for each attachement
+	 * and add a link in the attachements table to both the fromuserid (in the output folder) and the
+	 * touserid (in the inbox folder).
+	 * @param Int $fromuserid 				id of the user sending the message.
+	 * @param Int $touserid 				id of the user to send the message to.
+	 * @param String $inboxmsgid			id of the message inserted in inbox.
+	 * @param String $outboxmsgid			id of the message inserted in inbox.
+	 * @param Array $attachements 			array of $_FILES with the attachements.
+	 * @return boolean 						true if successful, false otherwise
+	 */
+	protected function addAttachementsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachements, $attachementTag) {
+		// no files, empty files.
+		if (!isset($attachements)) { return true; }
+		if (!is_array($attachements)) { return true; }
+		if (count($attachements) < 1) { return true; }
+
+		// Assign a new hashed name for files and store them.
+		require_once('CRMUtils.php');
+		// iterate through all the attachements and create the inbox/outbox links.
+		for ($i = 0; $i < count($attachements[$attachementTag]["tmp_name"]); $i++) {
+			if ($attachements[$attachementTag]['error'][$i] != UPLOAD_ERR_OK) { return false; }
+			$relativeURL = \creamy\CRMUtils::generateUploadRelativePath($attachements[$attachementTag]['name'][$i], true);
+			$filepath = \creamy\CRMUtils::creamyBaseDirectoryPath().$relativeURL;
+			if (move_uploaded_file($attachements[$attachementTag]['tmp_name'][$i], $filepath)) { // successfully moved upload.
+				// inbox attachement.
+				$data = array(
+					"message_id" => $inboxmsgid, 
+					"folder_id" => MESSAGES_GET_INBOX_MESSAGES,
+					"filepath" => $relativeURL,
+					"filetype" => $attachements[$attachementTag]['type'][$i], // I know, I know, I shouldn't trust this, but...
+					"filesize" => $attachements[$attachementTag]['size'][$i]
+				);
+				if (!$this->dbConnector->insert(CRM_ATTACHEMENTS_TABLE_NAME, $data)) { return false; }
+				
+				// outbox attachement.
+				$data["message_id"] = $outboxmsgid;
+				$data["folder_id"] = MESSAGES_GET_SENT_MESSAGES;
+				if (!$this->dbConnector->insert(CRM_ATTACHEMENTS_TABLE_NAME, $data)) { return false; }				
+			} else { return false; }
+		}
+		return true;
 	}
 	
 	/**
@@ -952,7 +1071,7 @@ class DbHandler {
 		
 		// calculate query message.
 		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$params = arrat($messageid, $userid, $userid);		
+			$params = array($messageid, $userid, $userid);		
 			$query = "SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id))";
 		} else {
 			$params = array($userid, $messageid);
@@ -1065,12 +1184,46 @@ class DbHandler {
 		if ($tableName == NULL) return false;
 		if (!$this->array_contains_only_numeric_values($messageids)) return false;
 
+		// determine required user id (depending on folder).
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 
+		// delete attachaments first. We must check for orfan attachement files.
+		if (!$this->deleteAttachementsAndCheckForOrphanFiles($messageids, $folder)) { return false; }
+
+		// now delete the message.
 		$this->dbConnector->where($useridfield, $userid);
 		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
 		return $this->dbConnector->delete($tableName);
+	}
+
+	/**
+	 * This function iterates through a series of attachements (defined by messageid and folder)
+	 * and deletes that attachement from the database. If the file referenced by this attachement
+	 * doesn't exist anymore (orphan file) we delete it from disk.
+	 * @param $messageids Array a set of Int values containing the ids of the messages.
+	 * @param $folder Int folder id the messages belong to.
+	 * @return true if operation was successful, false otherwise.
+	 */ 
+	protected function deleteAttachementsAndCheckForOrphanFiles($messageids, $folder) {
+		foreach ($messageids as $messageid) { // iterate through all messages.
+			$this->dbConnector->where("message_id", $messageid);
+			$this->dbConnector->where("folder_id", $folder);			
+			$attachements = $this->dbConnector->get(CRM_ATTACHEMENTS_TABLE_NAME);
+			if ($this->dbConnector->count > 0) { // do we have any attachements
+				foreach ($attachements as $attachement) { // get id and delete the attachement
+					$this->dbConnector->where("id", $attachement["id"]);
+					if ($this->dbConnector->delete(CRM_ATTACHEMENTS_TABLE_NAME)) { // success
+						// Now check for orphan file. Try to look for other attachement referencing the same file.
+						$filepath = \creamy\CRMUtils::creamyBaseDirectoryPath().$attachement["filepath"];
+						$this->dbConnector->where("filepath", $filepath);
+						if (!$this->dbConnector->getOne(CRM_ATTACHEMENTS_TABLE_NAME)) { // orphan file
+							unlink($attachement["filepath"]); // remove it.
+						}
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -1152,6 +1305,18 @@ class DbHandler {
 		}
 		
 		return $messagesUnjunked;	
+	}
+	
+	/**
+	 * Retrieves the attachements for a given message.
+	 * @param Int $messageid 	identifier for the message.
+	 * @param Int $folderid 	identifier for the folder.
+	 * @return Array an array containing the attachements data.
+	 */
+	public function getMessageAttachements($messageid, $folderid) {
+		$this->dbConnector->where("message_id", $messageid);
+		$this->dbConnector->where("folder_id", $folderid);
+		return $this->dbConnector->get(CRM_ATTACHEMENTS_TABLE_NAME);
 	}
 
 	/** Notificaciones */
@@ -1253,8 +1418,8 @@ class DbHandler {
 	 * @param $limit Int (default = 10) the number of statistics to retrieve, in descending order, ordered by timestamp.
 	 * 
 	 */	
-	public function getLastCustomerStatistics($limit = 10) {
-		$this->dbConnector->orderBy("timestamp", "Desc");
+	public function getLastCustomerStatistics($limit = 6) {
+		$this->dbConnector->orderBy("timestamp", "asc");
 		return $this->dbConnector->get(CRM_STATISTICS_TABLE_NAME, $limit);
 	}
 	

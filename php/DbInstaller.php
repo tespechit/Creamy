@@ -83,6 +83,7 @@ class DBInstaller {
 	    if ($this->setupNotificationsTable() == false) { return false; }
 	    if ($this->setupMaritalStatusTable() == false) { return false; }
 	    if ($this->setupMessagesTables() == false) { return false; }
+	    if ($this->setupAttachementsTables() == false) { return false; }
 	    
 	    return true;
     }
@@ -140,6 +141,12 @@ class DBInstaller {
 		if (!$this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting"])) { return false; }
 		
 		// fill the settings table.
+
+		// base dir. We suppose here we have been called from updater.php or other root file.
+		$currentURL = \creamy\CRMUtils::getCurrentURLPath(); // i.e: http://localhost:8080/creamy/updater.php
+		$baseurl = \creamy\CRMUtils::getBasedirFromURL($currentURL); // => http://localhost:8080/creamy
+		$data = array("setting" => CRM_SETTING_CRM_BASE_URL, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $baseurl);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
 		// admin account
 		$adminEmail = array("setting" => CRM_SETTING_ADMIN_USER, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => 1);
@@ -222,7 +229,7 @@ class DBInstaller {
 			"name" => "VARCHAR(255) NOT NULL"
 		);
 		if (!$this->dbConnector->createTable(CRM_MARITAL_STATUS_TABLE_NAME, $fields, null)) {
-			this->error = "Creamy install: Failed to create table ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
+			$this->error = "Creamy install: Failed to create table ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
 			return false;
 		}
 		
@@ -267,6 +274,21 @@ class DBInstaller {
 			return false;
 		}
 		return true;		
+	}
+	
+	private function setupAttachementsTables() {
+		$fields = array(
+		  	"message_id" => "INT(11) NOT NULL",
+		  	"folder_id" => "INT(11) NOT NULL",
+		  	"filepath" => "VARCHAR(255) NOT NULL",
+		  	"filetype" => "VARCHAR(255) NOT NULL",
+		  	"filesize" => "INT(11) NOT NULL"
+		);
+		// inbox
+		if (!$this->dbConnector->createTable(CRM_ATTACHEMENTS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_ATTACHEMENTS_TABLE_NAME."."; 
+			return false;
+		}
 	}
 
 	private function generateIdentifiersForCustomers($schema, $customCustomers) {
