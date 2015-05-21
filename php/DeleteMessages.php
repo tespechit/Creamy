@@ -25,6 +25,7 @@
 
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
@@ -49,10 +50,10 @@ if ($validated == 1) {
 
 	$result = $db->deleteMessages($userid, $messageids, $folder);
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_messages");
-	} else print "success";
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	
 	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

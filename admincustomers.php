@@ -42,7 +42,7 @@
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -60,7 +60,7 @@
         <script src="js/app.min.js" type="text/javascript"></script>
 
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
@@ -90,7 +90,7 @@
 	                    <div class="col-xs-12">
 		                    <?php 
 			                    $table_content = $ui->getCustomerTypesAdminTable();
-								print $ui->responsibleTableBox($customersTitle, $table_content, null, null, "users_table");
+								print $ui->responsibleTableBox($customersTitle, $table_content, null, CRM_UI_STYLE_DEFAULT, "users_table");
 							?>
                         </div>
                     </div>
@@ -108,6 +108,7 @@
 				?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 
 		<!-- Modal Dialogs -->

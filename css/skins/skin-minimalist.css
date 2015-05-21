@@ -20,6 +20,12 @@
 .skin-minimalist .main-header > .navbar .nav > li > a {
   color: #333333;
 }
+.skin-minimalist .right-side {
+	background-color: #f8f8f8;
+}
+.skin-minimalist .content-wrapper {
+	background-color: #f8f8f8;
+}
 .skin-minimalist .main-header > .navbar .nav > li > a:hover,
 .skin-minimalist .main-header > .navbar .nav > li > a:active,
 .skin-minimalist .main-header > .navbar .nav > li > a:focus,

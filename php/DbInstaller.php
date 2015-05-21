@@ -83,7 +83,7 @@ class DBInstaller {
 	    if ($this->setupNotificationsTable() == false) { return false; }
 	    if ($this->setupMaritalStatusTable() == false) { return false; }
 	    if ($this->setupMessagesTables() == false) { return false; }
-	    if ($this->setupAttachementsTables() == false) { return false; }
+	    if ($this->setupAttachmentsTables() == false) { return false; }
 	    
 	    return true;
     }
@@ -116,7 +116,7 @@ class DBInstaller {
 			"role" => "INT(4) NOT NULL",
 			"status" => "INT(1) NOT NULL", // 1=enabled, 0=disabled
 		);
-		if (!$this->dbConnector->createTable(CRM_USERS_TABLE_NAME, $fields, ["name"])) {
+		if (!$this->dbConnector->createTable(CRM_USERS_TABLE_NAME, $fields, ["name", "email"])) {
 			$this->error = "Creamy install: Failed to create table ".CRM_USERS_TABLE_NAME."."; 
 			return false;
 		}
@@ -171,6 +171,14 @@ class DBInstaller {
 		$data = array("setting" => CRM_SETTING_STATISTICS_SYSTEM_ENABLED, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
+		// email notifications of events.
+		$data = array("setting" => CRM_SETTING_EVENTS_EMAIL, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
+		// job scheduling frequency
+		$data = array("setting" => CRM_SETTING_JOB_SCHEDULING_MIN_FREQ, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_JOB_SCHEDULING_DAILY);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
 		// active plugins (empty by default)
 		$data = array("setting" => CRM_SETTING_ACTIVE_MODULES, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => "");
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
@@ -205,6 +213,25 @@ class DBInstaller {
 		);
 		if (!$this->dbConnector->createTable(CRM_TASKS_TABLE_NAME, $fields, null)) {
 			$this->error = "Creamy install: Failed to create table ".CRM_TASKS_TABLE_NAME."."; 
+			return false;
+		}
+		return true;
+	}
+
+	private function setupEventsTable() {
+		$fields = array(
+			"user_id" => "INT(11) NOT NULL",
+			"title" => "VARCHAR(512) NOT NULL",
+			"all_day" => "INT(1) NOT NULL",
+			"start_date" => "DATETIME NULL",
+			"end_date" => "DATETIME NULL",
+			"url" => "VARCHAR(512) NULL",
+			"alarm" => "VARCHAR(80) NULL",
+			"notification_sent" => "INT(1) NOT NULL DEFAULT 0",
+			"color" => "INT(80) NOT NULL" 
+		);
+		if (!$this->dbConnector->createTable(CRM_EVENTS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_EVENTS_TABLE_NAME."."; 
 			return false;
 		}
 		return true;
@@ -276,7 +303,7 @@ class DBInstaller {
 		return true;		
 	}
 	
-	private function setupAttachementsTables() {
+	private function setupAttachmentsTables() {
 		$fields = array(
 		  	"message_id" => "INT(11) NOT NULL",
 		  	"folder_id" => "INT(11) NOT NULL",
@@ -285,8 +312,8 @@ class DBInstaller {
 		  	"filesize" => "INT(11) NOT NULL"
 		);
 		// inbox
-		if (!$this->dbConnector->createTable(CRM_ATTACHEMENTS_TABLE_NAME, $fields, null)) {
-			$this->error = "Creamy install: Failed to create table ".CRM_ATTACHEMENTS_TABLE_NAME."."; 
+		if (!$this->dbConnector->createTable(CRM_ATTACHMENTS_TABLE_NAME, $fields, null)) {
+			$this->error = "Creamy install: Failed to create table ".CRM_ATTACHMENTS_TABLE_NAME."."; 
 			return false;
 		}
 	}
@@ -351,70 +378,10 @@ class DBInstaller {
 			$this->error = "Creamy install: Unable to create the table ".CRM_STATISTICS_TABLE_NAME.".";
 			return false;
 		}
-		
-		// create the event for scheduling the statistics retrieval. The event scheduler must be turned on.
-	    $customerFieldsString = "";
-	    $customerCountsString = "";
-	    $index = 1;
-	    foreach ($customerIdentifiers as $ci) { 
-		    $customerFieldsString = $customerFieldsString . ", $ci";
-		    $customerCountsString = $customerCountsString . ", (select count(*) from $ci) as t$index";
-		}
-
-	    // the event scheduler will take care of running the event.
-		$eventQuery = "CREATE EVENT creamy_retrieve_statistics 
-			ON SCHEDULE EVERY 1 WEEK 
-			DO BEGIN
-				INSERT INTO statistics ( timestamp $customerFieldsString ) 
-				SELECT now() $customerCountsString ;							    
-			END;";
-		$this->dbConnector->rawQuery($eventQuery);
-		$errorMsg = $this->dbConnector->getLastError();
-		if (!empty($errorMsg)) { // error.
-			$this->error = "Creamy install: Unable to create the event for retrieving the statistics: ".$errorMsg;		
-			return false;
-		}
-
-		// Start event scheduler. Requires SUPER admin privileges.
-		$startEventSchedulerQuery = "SET GLOBAL event_scheduler = 1;";
-		$this->dbConnector->rawQuery($startEventSchedulerQuery);
-		$errorMsg = $this->dbConnector->getLastError();
-		if (!empty($errorMsg)) { // error.
-			$this->error = "Creamy install: Unable to start the global event scheduler. ".$errorMsg.". You can start it manually by setting event_scheduler to ON: http://dev.mysql.com/doc/refman/5.1/en/events-configuration.html";
-			return false;
-		}
 		// if all operations succeed, return true
 		return true;
 	}
-	
-	public function setupCommonTriggers($schema, $customCustomers) {
-		$customerIdentifiers = $this->generateIdentifiersForCustomers($schema, $customCustomers);
-		// generate a trigger for each customer/contact type insertion
-		foreach ($customerIdentifiers as $identifier) {
-			// try to delete previous trigger
-			$dropTriggerQuery = "DROP TRIGGER IF EXISTS `creamy_new_$identifier`";
-			$this->dbConnector->rawQuery($dropTriggerQuery);
-			$errorMsg = $this->dbConnector->getLastError();
-			if (!empty($errorMsg)) { $this->error = "Creamy install: Failed to drop trigger `creamy_new_$identifier`";  } 
-			
-			// generate trigger for that table
-			$userCreatedTrigger = "CREATE TRIGGER creamy_new_".$identifier." AFTER INSERT ON ".$identifier." FOR EACH ROW
-				BEGIN
-					INSERT INTO ".CRM_NOTIFICATIONS_TABLE_NAME." (`target_user`, `text`, `date`, `action`, `type`) values (0, CONCAT('".
-					$this->lh->translationFor("new_contact_added").": ', NEW.name), now(), 
-					CONCAT('./editcustomer.php?customerid=',NEW.id,'&customer_type=".$identifier."'), 'contact');
-				END;
-			";
-			$this->dbConnector->rawQuery($dropTriggerQuery);
-			$errorMsg = $this->dbConnector->getLastError();
-			if (!empty($errorMsg)) { 
-				$this->error = "Creamy install: Unable to create the notification trigger for newly created customers: ".$errorMsg;
-				return false;
-			}
-		}
-		return true;
-	}
-	
+
 	private function createCustomersTableWithNameAndDescription($name, $description) {
 		$fields = array(
 		  "company" => "INT(1) NOT NULL DEFAULT 0",
@@ -456,5 +423,4 @@ class DBInstaller {
 		return $this->dbConnector->createTable(CRM_CUSTOMER_TYPES_TABLE_NAME, $fields, null);
 	}
 }
-
 ?>

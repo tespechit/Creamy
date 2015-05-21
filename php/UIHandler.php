@@ -100,11 +100,24 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
     
     /** Generic HTML structure */
 
-	public function fullRowWithContent($content, $colSize = "xs") {
-		return '<div class="row"><div class="col-'.$colSize.'-12">'.$content.'</div></div>';
+	public function fullRowWithContent($content, $colStyle = "lg") {
+		return '<div class="row"><div class="col-'.$colStyle.'-12">'.$content.'</div></div>';
+	}
+	
+	public function rowWithVariableContents($spans, $columns, $columnsStyle = "lg") {
+		// safety checks
+		if ((!is_array($spans)) || (!is_array($columns))) { return ""; }
+		if (count($spans) != count($columns)) { return ""; }
+		// build the structure
+		$result = '<div class="row">';
+		for ($i = 0; $i < count($spans); $i++) {
+			$result .= '<div class="col-'.$columnsStyle.'-'.$spans[$i].'">'.$columns[$i].'</div>';
+		}
+		$result .= '</div>';
+		return $result;
 	}
 
-    public function boxWithContent($header_title, $body_content, $footer_content = NULL, $icon = NULL, $style = NULL, $body_id = NULL, $additional_body_classes = "") {
+    public function boxWithContent($header_title, $body_content, $footer_content = NULL, $icon = NULL, $style = CRM_UI_STYLE_DEFAULT, $body_id = NULL, $additional_body_classes = "") {
 	    // if icon is present, generate an icon item.
 	    $iconItem = (empty($icon)) ? "" : '<i class="fa fa-'.$icon.'"></i>';
 	    $bodyIdCode = (empty($body_id)) ? "" : 'id="'.$body_id.'"';
@@ -120,22 +133,22 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 				</div>';
     }
     
-    public function responsibleTableBox($header_title, $table_content, $icon = NULL, $style = NULL, $body_id = NULL) {
+    public function responsibleTableBox($header_title, $table_content, $icon = NULL, $style = CRM_UI_STYLE_DEFAULT, $body_id = NULL) {
 	    return $this->boxWithContent($header_title, $table_content, NULL, $icon, $style, $body_id, "table-responsive");
     }
     
-    public function boxWithMessage($header_title, $message, $icon = NULL, $style = "PRIMARY") {
+    public function boxWithMessage($header_title, $message, $icon = NULL, $style = CRM_UI_STYLE_DEFAULT) {
 	    $body_content = '<div class="callout callout-'.$style.'"><p>'.$message.'</p></div>';
 	    return $this->boxWithContent($header_title, $body_content, NULL, $icon, $style);
     }
     
-    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = CRM_UI_STYLE_PRIMARY, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
+    public function boxWithForm($id, $header_title, $content, $submit_text = null, $style = CRM_UI_STYLE_DEFAULT, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 	    if (empty($submit_text)) { $submit_text = $this->lh->translationFor("accept"); }
-	    return '<div class="box box-primary"><div class="box-header"><h3 class="box-title">'.$header_title.'</h3></div>
+	    return '<div class="box box-default"><div class="box-header"><h3 class="box-title">'.$header_title.'</h3></div>
 	    	   '.$this->formWithContent($id, $content, $submit_text, $style, $messagetag).'</div>';
     }
     
-    public function boxWithQuote($title, $quote, $author, $icon = "quote-left", $style = null, $body_id = null, $additional_body_classes = "") {
+    public function boxWithQuote($title, $quote, $author, $icon = "quote-left", $style = CRM_UI_STYLE_DEFAULT, $body_id = null, $additional_body_classes = "") {
 	    $body_content = '<blockquote><p>'.$quote.'</p>'.(empty($author) ? "" : '<small>'.$author.'</small>').'</blockquote>';
 	    return $this->boxWithContent($title, $body_content, null, $icon, $style, $body_id, $additional_body_classes);
     }
@@ -146,26 +159,42 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			<span class="info-box-number">'.$subtitle.'</span></div></div></div>';
     }
     
+    public function spinnerOverlay($overlayId = "loading-overlay") { 
+	    return '<div id="'.$overlayId.'" class="overlay"><i class="fa fa-spinner fa-spin"></i></div>'; 
+	}
+    
     /** Tables */
 
-    public function generateTableHeaderWithItems($items, $id, $styles = "", $needsTranslation = true, $hideHeading = false) {
-	    $theadStyle = $hideHeading ? 'style="display: none;"' : '';
+    public function generateTableHeaderWithItems($items, $id, $styles = "", $needsTranslation = true, $hideHeading = false, $hideOnMedium = array(), $hideOnLow = array()) {
+	    $theadStyle = $hideHeading ? 'style="display: none!important;"' : '';
 	    $table = "<table id=\"$id\" class=\"table $styles\"><thead $theadStyle><tr>";
 	    if (is_array($items)) {
 		    foreach ($items as $item) {
-			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
+			    // class modifiers for hiding classes in medium or low resolutions.
+			    $classModifiers = "class=\"";
+			    if (in_array($item, $hideOnMedium)) { $classModifiers .= " hide-on-medium "; }
+			    if (in_array($item, $hideOnLow)) { $classModifiers .= " hide-on-low "; }
+			    $classModifiers .= "\"";
+			    // build header item
+			    $table .= "<th $classModifiers>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
 		    }
 	    }
 		$table .= "</tr></thead><tbody>";
 		return $table;
     }
     
-    public function generateTableFooterWithItems($items, $needsTranslation = true, $hideHeading = false) {
-	    $theadStyle = $hideHeading ? 'style="display: none;"' : '';
+    public function generateTableFooterWithItems($items, $needsTranslation = true, $hideHeading = false, $hideOnMedium = array(), $hideOnLow = array()) {
+	    $theadStyle = $hideHeading ? 'style="display: none!important;"' : '';
 	    $table = "</tbody><tfoot $theadStyle><tr>";
 	    if (is_array($items)) {
 		    foreach ($items as $item) {
-			    $table .= "<th>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
+			    // class modifiers for hiding classes in medium or low resolutions.
+			    $classModifiers = "class=\"";
+			    if (in_array($item, $hideOnMedium)) { $classModifiers .= " hide-on-medium "; }
+			    if (in_array($item, $hideOnLow)) { $classModifiers .= " hide-on-low "; }
+			    $classModifiers .= "\"";
+				// build footer item
+			    $table .= "<th $classModifiers>".($needsTranslation ? $this->lh->translationFor($item) : $item)."</th>";
 		    }
 	    }
 		$table .= "</tr></tfoot></table>";
@@ -173,7 +202,50 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	}
     
     /** Style and color */
-    	
+    
+    /**
+	 * Returns the array of creamy colors as an associative arrays.
+	 * Keys are creamy tags (which can be used for css text-<color>)
+	 * Values are their #rrggbb representation.
+	 */
+    public function creamyColors() {
+	    return array(
+		    "aqua" => "#00c0ef",
+		    "blue" => "#0073b7",
+		    "light-blue" => "#3c8dbc",
+		    "teal" => "#39cccc",
+		    "yellow" => "#f39c12",
+		    "orange" => "#ff851b",
+		    "green" => "#00a65a",
+		    "lime" => "#01ff70",
+		    "red" => "#dd4b39",
+		    "purple" => "#605ca8",
+		    "fuchsia" => "#f012be",
+		    "navy" => "#001f3f",
+		    "muted" => "#777"
+	    );
+    }
+    
+    /**
+	 * Returns the rgb hex value (including #) string for the given creamy color.
+	 * If $color is not found, returns CRM_UI_COLOR_DEFAULT_HEX.
+	 */
+    public function hexValueForCreamyColor($color) {
+		$colors = $this->creamyColors();
+		if (array_key_exists($color, $colors)) { return $colors[$color]; }
+		else return CRM_UI_COLOR_DEFAULT_HEX;
+    }
+    
+    /**
+	 * Returns the creamy color for an hex value, 
+	 * or CRM_UI_COLOR_DEFAULT_NAME if the hex code doesn't translate 
+	 */
+    public function creamyColorForHexValue($color) {
+		$colors = $this->creamyColors();
+		foreach ($colors as $creamy => $hex) { if ($hex == $color) return $creamy; }
+		return CRM_UI_COLOR_DEFAULT_NAME;
+    }
+    
 	/**
 	 * Returns a random UI style to use for a notification, button, background element or such.
 	 */
@@ -185,7 +257,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		else if ($number == 4) return CRM_UI_STYLE_SUCCESS;
 		else return CRM_UI_STYLE_DEFAULT;
 	}
-		
+
     /** Messages */
     
     public function dismissableAlertWithMessage($message, $success, $includeResultData = false) {
@@ -252,24 +324,18 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	
 	/** Forms */
 	
-	public function formWithContent($id, $content, $submit_text = null, $submitStyle = CRM_UI_STYLE_PRIMARY, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
-		return '<form role="form" id="'.$id.'" name="'.$id.'" method="post" action="'.$action.'" enctype="multipart/form-data">
-            <div class="box-body">
-            	'.$content.'
-            </div>
-            <div class="box-footer" id="form-footer">
-            	'.$this->emptyMessageDivWithTag($messagetag).'
-                <button type="submit" class="btn btn-'.$submitStyle.'">'.$submit_text.'</button>
-            </div>
-        </form>';
+	public function formWithContent($id, $content, $submit_text = null, $submitStyle = CRM_UI_STYLE_DEFAULT, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
+		if (empty($submit_text)) { $submit_text = $this->lh->translationFor("send"); }
+		$button = '<button type="submit" class="btn btn-'.$submitStyle.'">'.$submit_text.'</button>';
+		return $this->formWithCustomFooterButtons($id, $content, $button, $messagetag);
 	}
 	
 	public function formForCustomHook($id, $modulename, $hookname, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
 		$hiddenFields = $this->hiddenFormField("module_name", $modulename).$this->hiddenFormField("hook_name", $hookname);
-		return $this->formWithContent($id, $hiddenFields.$content, $submit_text, CRM_UI_STYLE_PRIMARY, $messagetag, $action);
+		return $this->formWithContent($id, $hiddenFields.$content, $submit_text, CRM_UI_STYLE_DEFAULT, $messagetag, $action);
 	}
 	
-	public function modalFormStructure($modalid, $formid, $title, $subtitle, $body, $footer, $icon = null) {
+	public function modalFormStructure($modalid, $formid, $title, $subtitle, $body, $footer, $icon = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG) {
 		$iconCode = empty($icon) ? '' : '<i class="fa fa-'.$icon.'"></i> ';
 		$subtitleCode = empty($subtitle) ? '' : '<p>'.$subtitle.'</p>';
 		
@@ -283,6 +349,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	                <form action="" method="post" name="'.$formid.'" id="'.$formid.'">
 	                    <div class="modal-body">
 	                        '.$body.'
+	                        <div id="'.$messagetag.'" style="display: none;"></div>
 	                    </div>
 	                    <div class="modal-footer clearfix">
 							'.$footer.'
@@ -292,13 +359,39 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 				</div>';
 	}
 	
+	public function formWithCustomFooterButtons($id, $content, $footer, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
+		return '<form role="form" id="'.$id.'" name="'.$id.'" method="post" action="'.$action.'" enctype="multipart/form-data">
+            <div class="box-body">
+            	'.$content.'
+            </div>
+            <div class="box-footer" id="form-footer">
+            	'.$this->emptyMessageDivWithTag($messagetag).'
+				'.$footer.'
+            </div>
+        </form>';
+	}
+	
     public function checkboxInputWithLabel($label, $id, $name, $enabled) {
 	    return '<div class="checkbox"><label for="'.$id.'">
 	    <input type="checkbox" id="'.$id.'" name="'.$name.'"'.($enabled ? "checked": "").'/> '.$label.'</label></div>';
     }
     
-    public function selectWithLabel($label, $id, $name, $options, $selectedOption, $needsTranslation = false) {
-	    $selectCode = '<div class="form-group"><label>'.$label.'</label><select id="'.$id.'" name="'.$name.'" class="form-control">';
+    public function radioButtonInputGroup($name, $values, $labels, $ids = null, $checkedIndex = 0) {
+	    $result = '<div class="form-group">';
+	    $i = 0;
+	    foreach ($values as $value) {
+		    $idCode = ((isset($ids)) && (isset($ids[$i]))) ? 'id="'.$ids[$i].'"' : '';
+		    $checkedCode = ($checkedIndex == $i) ? "checked" : "";
+		    $result .= '<div class="radio"><label><input type="radio" name="'.$name.'" '.$idCode.' value="'.$value.'" '.$checkedCode.'>'.$labels[$i].'</label></div>';
+			$i++;
+	    }
+	    $result .= '</div>';
+	    return $result;
+    }
+    
+    public function singleFormGroupWithSelect($label, $id, $name, $options, $selectedOption, $needsTranslation = false) {
+	    $labelCode = empty($label) ? "" : '<label>'.$label.'</label>';
+	    $selectCode = '<div class="form-group">'.$labelCode.'<select id="'.$id.'" name="'.$name.'" class="form-control">';
 	    foreach ($options as $key => $value) {
 		    $isSelected = ($selectedOption == $key) ? " selected" : "";
 		    $selectCode .= '<option value="'.$key.'" '.$isSelected.'>'.($needsTranslation ? $this->lh->translationFor($value) : $value).'</option>';
@@ -307,13 +400,26 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		return $selectCode;
     }
     
-    public function singleFormInputElement($id, $name, $type, $placeholder, $value = null, $icon = null) {
+    public function singleFormInputElement($id, $name, $type, $placeholder = "", $value = null, $icon = null, $required = false, $disabled = false) {
 	    $iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
 	    $valueCode = empty($value) ? '' : ' value="'.$value.'"';
-	    return $iconCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control" placeholder="'.$placeholder.'"'.$valueCode.'>';
+	    $requiredCode = $required ? "required" : "";
+	    $disabledCode = $disabled ? "disabled" : "";
+	    return $iconCode.'<input name="'.$name.'" id="'.$id.'" type="'.$type.'" class="form-control '.$requiredCode.'" placeholder="'.$placeholder.'"'.$valueCode.' '.$disabledCode.'>';
+    }
+    
+    public function singleFormTextareaElement($id, $name, $placeholder = "", $text = "", $icon = null) {
+	    $iconCode = empty($icon) ? '' : '<span class="input-group-addon"><i class="fa fa-'.$icon.'"></i></span>';
+	    return $iconCode.'<textarea id="'.$id.'" name="'.$name.'" placeholder="'.$placeholder.'" class="form-control">'.$text.'</textarea>';
+    }
+    
+    public function singleFormGroupWithFileUpload($id, $name, $currentFilePreview, $label, $bottomText) {
+	    $labelCode = isset($label) ? '<label for="'.$id.'">'.$label.'</label>' : '';
+	    return '<div class="form-group">'.$labelCode.'<br>'.$currentFilePreview.'<br><input type="file" id="'.$id.'" name="'.$id.'">
+	                <p class="help-block">'.$bottomText.'</p></div>';
     }
 
-	public function maskedDateInputElement($id, $name, $dateFormat = "dd/mm/yyyy", $value = null, $icon = null) {
+	public function maskedDateInputElement($id, $name, $dateFormat = "dd/mm/yyyy", $value = null, $icon = null, $includeJS = false) {
 		// date value
 		$dateAsDMY = "";
         if (isset($value)) { 
@@ -329,26 +435,33 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		// bild html code
 		$htmlCode = '<input name="'.$name.'" id="'.$id.'" type="text" class="form-control" data-inputmask="\'alias\': \''.$dateFormat.'\'" data-mask value="'.$dateAsDMY.'" placeholder="'.$dateFormat.'"/>';
 		// build JS code to turn an input text into a dateformat.
-		$jsIncludes = '<script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
-	    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
-	    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>';
-	    $jsActivation = $this->wrapOnDocumentReadyJS('$("#'.$id.'").inputmask("'.$dateFormat.'", {"placeholder": "'.$dateFormat.'"});');
-		
-		return $iconCode.$htmlCode."\n".$jsIncludes."\n".$jsActivation;
+		$jsCode = "";
+		if ($includeJS === true) {
+			$jsCode = '<script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
+		    <script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
+		    <script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>';
+		} 
+		$jsCode .= $this->wrapOnDocumentReadyJS('$("#'.$id.'").inputmask("'.$dateFormat.'", {"placeholder": "'.$dateFormat.'"});');
+				
+		return $iconCode.$htmlCode."\n".$jsCode;
 	}
 
 	public function hiddenFormField($id, $value = "") {
 		return '<input type="hidden" id="'.$id.'" name="'.$id.'" value="'.$value.'">';
 	}
 
-    public function singleFormInputGroup($inputElement, $label = null) {
+	public function singleInputGroupWithContent($content) {
+		return '<div class="input-group">'.$content.'</div>';
+	}
+	
+	public function singleFormGroupWrapper($content, $label = null) {
+		$labelCode = isset($label) ? '<label>'.$label.'</label>' : '';
+		return '<div class="form-group">'.$labelCode.$content.'</div>';
+	}
+
+    public function singleFormGroupWithInputGroup($inputGroup, $label = null) {
 	    $labelCode = isset($label) ? "<label>$label</label>" : "";
-	    return '<div class="form-group">'.$labelCode.'<div class="input-group">'.$inputElement.'</div></div>';
-    }
-    
-    public function doubleFormInputGroup($firstInputElement, $secondInputElement, $sizeClass = "lg") {
-	    return '<div class="form-group"><div class="row"><div class="col-'.$sizeClass.'-6"><div class="input-group">'.$firstInputElement.'</div></div>
-                <div class="col-'.$sizeClass.'-6">'.$secondInputElement.'</div></div></div>';
+	    return '<div class="form-group">'.$labelCode.'<div class="input-group">'.$inputGroup.'</div></div>';
     }
     
     public function modalDismissButton($id, $message = null, $position = "right", $dismiss = true) {
@@ -362,6 +475,13 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    if (empty($message)) { $message = $this->lh->translationFor("accept"); }
 	    $dismissCode = $dismiss ? 'data-dismiss="modal"' : '';
 	    return '<button type="submit" class="btn btn-primary pull-'.$position.'" '.$dismissCode.' id="'.$id.'"><i class="fa fa-check-circle"></i> '.$message.'</button>';
+    }
+    
+    /** Global buttons */
+    
+    public function buttonWithLink($id, $link, $title, $type = "button", $icon = null, $style = CRM_UI_STYLE_DEFAULT, $additionalClasses = null) {
+	    $iconCode = isset($icon) ? '<i class="fa fa-times"></i>' : '';
+	    return '<button type="'.$type.'" class="btn btn-'.$style.' '.$additionalClasses.'" id="'.$id.'" href="'.$link.'">'.$iconCode.' '.$title.'</button>';
     }
     
     /** Task list buttons */
@@ -396,7 +516,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		    foreach ($style as $class) { $styleCode .= " btn-$class"; }
 	    } else { $styleCode = "btn btn-default"; }
 	    // popup prefix code
-	    $popup = '<div class="btn-group"><button type="button" class="'.$styleCode.' dropdown-toggle" data-toggle="dropdown">'.$title.'</button><ul class="dropdown-menu" role="menu">';
+	    $popup = '<div class="btn-group"><button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'.$title.' 
+	                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" style="height: 34px;">
+						<span class="caret"></span>
+						<span class="sr-only">Toggle Dropdown</span>
+	                </button><ul class="dropdown-menu" role="menu">';
 	    // options
 	    foreach ($options as $option) { $popup .= $option; }
 	    // popup suffix code.
@@ -441,8 +565,22 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		    else if (is_string($style)) { $styleCode = "btn-$style"; }
 	    }
 	    return '<a id="'.$id.'" class="btn '.$styleCode.'" href="'.$url.'">'.$title.'</a>';
-
-
+    }
+    
+    /** Images */
+    
+    public function imageWithData($src, $class, $extraParams, $alt = "") {
+	    $paramsCode = "";
+	    if (is_array($extraParams) && count($extraParams) > 0) {
+		    foreach ($extraParams as $key => $value) { $paramsCode .= " $key=\"$value\""; }
+		}
+	    return "<img src=\"$src\" class=\"$class\" $paramsCode alt=\"$alt\"/>";
+    }
+    
+    /** Paragraphs */
+    
+    public function simpleParagraphWithText($text, $additionalClasses = "") {
+	    return "<p class='$additionalClasses'>$text</p>";
     }
     
     /** Javascript HTML code generation */
@@ -488,7 +626,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
     
     public function showCustomErrorMessageAlertJS($msg) { return 'alert("'.$msg.'");'; }
     
-    public function clickableClassActionJS($className, $parameter, $container, $phpfile, $successJS, $failureJS, $confirmation = false, $successResult = "success", $additionalParameters = null, $parentContainer = null) {
+    public function clickableClassActionJS($className, $parameter, $container, $phpfile, $successJS, $failureJS, $confirmation = false, $successResult = CRM_DEFAULT_SUCCESS_RESPONSE, $additionalParameters = null, $parentContainer = null) {
 	    // build the confirmation code if needed.
 	    $confirmPrefix = $confirmation ? 'var r = confirm("'.$this->lh->translationFor("are_you_sure").'"); if (r == true) {' : '';
 	    $confirmSuffix = $confirmation ? '}' : '';
@@ -685,61 +823,70 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
     /** Returns the HTML form for modyfing the system settings */
     public function getGeneralSettingsForm() {
 		// current settings values
-	    $modulesEnabled = $this->db->getSettingValueForKey(CRM_SETTING_MODULE_SYSTEM_ENABLED) == true ? " checked" : "";
-	    $statsEnabled = $this->db->getSettingValueForKey(CRM_SETTING_STATISTICS_SYSTEM_ENABLED) ? " checked" : "";
 	    $baseURL = $this->db->getSettingValueForKey(CRM_SETTING_CRM_BASE_URL);
 	    $tz = $this->db->getSettingValueForKey(CRM_SETTING_TIMEZONE);
 	    $lo = $this->db->getSettingValueForKey(CRM_SETTING_LOCALE);
+	    $ct = $this->db->getSettingValueForKey(CRM_SETTING_THEME);
+	    $ce = $this->db->getSettingValueForKey(CRM_SETTING_CONFIRMATION_EMAIL);
+	    $cv = $this->db->getSettingValueForKey(CRM_SETTING_EVENTS_EMAIL);
+	    $cn = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_NAME);
+	    $cl = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_LOGO);
+	    if (isset($cl)) { $cl = $this->imageWithData($cl, "", null); }
+	    $cf = $this->db->getSettingValueForKey(CRM_SETTING_JOB_SCHEDULING_MIN_FREQ);
+	    $tOpts = array("black" => "black", "blue" => "blue", "green" => "green", "minimalist" => "minimalist", "purple" => "purple", "red" => "red", "yellow" => "yellow");
+	    $fOpts = array(CRM_JOB_SCHEDULING_HOURLY => "hourly", CRM_JOB_SCHEDULING_DAILY => "daily", 
+	    			   CRM_JOB_SCHEDULING_WEEKLY => "weekly", CRM_JOB_SCHEDULING_MONTHLY => "monthly");
 	    
 	    // translation.
-	    $em_text = $this->lh->translationFor("enable_modules");
-	    $es_text = $this->lh->translationFor("enable_statistics");
+	    $em_text = $this->lh->translationFor("require_confirmation_email");
+	    $ev_text = $this->lh->translationFor("send_event_email");
+	    $es_text = $this->lh->translationFor("choose_theme");
 	    $tz_text = $this->lh->translationFor("detected_timezone");
 	    $lo_text = $this->lh->translationFor("choose_language");
 	    $ok_text = $this->lh->translationFor("settings_successfully_changed");
-	    $ko_text = $this->lh->translationFor("error_changing_settings");
 	    $bu_text = $this->lh->translationFor("base_url");
+	    $cn_text = $this->lh->translationFor("company_name");
+	    $cl_text = $this->lh->translationFor("custom_company_logo");
+	    $mf_text = $this->lh->translationFor("min_event_frequency");
 	    
 	    // form
-	    $form = '<div class="form-group"><form role="form" id="adminsettings" name="adminsettings" class="form">
-			  '.$this->singleFormInputGroup($this->singleFormInputElement("base_url", "base_url", "text", $bu_text, $baseURL, "globe"), $bu_text).'
-	    	  <label>'.$this->lh->translationFor("general_settings").'</label>
-			  '.$this->checkboxInputWithLabel($em_text, "enableModules", "enableModules", $modulesEnabled).'
-			  '.$this->checkboxInputWithLabel($es_text, "enableStatistics", "enableStatistics", $statsEnabled).'
-			  '.$this->selectWithLabel($tz_text, "timezone", "timezone", \creamy\CRMUtils::getTimezonesAsArray(), $tz).'
-			  '.$this->selectWithLabel($lo_text, "locale", "locale", \creamy\LanguageHandler::getAvailableLanguages(), $lo).'
+	    $form = '<form role="form" id="adminsettings" name="adminsettings" class="form" enctype="multipart/form-data">
+			  '.$this->singleFormGroupWithInputGroup($this->singleFormInputElement("base_url", "base_url", "text", $bu_text, $baseURL, "globe"), $bu_text).'
+	    	  <label>'.$this->lh->translationFor("messages").'</label>
+			  '.$this->checkboxInputWithLabel($em_text, "confirmationEmail", "confirmationEmail", $ce).'
+			  '.$this->checkboxInputWithLabel($ev_text, "eventEmail", "eventEmail", $ce).'
+			  '.$this->singleFormGroupWithSelect($mf_text, "jobScheduling", "jobScheduling", $fOpts, $cf, true).'
+			  '.$this->singleFormGroupWithInputGroup($this->singleFormInputElement("company_name", "company_name", "text", $cn_text, $cn, "building-o"), $cn_text).'
+			  '.$this->singleFormGroupWithFileUpload("company_logo", "company_logo", $cl, $cl_text, null).'
+			  '.$this->singleFormGroupWithSelect($es_text, "theme", "theme", $tOpts, $ct, false).'
+			  '.$this->singleFormGroupWithSelect($tz_text, "timezone", "timezone", \creamy\CRMUtils::getTimezonesAsArray(), $tz).'
+			  '.$this->singleFormGroupWithSelect($lo_text, "locale", "locale", \creamy\LanguageHandler::getAvailableLanguages(), $lo).'
 			  <div class="box-footer">
 			  '.$this->emptyMessageDivWithTag(CRM_UI_DEFAULT_RESULT_MESSAGE_TAG).'
-			  <button type="submit" class="btn btn-primary">'.$this->lh->translationFor("modify").'</button></form></div></div>';
+			  <button type="submit" class="btn btn-primary">'.$this->lh->translationFor("modify").'</button></div></form>';
 		
-		// javascript
-		$successJS = $this->reloadLocationJS();
-		$failureJS = $this->fadingInMessageJS($this->dismissableAlertWithMessage($ko_text, false, true));
-		$preambleJS = $this->fadingOutMessageJS(false);
-		$javascript = $this->formPostJS("adminsettings", "./php/ModifySettings.php", $successJS, $failureJS, $preambleJS);
-		
-		return $form."</br>".$javascript;
+		return $form;
     }
     
     /** Returns the HTML code for the input field associated with a module setting data type */
     public function inputFieldForModuleSettingOfType($setting, $type, $currentValue) {
 	    if (is_array($type)) { // select type
-		    return $this->selectWithLabel($this->lh->translationFor($setting), $setting, $setting, $type, $currentValue);
+		    return $this->singleFormGroupWithSelect($this->lh->translationFor($setting), $setting, $setting, $type, $currentValue);
 	    } else { // single input type: text, number, bool, date...
 		    switch ($type) {
 			    case CRM_SETTING_TYPE_STRING:
-				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "text", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
+				    return $this->singleFormGroupWithInputGroup($this->singleFormInputElement($setting, $setting, "text", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
 					break;
 				case CRM_SETTING_TYPE_INT:
 				case CRM_SETTING_TYPE_FLOAT:
-				    return $this->singleFormInputGroup($this->singleFormInputElement($setting, $setting, "number", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
+				    return $this->singleFormGroupWithInputGroup($this->singleFormInputElement($setting, $setting, "number", $this->lh->translationFor($setting), $currentValue), $this->lh->translationFor($setting));
 					break;
 				case CRM_SETTING_TYPE_BOOL:
-					return $this->singleFormInputGroup($this->checkboxInputWithLabel($this->lh->translationFor($setting), $setting, $setting, (bool) $currentValue));
+					return $this->singleFormGroupWithInputGroup($this->checkboxInputWithLabel($this->lh->translationFor($setting), $setting, $setting, (bool) $currentValue));
 					break;
 				case CRM_SETTING_TYPE_DATE:
 					$dateFormat = $this->lh->getDateFormatForCurrentLocale();
-				    return $this->singleFormInputGroup($this->maskedDateInputElement($setting, $setting, $dateFormat, $currentValue), $this->lh->translationFor($setting));
+				    return $this->singleFormGroupWithInputGroup($this->maskedDateInputElement($setting, $setting, $dateFormat, $currentValue), $this->lh->translationFor($setting));
 					break;
 		    }
 	    }
@@ -783,7 +930,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$textForStatus = $status == 1 ? $this->lh->translationFor("disable") : $this->lh->translationFor("enable");
 		$actionForStatus = $status == 1 ? "deactivate-user-action" : "activate-user-action";
 		return '<div class="btn-group">
-	                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'.$this->lh->translationFor("choose_action").'</button>
+	                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'.$this->lh->translationFor("choose_action").' 
+	                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" style="height: 34px;">
+						<span class="caret"></span>
+						<span class="sr-only">Toggle Dropdown</span>
+	                </button>
 	                <ul class="dropdown-menu" role="menu">
 	                    <li><a class="edit-action" href="'.$userid.'">'.$this->lh->translationFor("edit_data").'</a></li>
 	                    <li><a class="change-password-action" href="'.$userid.'">'.$this->lh->translationFor("change_password").'</a></li>
@@ -808,7 +959,9 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
        } else { 
 	       // we have some users, show a table
 	       $columns = array("id", "name", "email", "creation_date", "role", "status", "action");
-		   $result = $this->generateTableHeaderWithItems($columns, "users", "table-bordered table-striped", true);
+	       $hideOnMedium = array("email", "creation_date", "role");
+	       $hideOnLow = array("email", "creation_date", "role", "status");
+		   $result = $this->generateTableHeaderWithItems($columns, "users", "table-bordered table-striped", true, false, $hideOnMedium, $hideOnLow);
 	       
 	       // iterate through all contacts
 	       foreach ($users as $userData) {
@@ -818,16 +971,16 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		       $result = $result."<tr>
 	                    <td>".$userData["id"]."</td>
 	                    <td><a class=\"edit-action\" href=\"".$userData["id"]."\">".$userData["name"]."</a></td>
-	                    <td>".$userData["email"]."</td>
-	                    <td>".$userData["creation_date"]."</td>
-	                    <td>".$userRole."</td>
-	                    <td>".$status."</td>
+	                    <td class='hide-on-medium hide-on-low'>".$userData["email"]."</td>
+	                    <td class='hide-on-medium hide-on-low'>".$userData["creation_date"]."</td>
+	                    <td class='hide-on-medium hide-on-low'>".$userRole."</td>
+	                    <td class='hide-on-low'>".$status."</td>
 	                    <td>".$action."</td>
 	                </tr>";
 	       }
 	       
 	       // print suffix
-	       $result .= $this->generateTableFooterWithItems($columns, true);
+	       $result .= $this->generateTableFooterWithItems($columns, true, false, $hideOnMedium, $hideOnLow);
 	       return $result; 
        }
 	}
@@ -858,96 +1011,22 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	}
 	
 	/**
+	 * Returns a warning message in case the setting for email confirmation on new user accounts is activated.
+	 */
+	public function getUserActivationEmailWarning() {
+		$confirmationEmailSetting = $this->db->getSettingValueForKey(CRM_SETTING_CONFIRMATION_EMAIL);
+		if (filter_var($confirmationEmailSetting, FILTER_VALIDATE_BOOLEAN)) {
+			return '<p>'.$this->lh->translationFor("confirmation_email_enabled").'</p>';
+		} else { return '<p>'.$this->lh->translationFor("confirmation_email_disabled").'</p>'; }
+	}
+	
+	/**
 	 * Generates the HTML with a unauthorized access. It must be included inside a <section> section.
 	 */
 	public function getUnauthotizedAccessMessage() {
 		return $this->boxWithMessage($this->lh->translationFor("access_denied"), $this->lh->translationFor("you_dont_have_permission"), "lock", "danger");
 	}
 	
-	/**
-	 * Generates the HTML code for editing the profile of a user as  an HTML form. Depends on the user having the right permissions.
-	 * @param $usertoeditid ID of the user to edit
-	 * @param $requestinguserid ID of the user requesting the edit form for the user $usertoeditid
-	 * @param $hasAdminPermissions true if the user has admin permissions.
-	 * @return A HTML containing the edit user form if permissions are correct, an error message otherwise.
-	 */
-	public function getEditUserForm($usertoeditid, $requestinguserid, $hasAdminPermissions) {
-		$userobj = NULL;
-		$errormessage = NULL;
-		
-		if (!empty($usertoeditid)) {
-			if (($requestinguserid == $usertoeditid) || ($hasAdminPermissions)) { 
-    			// if it's the same user or we have admin privileges.
-    			$userobj = $this->db->getDataForUser($usertoeditid);
-			} else {
-    			$errormessage = $this->lh->translationFor("not_permission_edit_user_information");
-			}
-		} else {
-    		$errormessage = $this->lh->translationFor("unknown_error");
-		}
-		
-		if (!empty($userobj)) {
-			// current user avatar
-			$currentUserAvatar = empty($userobj["avatar"]) ? "" : 
-				"<img src=\"".$userobj["avatar"]."\" class=\"img-circle\" width=\"100\" height=\"100\" alt=\"User Image\" /><br>";
-			// if requesting user is admin, we can change the user role
-			$setUserRoleCode = "";
-			if ($hasAdminPermissions) {
-				$userRolesAsFormSelect = $this->getUserRolesAsFormSelect($userobj["role"]);
-				$setUserRoleCode = '<div class="form-group"><label for="role">'.$this->lh->translationFor("user_role").'</label>'.$userRolesAsFormSelect.'</div>';
-			}	
-						
-			$result = '<div class="box box-primary">
-                                <div class="box-header">
-                                    <h3 class="box-title">'.$this->lh->translationFor("insert_new_data").'</h3>
-                                </div><!-- /.box-header -->
-                                <!-- form start -->
-                                <form role="form" id="modifyuser" name="modifyuser" method="post" action=""  enctype="multipart/form-data">
-                                	<input type="hidden" id="modifyid" name="modifyid" value="'.$usertoeditid.'">
-                                    <div class="box-body">
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                        <input type="text" id="name" name="name" class="form-control required" placeholder="'.
-	                                        $this->lh->translationFor("name").'" value="'.$userobj["name"].'" disabled>
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-	                                        <input type="text" id="email" name="email" class="form-control"placeholder="'.
-	                                        $this->lh->translationFor("email").' ('.$this->lh->translationFor("optional").')'.'" value="'.$userobj["email"].'">
-	                                    </div>
-	                                    <br>
-	                                    <div class="input-group">
-	                                        <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                        <input type="text" id="phone" name="phone" class="form-control" placeholder="'.
-	                                        $this->lh->translationFor("phone").' ('.$this->lh->translationFor("optional").')'.'" value="'.$userobj["phone"].'">
-	                                    </div>
-	                                    <br>
-                                        <div class="form-group">
-                                            <label for="exampleInputFile">'.
-                                            $this->lh->translationFor("user_avatar").' ('.$this->lh->translationFor("optional").')'.'
-                                            </label><br>
-                                            '.$currentUserAvatar.'
-                                            <br>
-                                            <input type="file" id="avatar" name="avatar">
-                                            <p class="help-block">'.$this->lh->translationFor("choose_image").'</p>
-                                        </div>
-										'.$setUserRoleCode.'
-	                                    <br>
-	                                    <div  id="'.CRM_UI_DEFAULT_RESULT_MESSAGE_TAG.'" name="'.CRM_UI_DEFAULT_RESULT_MESSAGE_TAG.'" style="display:none">
-	                                    </div>
-                                    </div><!-- /.box-body -->
-                                    <div class="box-footer">
-                                        <button type="submit" class="btn btn-primary">'.$this->lh->translationFor("edit_user").'</button>
-                                    </div>
-                                </form>
-                            </div><!-- /.box -->';
-                return $result;
-		} else {
-			return $this->calloutErrorMessage($errormessage);
-		}
-	}
-
 	/** Modules */
 	
 	public function getModulesAsList() {
@@ -956,8 +1035,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$allModules = $mh->listOfAllModules();
 		
 		// generate a table with all elements.
-		$items = array("name", "description", "enabled", "action");
-		$table = $this->generateTableHeaderWithItems($items, "moduleslist", "table-striped");
+		$items = array("name", "version", "enabled", "action");
+		$table = $this->generateTableHeaderWithItems($items, "moduleslist", "table-striped", true, false, array(), array("version", "action"));
 		// fill table
 		foreach ($allModules as $moduleClass => $moduleDefinition) {
 			// module data
@@ -975,11 +1054,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			$moduleShortName = $moduleDefinition->getModuleShortName();
 			$action = $this->getActionButtonForModule($moduleShortName, $enabled);
 			// add module row
-			$table .= "<tr><td><b>$moduleName</b><br/><div class='small'>$moduleDescription</div></td><td>$moduleVersion</td><td>$status</td><td>$action</td></tr>";
+			$table .= "<tr><td><b>$moduleName</b><br/><div class='small hide-on-low'>$moduleDescription</div></td><td class='small hide-on-low'>$moduleVersion</td><td class='small hide-on-low'>$status</td><td>$action</td></tr>";
 		}
 
 		// close table
-		$table .= $this->generateTableFooterWithItems($items);
+		$table .= $this->generateTableFooterWithItems($items, true, false, array(), array("version", "action"));
 		
 		// add javascript code.
 		$enableJS = $this->clickableClassActionJS("enable_module", "module_name", "href", "./php/ModifyModule.php", $this->reloadLocationJS(), $this->showRetrievedErrorMessageAlertJS(), false, CRM_DEFAULT_SUCCESS_RESPONSE, array("enabled"=>"1"), null);
@@ -1014,9 +1093,12 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		// module topbar elements
 		$mh = \creamy\ModuleHandler::getInstance();
 		$moduleTopbarElements = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TOPBAR, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
+		// header elements
+		$logo = $this->creamyHeaderLogo();
+		$name = $this->creamyHeaderName();
 		// return header
 		return '<header class="main-header">
-	            <a href="./index.php" class="logo"><img src="img/logoWhite.png" width="32" height="32"> Creamy</a>
+	            <a href="./index.php" class="logo"><img src="'.$logo.'" width="auto" height="32"> '.$name.'</a>
 	            <nav class="navbar navbar-static-top" role="navigation">
 	                <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
 	                    <span class="sr-only">Toggle navigation</span>
@@ -1033,6 +1115,46 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	                </div>
 	            </nav>
 	        </header>';
+	}
+	
+	/**
+	 * Returns the creamy company custom logo. If no custom logo is defined, returns 
+	 * the default white creamy logo.
+	 * @return String a string containing the relative URL for the header logo.
+	 */
+	public function creamyHeaderLogo() {
+		$customLogo = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_LOGO);
+		return (!empty($customLogo) ? $customLogo : CRM_DEFAULT_HEADER_LOGO);
+	}
+	
+	/**
+	 * Returns the creamy name for the header. If a custom company name is defined, it
+	 * returns it, otherwise, it returns "Creamy".
+	 * @return String a string containing the company custom name (if set) or "Creamy".
+	 */
+	public function creamyHeaderName() {
+		$customName = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_NAME);
+		return (!empty($customName) ? $customName : "Creamy");
+	}
+	
+	/**
+	 * Returns the creamy body for a page including the theme.
+	 * If no theme setting is found, it defaults to CRM_SETTING_DEFAULT_THEME
+	 */
+	public function creamyBody() {
+		$theme = $this->db->getSettingValueForKey(CRM_SETTING_THEME);
+		if (empty($theme)) { $theme = CRM_SETTING_DEFAULT_THEME; }
+		return '<body class="skin-'.$theme.'">';
+	}
+	
+	/**
+	 * Returns the proper css style for the selected theme.
+	 * If theme is not found, it defaults to CRM_SETTING_DEFAULT_THEME
+	 */
+	public function creamyThemeCSS() {
+		$theme = $this->db->getSettingValueForKey(CRM_SETTING_THEME);
+		if (empty($theme)) { $theme = CRM_SETTING_DEFAULT_THEME; }
+		return '<link href="css/skins/skin-'.$theme.'.min.css" rel="stylesheet" type="text/css" />';
 	}
 	
 	/**
@@ -1057,12 +1179,16 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$numMessages = count($list);
 		
 		$headerText = $this->lh->translationFor("you_have").' '.$numMessages.' '.$this->lh->translationFor("unread_messages");
-		$result = $this->getTopbarMenuHeader("envelope", $numMessages, CRM_UI_TOPBAR_MENU_STYLE_COMPLEX, $headerText, null, CRM_UI_STYLE_SUCCESS);
+		$result = $this->getTopbarMenuHeader("envelope-o", $numMessages, CRM_UI_TOPBAR_MENU_STYLE_COMPLEX, $headerText, null, CRM_UI_STYLE_SUCCESS, false);
         
         foreach ($list as $message) {
+			if (empty($message["remote_user"])) $remoteuser = $this->lh->translationFor("unknown");
 	        if (empty($message["remote_avatar"])) $remoteavatar = CRM_DEFAULTS_USER_AVATAR;
-	        else $remoteavatar = $message["remote_avatar"];
-	        $result .= $this->getTopbarComplexElement($message["remote_user"], $message["message"], $message["date"], $remoteavatar, "messages.php");
+	        else {
+		        $remoteuser = $message["remote_user"];
+		        $remoteavatar = $message["remote_avatar"];
+	        }
+	        $result .= $this->getTopbarComplexElement($remoteuser, $message["message"], $message["date"], $remoteavatar, "messages.php");
         }
         $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_messages"), "messages.php");
         return $result;
@@ -1099,16 +1225,27 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	protected function getTopbarNotificationsMenu($user) {
 		if (!$user->userHasBasicPermission()) return '';
 		
+		// get notifications number
 		$notifications = $this->db->getTodayNotifications($user->getUserId());
 		if (empty($notifications)) $notificationNum = 0;
 		else $notificationNum = count($notifications);
-		
+		$eventsForToday = $this->db->getEventsForToday($user->getUserId());
+		if (!empty($eventsForToday)) $notificationNum += count($eventsForToday);
+		// build header
 		$headerText = $this->lh->translationFor("you_have").' '.$notificationNum.' '.strtolower($this->lh->translationFor("notifications"));
-		$result = $this->getTopbarMenuHeader("warning", $notificationNum, CRM_UI_TOPBAR_MENU_STYLE_SIMPLE, $headerText, null, CRM_UI_STYLE_WARNING);
-
+		$result = $this->getTopbarMenuHeader("calendar", $notificationNum, CRM_UI_TOPBAR_MENU_STYLE_SIMPLE, $headerText, null, CRM_UI_STYLE_WARNING, false);
+		// build notifications
         foreach ($notifications as $notification) {
 	        $result .= $this->getTopbarSimpleElement($notification["text"], $this->notificationIconForNotificationType($notification["type"]), "notifications.php", $this->getRandomUIStyle());
-        }                                        
+        }  
+        // build events.
+        foreach ($eventsForToday as $event) {
+	        $url = "events.php?initial_date=".urlencode($event["start_date"]);
+	        $tint = $this->creamyColorForHexValue($event["color"]);
+	        $result .= $this->getTopbarSimpleElement($event["title"], "calendar-o", $url, $tint);
+        }  
+        
+        // footer and result                                      
         $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_notifications"), "notifications.php");
         return $result;
 	}
@@ -1120,7 +1257,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$numTasks = count($list);
 		
 		$headerText = $this->lh->translationFor("you_have").' '.$numTasks.' '.$this->lh->translationFor("pending_tasks");
-		$result = $this->getTopbarMenuHeader("tasks", $numTasks, CRM_UI_TOPBAR_MENU_STYLE_DATE, $headerText, null, CRM_UI_STYLE_DANGER);
+		$result = $this->getTopbarMenuHeader("tasks", $numTasks, CRM_UI_TOPBAR_MENU_STYLE_DATE, $headerText, null, CRM_UI_STYLE_DANGER, false);
                                     
         foreach ($list as $task) {
 	        $result .= $this->getTopbarSimpleElementWithDate($task["description"], $task["creation_date"], "clock-o", "tasks.php", CRM_UI_STYLE_WARNING);
@@ -1142,7 +1279,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$changeMyData = '';
 		if ($user->userHasBasicPermission()) {
 			$menuActions = '<li class="user-body">
-				<div class="text-center"><a href="" data-toggle="modal" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a></div>
+				<div class="text-center"><a href="" data-toggle="modal" id="change-password-toggle" data-target="#change-password-dialog-modal">'.$this->lh->translationFor("change_password").'</a></div>
 				<div class="text-center"><a href="./messages.php">'.$this->lh->translationFor("messages").'</a></div>
 				<div class="text-center"><a href="./notificationes.php">'.$this->lh->translationFor("notifications").'</a></div>
 				<div class="text-center"><a href="./tasks.php">'.$this->lh->translationFor("tasks").'</a></div>
@@ -1167,16 +1304,17 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	            </li>';
 	}
 
-	public function getTopbarMenuHeader($icon, $badge, $menuStyle, $headerText = null, $headerLink = null, $badgeStyle = CRM_UI_STYLE_DEFAULT) {
+	public function getTopbarMenuHeader($icon, $badge, $menuStyle, $headerText = null, $headerLink = null, $badgeStyle = CRM_UI_STYLE_DEFAULT, $hideForLowResolution = true) {
 		// header text and link
 		if (!empty($headerText)) {
 			$linkPrefix = isset($headerLink) ? '<a href="'.$headerLink.'">' : '';
 			$linkSuffix = isset($headerLink) ? '</a>' : '';
 			$headerCode = '<li class="header">'.$linkPrefix.$headerText.$linkSuffix.'</li>';
 		} else { $headerCode = ""; }
+		$hideCode = $hideForLowResolution? "hide-on-low" : "";
 		
 		// return the topbar menu header
-		return '<li class="dropdown '.$menuStyle.'-menu"><a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-'.$icon.'"></i><span class="label label-'.$badgeStyle.'">'.$badge.'</span></a>
+		return '<li class="dropdown '.$menuStyle.'-menu '.$hideCode.'"><a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-'.$icon.'"></i><span class="label label-'.$badgeStyle.'">'.$badge.'</span></a>
 					<ul class="dropdown-menu">'.$headerCode.'<li><ul class="menu">';
 	}
 
@@ -1186,9 +1324,9 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		return '</ul></li><li class="footer">'.$linkPrefix.$footerText.$linkSuffix.'</li></ul></li>';
 	}
 	
-	public function getTopbarSimpleElement($text, $icon, $link, $tint = CRM_UI_STYLE_DEFAULT) {
+	public function getTopbarSimpleElement($text, $icon, $link, $tint = "aqua") {
 		$shortText = $this->substringUpTo($text, 40);
-		return '<li style="text-align: left; !important;"><a href="'.$link.'"><i class="fa fa-'.$icon.' '.$tint.'"></i> '.$shortText.'</a></li>';
+		return '<li style="text-align: left; !important;"><a href="'.$link.'"><i class="fa fa-'.$icon.' text-'.$tint.'"></i> '.$shortText.'</a></li>';
 	}
 	
 	public function getTopbarSimpleElementWithDate($text, $date, $icon, $link, $tint = CRM_UI_STYLE_DEFAULT) {
@@ -1224,7 +1362,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function getSidebar($userid, $username, $userrole, $avatar) {
 		$numMessages = $this->db->getUnreadMessagesNumber($userid);
 		$numTasks = $this->db->getUnfinishedTasksNumber($userid);
-		$numNotifications = $this->db->getNumberOfTodayNotifications($userid);
+		$numNotifications = $this->db->getNumberOfTodayNotifications($userid) + $this->db->getNumberOfTodayEvents($userid);
 		$mh = \creamy\ModuleHandler::getInstance();
 		
 		$adminArea = "";
@@ -1266,7 +1404,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	        }
         }
 
-        // ending: messages, notifications, tasks
+        // ending: messages, notifications, tasks, events.
+        $result .= $this->getSidebarItem("events.php", "calendar-o", $this->lh->translationFor("events"));
         $result .= $this->getSidebarItem("messages.php", "envelope", $this->lh->translationFor("messages"), $numMessages);
         $result .= $this->getSidebarItem("notifications.php", "exclamation", $this->lh->translationFor("notifications"), $numNotifications, "orange");
         $result .= $this->getSidebarItem("tasks.php", "tasks", $this->lh->translationFor("tasks"), $numTasks, "red");
@@ -1325,7 +1464,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$modalTitle = $this->lh->translationFor("edit_customer_type");
 		$modalSubtitle = $this->lh->translationFor("enter_new_name_customer_type");
 		$name = $this->lh->translationFor("name");
-		$newnameInput = $this->singleFormInputGroup($this->singleFormInputElement("newname", "newname", "text required", $name));
+		$newnameInput = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("newname", "newname", "text required", $name));
 		$hiddenidinput = $this->hiddenFormField("customer-type-id");
 		$bodyInputs = $newnameInput.$hiddenidinput;
 		$msgDiv = $this->emptyMessageDivWithTag("editcustomermessage");
@@ -1347,8 +1486,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$cg_text = $this->lh->translationFor("customer_group");
 		$hc_text = $this->lh->translationFor("new_customer_group");
 		$cr_text = $this->lh->translationFor("create");
-		$inputfield = $this->singleFormInputGroup($this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text));
-		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, CRM_UI_STYLE_PRIMARY, "creationmessage");
+		$inputfield = $this->singleFormInputElement("newdesc", "newdesc", "text", $cg_text);
+		$formbox = $this->boxWithForm("createcustomergroup", $hc_text, $inputfield, $cr_text, CRM_UI_STYLE_DEFAULT, "creationmessage");
 		
 		// javascript form submit.
 		$successJS = $this->reloadLocationJS();
@@ -1374,217 +1513,6 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
        return $result;
 	}
 
-   	/**
-	 * Generates the HTML code for the editing customer form.
-	 * @param customerId Int the id of the customer to edit
-	 * @param customerType String the table name (= customer type identifier) of the customer to edit. 
-	 * @param userHasWritePermission Bool true if the requesting user has write permissions.
-	 */
-	public function generateCustomerEditionForm($customerid, $customerType, $userHasWritePermissions) {
-		$customerobj = NULL;
-		$errormessage = NULL;
-		
-		if (isset($customerid) && isset($customerType)) {
-			$customerobj = $this->db->getDataForCustomer($customerid, $customerType);
-		} else {
-    		$errormessage = $this->lh->translationFor("some_fields_missing");
-		}
-		
-		if (!empty($customerobj)) {
-
-			// marital status
-            $currentMS = 0;
-            if (isset($customerobj["marital_status"])) {
-                $currentMS = $customerobj["marital_status"];
-                if ($currentMS < 1) $currentMS = 0;
-                if ($currentMS > 5) $currentMS = 0;
-            }
-            $msSelected0 = $currentMS == 0 ?  "selected" : "";
-            $msSelected1 = $currentMS == 1 ?  "selected" : "";
-            $msSelected2 = $currentMS == 2 ?  "selected" : "";
-            $msSelected3 = $currentMS == 3 ?  "selected" : "";
-            $msSelected4 = $currentMS == 4 ?  "selected" : "";
-			$msSelected5 = $currentMS == 5 ?  "selected" : "";
-
-			// gender
-	        $currentGender = -1;
-	        if (isset($customerobj["gender"])) {
-	            $currentGender = $customerobj["gender"];
-	            if ($currentGender < 0) $currentGender = -1;
-	            if ($currentGender > 1) $currentGender = -1;
-	        }
-	        $cgSelectedDefault = $currentGender == -1 ? "selected" : "";
-	        $cgSelected0 = $currentGender == 0 ? "selected" : "";
-	        $cgSelected1 = $currentGender == 1 ? "selected" : "";
-	        
-	        // date as dd/mm/yyyy
-			$dateAsDMY = "";
-	        if (isset($customerobj["birthdate"])) { 
-	            $time = strtotime($customerobj["birthdate"]);
-	            $dateAsDMY = date('d/m/Y', $time); 
-	        }
-
-			// buttons at bottom (only for writing+ permissions)
-			$buttons = "";
-			if ($userHasWritePermissions) {
-				$buttons = '<div class="modal-footer clearfix">
-	                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="modifyCustomerDeleteButton" href="'.
-	                        $customerid.'"><i class="fa fa-times"></i> '.$this->lh->translationFor("delete").'</button>
-	                        <button type="submit" class="btn btn-primary pull-left" id="modifyCustomerOkButton"><i class="fa fa-check-circle"></i> '.
-	                        $this->lh->translationFor("modify").'</button>
-	                    </div>';
-			}
-
-			// do not send email
-			$doNotSendEmail = empty($customerobj["do_not_send_email"]) ? "" : "checked";
-
-            return '<div class="box box-primary">
-                    <div class="box-header">
-                        <h3 class="box-title">Introduzca los nuevos datos</h3>
-                    </div><!-- /.box-header -->
-                    <!-- form start -->
-	                <form role="form" action="" method="post" name="modifycustomerform" id="modifycustomerform">
-	                    <div class="modal-body">
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-	                                <input name="name" id="name" type="text" class="form-control" value="'.
-	                                $customerobj["name"].'" placeholder="'.$this->lh->translationFor("name").' ('.$this->lh->translationFor("mandatory").')'.'">
-	                            </div>
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-medkit"></i></span>
-	                                <input name="productType" id="productType" value="'.
-	                                $customerobj["type"].'" type="text" class="form-control" placeholder="'.$this->lh->translationFor("customer_or_service_type").'">
-	                            </div>
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
-	                                <input name="id_number" id="id_number" type="text" class="form-control" placeholder="'.
-	                                $this->lh->translationFor("id_number").'" value="'.$customerobj["id_number"].'">
-	                            </div>
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-	                                <input name="email" id="email" type="text" class="form-control" placeholder="'.
-	                                $this->lh->translationFor("email").'" value="'.$customerobj["email"].'">
-	                            </div>                  
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-phone"></i></span>
-	                                <input name="phone" id="phone" type="text" class="form-control" placeholder="'.
-	                                $this->lh->translationFor("home_phone").'" value="'.$customerobj["phone"].'">
-	                            </div>                  
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-mobile"></i></span>
-	                                <input name="mobile" id="mobile" type="text" class="form-control" placeholder="'.
-	                                $this->lh->translationFor("mobile_phone").'" value="'.$customerobj["mobile"].'">
-	                            </div>                  
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-	                                <input name="address" id="address" type="text" class="form-control" placeholder="'.
-	                                $this->lh->translationFor("address").'" value="'.$customerobj["address"].'">
-	                            </div>                  
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="row">
-								<div class="col-lg-6">
-		                            <div class="input-group">
-		                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-		                                <input name="city" id="city" type="text" class="form-control" placeholder="'.
-		                                $this->lh->translationFor("city").'" value="'.$customerobj["city"].'">
-		                            </div>
-		                        </div><!-- /.col-lg-6 -->
-		                        <div class="col-lg-6">
-		                            <div class="input-group">
-		                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-		                                <input name="state" id="state" type="text" class="form-control" placeholder="'.
-		                                $this->lh->translationFor("estate").'" value="'.$customerobj["state"].'">
-		                            </div>                        
-		                        </div><!-- /.col-lg-6 -->
-	                            </div>
-	                        </div>
-	                        <div class="form-group">
-	                            <div class="row">
-								<div class="col-lg-6">
-		                            <div class="input-group">
-		                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-		                                <input name="zipcode" id="zipcode" type="text" class="form-control" placeholder="'.
-		                                $this->lh->translationFor("zip_code").'" value="'.$customerobj["zip_code"].'">
-		                            </div>
-		                        </div><!-- /.col-lg-6 -->
-		                        <div class="col-lg-6">
-		                            <div class="input-group">
-		                                <span class="input-group-addon"><i class="fa fa-map-marker"></i></span>
-		                                <input name="country" id="country" type="text" class="form-control" placeholder="'.
-		                                $this->lh->translationFor("country").'" value="'.$customerobj["country"].'">
-		                            </div>                        
-		                        </div><!-- /.col-lg-6 -->
-	                            </div>
-	                        </div>
-							<div class="form-group">
-	                            <div class="input-group">
-	                                <span class="input-group-addon"><i class="fa fa-file-text-o"></i></span>
-	                                <textarea id="notes" name="notes" placeholder="'.
-	                                $this->lh->translationFor("notes").'" class="form-control">'.$customerobj["notes"].'</textarea>
-	                            </div>                  
-	                        </div>
-	                        <div class="form-group">
-	                            <label>'.$this->lh->translationFor("marital_status").'</label>
-	                            <select class="form-control" id="maritalstatus" name="maritalstatus">
-									<option value="0" '.$msSelected0.'>'.$this->lh->translationFor("choose_an_option").'</option>
-	                                <option value="1" '.$msSelected1.'>'.$this->lh->translationFor("single").'</option>
-	                                <option value="2" '.$msSelected2.'>'.$this->lh->translationFor("married").'</option>
-	                                <option value="3" '.$msSelected3.'>'.$this->lh->translationFor("divorced").'</option>
-	                                <option value="4" '.$msSelected4.'>'.$this->lh->translationFor("separated").'</option>
-	                                <option value="5" '.$msSelected5.'>'.$this->lh->translationFor("widow").'</option>
-	                            </select>
-	                        </div>
-							<div class="form-group">
-	                            <label>'.$this->lh->translationFor("gender").'</label>
-	                            <select class="form-control" id="gender" name="gender">
-									<option value="-1" '.$cgSelectedDefault.'>'.$this->lh->translationFor("choose_an_option").'</option>
-	                                <option value="0" '.$cgSelected0.'>'.$this->lh->translationFor("female").'</option>
-	                                <option value="1" '.$cgSelected1.'>'.$this->lh->translationFor("male").'</option>
-	                            </select>
-	                        </div>
-	                        <div class="form-group">
-	                            <label>'.$this->lh->translationFor("birthdate").':</label>
-	                            <div class="input-group">
-	                                <div class="input-group-addon">
-	                                    <i class="fa fa-calendar"></i>
-	                                </div>
-	                                <input name="birthdate" id="birthdate" type="text" class="form-control" data-inputmask="\'alias\': \'dd/mm/yyyy\'" data-mask value="'.$dateAsDMY.'" placeholder="dd/mm/yyyy"/>
-	                            </div><!-- /.input group -->
-	                        </div><!-- /.form group -->                        
-	                        <div class="form-group">
-	                            <div class="checkbox">
-	                                <label><input name="donotsendemail" id="donotsendemail" type="checkbox" '.$doNotSendEmail.'/> 
-	                                '.$this->lh->translationFor("do_not_send_email").'</label>
-	                            </div>
-	                        </div>
-							<input type="hidden" id="customer_type" name="customer_type" value="'.$customerType.'">
-							<input type="hidden" id="customerid" name="customerid" value="'.$customerid.'">
-							<div id="modifycustomerresult" name="modifycustomerresult"></div>
-	                    </div>
-	                    '.$buttons.'
-	                </form>
-                </div><!-- /.box -->';
-
-		} else {
-			print $this->calloutErrorMessage($errormessage);
-		}
-		
-	}
-   	
 	/** Tasks */
 
 	/**
@@ -1600,7 +1528,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$creationdate = $this->relativeTime($task["creation_date"]);
 		// values dependent on completion of the task.
 		$doneOrNot = $completed == 100 ? 'class="done"' : '';
-		$completeActionCheckbox = $completed == 100 ? '' : '<input type="checkbox" value="" name="" style="position: absolute; opacity: 0;">';
+		$completeActionCheckbox = $completed == 100 ? '' : '<input type="checkbox" value="" name="">';
 		// modules hovers.
 		$mh = \creamy\ModuleHandler::getInstance();
 		$moduleTaskHoverActions = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TASK_LIST_HOVER, array("taskid" => $task["id"]), CRM_MODULE_MERGING_STRATEGY_APPEND);
@@ -1664,6 +1592,116 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		return $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_TASK_LIST_ACTION, null, CRM_MODULE_MERGING_STRATEGY_APPEND);
 	}
 	
+	/**
+	 * Generates the inner form code for the fields of the customer creation/edition form (the form part is not included, 
+	 * allowing it to be a modal or inline form). If $customerobj is specified, the values are loaded from it.
+	 * @param Array $customerobj an associative array with the current customer values, or null.
+	 * @return String a HTML generated code with the form fields without the form, ready to be wrapped in a form by using
+	 * any of the form generation methods of this class.
+	 */
+	public function customerFieldsForForm($customerobj = null, $customerType = null, $customerid = null) {
+		// name
+		$ph = $this->lh->translationFor("name").' ('.$this->lh->translationFor("mandatory").')';
+		$vl = isset($customerobj["name"]) ? $customerobj["name"] : null;
+		$name_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("name", "name", "text", $ph, $vl, "user"));
+
+		// type of customer service.
+		$ph = $this->lh->translationFor("customer_or_service_type");
+		$vl = isset($customerobj["type"]) ? $customerobj["type"] : null;
+		$ptype_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("productType", "productType", "text", $ph, $vl, "puzzle-piece"));
+
+		// Customer id number or id identifier (passport, NIF, DNI...).
+		$ph = $this->lh->translationFor("id_number");
+		$vl = isset($customerobj["id_number"]) ? $customerobj["id_number"] : null;
+		$idnum_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("id_number", "id_number", "text", $ph, $vl, "credit-card"));
+
+		// phone
+		$ph = $this->lh->translationFor("home_phone");
+		$vl = isset($customerobj["phone"]) ? $customerobj["phone"]: null;
+		$phone_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("phone", "phone", "text", $ph, $vl, "phone"));
+
+		// mobile phone
+		$ph = $this->lh->translationFor("mobile_phone");
+		$vl = isset($customerobj["mobile_phone"]) ? $customerobj["mobile"] : null;
+		$mobile_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("mobile", "mobile", "text", $ph, $vl, "mobile"));
+
+		// email
+		$ph = $this->lh->translationFor("email");
+		$vl = isset($customerobj["email"]) ? $customerobj["email"] : null;
+		$email_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("email", "email", "text", $ph, $vl, "envelope"));
+
+		// address
+		$ph = $this->lh->translationFor("address");
+		$vl = isset($customerobj["address"]) ? $customerobj["address"] : null;
+		$address_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("address", "address", "text", $ph, $vl, "map-marker"));
+
+		// city & state
+		$ph = $this->lh->translationFor("city");
+		$vl = isset($customerobj["city"]) ? $customerobj["city"] : null;
+		$city_f = $this->singleInputGroupWithContent($this->singleFormInputElement("city", "city", "text", $ph, $vl, "map-marker"));
+		$ph = $this->lh->translationFor("state");
+		$vl = isset($customerobj["state"]) ? $customerobj["state"] : null;
+		$state_f = $this->singleInputGroupWithContent($this->singleFormInputElement("state", "state", "text", $ph, $vl, "map-marker"));
+		$c_and_s_row = $this->rowWithVariableContents(array("6", "6"), array($city_f, $state_f));
+		$c_and_s_field = $this->singleFormGroupWrapper($c_and_s_row);
+
+		// zip code and country
+		$ph = $this->lh->translationFor("zipcode");
+		$vl = isset($customerobj["zipcode"]) ? $customerobj["zip_code"] : null;
+		$zip_f = $this->singleInputGroupWithContent($this->singleFormInputElement("zipcode", "zipcode", "text", $ph, $vl, "map-marker"));
+		$ph = $this->lh->translationFor("country");
+		$vl = isset($customerobj["country"]) ? $customerobj["country"] : null;
+		$country_f = $this->singleInputGroupWithContent($this->singleFormInputElement("country", "country", "text", $ph, $vl, "map-marker"));
+		$c_and_z_row = $this->rowWithVariableContents(array("6", "6"), array($zip_f, $country_f));
+		$c_and_z_field = $this->singleFormGroupWrapper($c_and_z_row);
+		
+		// textarea
+		$ph = $this->lh->translationFor("notes");
+		$vl = isset($customerobj["notes"]) ? $customerobj["notes"] : null;
+		$notes_f = $this->singleFormGroupWithInputGroup($this->singleFormTextareaElement("notes", "notes", $ph, $vl, "file-text-o"));
+		
+		// marital status
+        $currentMS = 0; $msOptions = "";
+        $ms = array("choose_an_option","single","married","divorced","separated","widow");
+        if (isset($customerobj["marital_status"])) {
+            $currentMS = $customerobj["marital_status"];
+            if ($currentMS < 1 || $currentMS > 5) $currentMS = 0;
+        }
+		$ms_f = $this->singleFormGroupWithSelect($this->lh->translationFor("marital_status"), "maritalstatus", "maritalstatus", $ms, $currentMS, true);
+		
+		// gender
+        $currentGender = -1;
+        if (isset($customerobj["gender"])) {
+            $currentGender = $customerobj["gender"];
+            if ($currentGender < 0 || $currentGender > 1) $currentGender = -1;
+        }
+        $genders = array("-1" => "choose_an_option", "0" => "female", "1" => "male");
+		$gender_f = $this->singleFormGroupWithSelect($this->lh->translationFor("gender"), "gender", "gender", $genders, $currentGender, true);
+        
+		// birthdate
+		$dateAsDMY = "";
+        if (isset($customerobj["birthdate"])) { 
+            $time = strtotime($customerobj["birthdate"]);
+            $dateAsDMY = date('d/m/Y', $time); 
+        }
+		$md = $this->maskedDateInputElement("birthdate", "birthdate", "dd/mm/yyyy", $dateAsDMY, "calendar", true);
+		$birth_f = $this->singleFormGroupWithInputGroup($md, $this->lh->translationFor("birthdate"));
+								
+		// do not send email
+		$doNotSendEmail = isset($customerobj["do_not_send_email"]) ? filter_var($customerobj["do_not_send_email"], FILTER_VALIDATE_BOOLEAN) : null; 
+		$dnsmc = $this->checkboxInputWithLabel($this->lh->translationFor("do_not_send_email"), "donotsendemail", "donotsendemail", $doNotSendEmail);
+		$dnsm_f = $this->singleFormGroupWrapper($dnsmc);
+
+		// hidden fields: customer type and id
+		$hidden = "";
+		$hidden .= $this->hiddenFormField("customer_type", $customerType);
+		$hidden .= $this->hiddenFormField("customerid", $customerid);
+
+		// join all fields
+		$formcontent = $name_f.$ptype_f.$idnum_f.$email_f.$phone_f.$mobile_f.$address_f.$c_and_s_field.$c_and_z_field.$notes_f.$ms_f.$gender_f.$birth_f.$dnsm_f.$hidden;
+		return $formcontent;
+	}
+	
 	/** Messages */
 
 	/**
@@ -1685,7 +1723,6 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			// don't include ourselves.
 			if ($userobj["id"] != $myuserid) {
 				$selectedUserCode = "";
-				error_log("Analizando usuario ".$userobj["id"].", selected user is $selectedUser");
 				if (isset($selectedUser) && ($selectedUser == $userobj["id"])) { $selectedUserCode = 'selected="true"'; }
 				$response = $response.'<option value="'.$userobj["id"].'" '.$selectedUserCode.' >'.$userobj["name"].'</option>';
 			} else if ($includeSelf === true) { // assign to myself by default unless another $selectedUser has been specified.
@@ -1715,7 +1752,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 
 			$table .= '<td><input type="checkbox" class="message-selection-checkbox" value="'.$message["id"].'"/></td>';
 			$table .= '<td class="mailbox-star"><i class="fa fa-star'.$favouriteHTML.'" id="'.$message["id"].'"></i></td>';
-			$table .= '<td class="mailbox-name">'.$messageLink.$message["remote_user"].'</a></td>';
+			$table .= '<td class="mailbox-name">'.$messageLink.(isset($message["remote_user"]) ? $message["remote_user"] : $this->lh->translationFor("unknown")).'</a></td>';
 			$table .= '<td class="mailbox-subject">'.$message["subject"].'</td>';
 			$table .= '<td class="mailbox-attachment"></td>'; //<i class="fa fa-paperclip"></i></td>';
 			$table .= '<td class="mailbox-date pull-right">'.$this->relativeTime($message["date"]).'</td>';
@@ -1851,105 +1888,38 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	}
 
 	/**
-	 * Generates a modal dialog HTML code for a given message of a given id. If the message is not found or an error occurrs, a error modal message is generated.
-	 * @param $userid Int the user identifier the message belongs to
-	 * @param $messageid Int the identifier for the message.
-	 * @param $folder Int identifier of the mail folder the message is contained in.
-	 * @return the modal dialog HTML code. 
-	 */
-	public function getMessageModalDialogAsHTML($userid, $messageid, $folder) {
-		$obj = $this->db->getSpecificMessage($userid, $messageid, $folder); // get message object
-	
-		// generate the message modal dialog to show the message.
-		if (isset($obj)) {
-			$messageid = $obj["id"]; 
-			$fromuserid = $obj["user_from"]; 
-			$touserid = $obj["user_to"]; 
-			$subject = $obj["subject"]; 
-			$text = $obj["message"]; 
-			$messagedate = $obj["date"]; 
-			$remoteusername = $obj["name"]; 
-			$fromortodestination = ($fromuserid == $userid)? $this->lh->translationFor("to")." $remoteusername." : $this->lh->translationFor("from")." $remoteusername.";
-			$relativeTime = $this->relativeTime($messagedate);
-		
-			return '
-			<div class="modal-dialog">
-		        <div class="modal-content">
-		            <div class="modal-header">
-		                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                <h4 class="modal-title"><i class="fa fa-envelope-o"></i> '.$this->lh->translationFor("message").' '.$fromortodestination.'</h4>
-		            </div>
-		            <form action="#" method="post" id="show-message-form" name="show-message-form" role="form">
-		                <div class="modal-body">
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-user"></i></span>
-		                            <input name="fromuserid" id="fromuserid" type="text" class="form-control" value="'.$remoteusername.'" readonly>
-		                        </div>
-		                    </div>
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-comment"></i></span>
-		                            <input name="subject" id="subject" type="text" class="form-control" value="'.$subject.'" readonly>
-		                        </div>
-		                    </div>                    
-		                    <div class="form-group">
-		                        <div class="input-group">
-		                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-		                            <input name="messagedate" id="messagedate" type="text" class="form-control" value="'.$relativeTime.'" readonly>
-		                        </div>
-		                    </div> 
-							<div class="form-group">
-		                        <textarea name="message" id="message" class="form-control" placeholder="'.$this->lh->translationFor("message").'" style="height: 120px;" readonly>'.$text.'
-		                        </textarea>
-		                    </div>
-		                </div>
-		                <input type="hidden" id="messageid" name="messageid" value="'.$messageid.'">
-		                <div class="modal-footer clearfix">
-		                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> '.$this->lh->translationFor("exit").'</button>
-		                </div>
-		            </form>
-		        </div><!-- /.modal-content -->
-			</div><!-- /.modal-dialog -->';
-    	} else {
-			return $this->modalErrorMessage($this->lh->translationFor("unable_get_message"), $this->lh->translationFor("error_getting_message"));
-    	}
-
-	} // end function
-
-	/**
-	 * Generates the HTML code for showing the attachements of a given message.
+	 * Generates the HTML code for showing the attachments of a given message.
 	 * @param Int $messageid 	identifier for the message.
 	 * @param Int $folderid 	identifier for the folder.
 	 * @param Int $userid 		identifier for the user.
-	 * @return String The HTML code containing the code for the attachements.
+	 * @return String The HTML code containing the code for the attachments.
 	 */
-	public function attachementsSectionForMessage($messageid, $folderid) {
-		$attachements = $this->db->getMessageAttachements($messageid, $folderid);
-		if (!isset($attachements) || count($attachements) < 1) { return ""; }
+	public function attachmentsSectionForMessage($messageid, $folderid) {
+		$attachments = $this->db->getMessageAttachments($messageid, $folderid);
+		if (!isset($attachments) || count($attachments) < 1) { return ""; }
 		
 		$code = '<div class="box-footer non-printable"><ul class="mailbox-attachments clearfix">';
-		foreach ($attachements as $attachement) {
+		foreach ($attachments as $attachment) {
 			// icon/image
-			$icon = $this->getFiletypeIconForFile($attachement["filepath"]);
+			$icon = $this->getFiletypeIconForFile($attachment["filepath"]);
 			if ($icon != CRM_FILETYPE_IMAGE) {
 				$hasImageCode = "";
 				$iconCode = '<i class="fa fa-'.$icon.'"></i>';
 				$attIcon = "paperclip";
 			} else {
 				$hasImageCode = "has-img";
-				$iconCode = '<img src="'.$attachement["filepath"].'" alt="'.$this->lh->translationFor("attachement").'"/>';
+				$iconCode = '<img src="'.$attachment["filepath"].'" alt="'.$this->lh->translationFor("attachment").'"/>';
 				$attIcon = "camera";
 			}
 			// code
-			$basename = basename($attachement["filepath"]);
+			$basename = basename($attachment["filepath"]);
 			$code .= '<li><span class="mailbox-attachment-icon '.$hasImageCode.'">'.$iconCode.'</span>
                       <div class="mailbox-attachment-info">
-                        <a href="'.$attachement["filepath"].'" target="_blank" class="mailbox-attachment-name">
+                        <a href="'.$attachment["filepath"].'" target="_blank" class="mailbox-attachment-name">
                         <i class="fa fa-'.$attIcon.'"></i> '.$basename.'</a>
                         <span class="mailbox-attachment-size">
-                          '.$attachement["filesize"].'
-                          <a href="'.$attachement["filepath"].'" target="_blank" class="btn btn-default btn-xs pull-right"><i class="fa fa-cloud-download"></i></a>
+                          '.$attachment["filesize"].'
+                          <a href="'.$attachment["filepath"].'" target="_blank" class="btn btn-default btn-xs pull-right"><i class="fa fa-cloud-download"></i></a>
                         </span>
                       </div>
                     </li>';			
@@ -1973,6 +1943,90 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		else { return CRM_FILETYPE_UNKNOWN; }
 	}
 
+	/** Events */
+	
+	/**
+	 * Returns a time selection for an event. It includes time periods of 15 min.
+	 * Default value is "All day" with value 0. All other values contain the time
+	 * string in HH:mm format.
+	 */
+	public function eventTimeSelect() {
+		// build options
+		$options = array("all_day" => $this->lh->translationFor("all_day"));
+		for ($i = 0; $i < 24; $i++) {
+			for ($j = 0; $j < 60; $j += 15) {
+				$hour = sprintf("%02d", $i);
+				$minute = sprintf("%02d", $j);
+				$options["$hour:$minute"] = "$hour:$minute"; 
+			}
+		}
+		
+		// return select.
+		return $this->singleFormGroupWithSelect(
+		    null, 									// label
+		    "time", 								// id
+		    "time", 								// name
+		    $options, 								// options
+		    "all_day",								// selected option 
+		    false);									// needs translation
+	}
+	
+	/**
+	 * Returns the list of unassigned events as list.
+	 */
+	public function getUnassignedEventsList($userid) {
+		$result = "<div id='external-events'>";
+		$events = $this->db->getUnassignedEventsForUser($userid);
+		foreach ($events as $event) {
+			$result .= "<div event-id='".$event["id"]."' class='external-event bg-".$this->creamyColorForHexValue($event["color"])."'>".$event["title"]."</div>";
+		}
+		$result .= "</div>";
+		return $result;
+	}
+	
+	/**
+	 * Returns the list of date-assigned events as javascript full calendar list.
+	 */
+	public function getAssignedEventsListForCalendar($userid) {
+		$result = "events: [ ";
+		$events = $this->db->getAssignedEventsForUser($userid);
+		foreach ($events as $event) {
+			// id
+			$eventId = $event["id"];
+			// title
+			$title = $event["title"];
+			// end and start date.
+			$startDate = strtotime($event["start_date"]);
+			if (empty($event["end_date"])) { continue; } // no end date? no way!
+			$endDate = strtotime($event["end_date"]);
+			// start date components
+			$comp = getdate($startDate);
+			$y = $comp["year"]; $m = $comp["mon"]-1; $d = $comp["mday"]; $H = $comp["hours"]; $M = $comp["minutes"];
+			$startCode = ", start: new Date($y, $m, $d, $H, $M)";
+			$comp = getdate($endDate);
+			$y = $comp["year"]; $m = $comp["mon"]-1; $d = $comp["mday"]; $H = $comp["hours"]; $M = $comp["minutes"];
+			$endCode = ", end: new Date($y, $m, $d, $H, $M)";
+			// all day?
+			$allDayCode = ", allDay: ".(($event["all_day"]) ? "true" : "false");
+			// url
+			if (isset($event["url"])) { $urlCode = ", url: '".$event["url"]."'"; }
+			else $urlCode = "";
+			// color
+			$color = $event["color"];
+			$colorCode = ", backgroundColor: '$color', borderColor: '$color'";
+			
+			$result .= "{ id: $eventId, title: '$title' $startCode $endCode $allDayCode $urlCode $colorCode},";
+		}
+		$result = rtrim($result, ",");
+		$result .= "]";
+		return $result;
+	}
+
+	public function getTimezoneForCalendar() {
+		$timezone = $this->db->getTimezoneSetting();
+		return "timezone: '$timezone', timezoneParam: '$timezone'";
+	}
+
 	/** Notifications */
 
 	/**
@@ -1982,6 +2036,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	 */
 	public function notificationIconForNotificationType($type) {
 		if ($type == "contact") return "user";
+		else if ($type == "event") return "calendar-o";
 		else if ($type == "message") return "envelope";
 		else return "calendar-o";
 	}
@@ -2005,6 +2060,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function actionButtonTextForNotificationType($type) {
 		if ($type == "contact") return $this->lh->translationFor("see_customer");
 		else if ($type == "message") return $this->lh->translationFor("read_message");
+		else if ($type == "event") return $this->lh->translationFor("see_event");
 		else return $this->lh->translationFor("see_more");
 	}
 	
@@ -2031,7 +2087,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	 * @return String			The HTML for the button to include in the timeline item.
 	 */
 	public function timelineItemActionButton($url, $title, $style = CRM_UI_STYLE_DEFAULT) {
-		$actionHTML = '<div class="timeline-footer"><a class="btn btn-'.$style.' btn-xs" href="'.$url.'">'.$title.'</a></div>';
+		return '<div class="timeline-footer"><a class="btn btn-'.$style.' btn-xs" href="'.$url.'">'.$title.'</a></div>';
 	}
 	
 	
@@ -2112,6 +2168,24 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	}
 	
 	/**
+	 * Generates the HTML code for the given event.
+	 * @param event Array an associative array object containing the event data.
+	 * @return String a HTML representation of the notification.
+	 */
+	public function timelineItemForEvent($event) {
+		$type = "event";
+		$action = isset($event["url"]) ? $event["url"]: "events.php?initial_date=".urlencode($event["start_date"]);
+		$date = $event["start_date"];
+		$content = $this->lh->translationFor("event_programmed_today").$event["title"];
+				
+		$color = $this->creamyColorForHexValue($event["color"]);
+		$icon = $this->notificationIconForNotificationType($type);
+		$title = $this->headerTextForNotificationType($type, $action);
+		$buttonTitle = $this->actionButtonTextForNotificationType($type);
+		return $this->timelineItemWithData($title, $content, $date, $action, $buttonTitle, $icon, CRM_UI_STYLE_DEFAULT, $color);
+	}
+	
+	/**
 	 * Generates the HTML code for the given notification.
 	 * @param $notification Array an associative array object containing the notification data.
 	 * @return String a HTML representation of the notification.
@@ -2123,31 +2197,46 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		
 		// today
 		$timeline = $this->timelineStart($todayAsText);
-		
+		// notifications for today
 		$notifications = $this->db->getTodayNotifications($userid);
-		if (empty($notifications)) {
-			$title = $this->lh->translationFor("message");
-			$message = $this->lh->translationFor("no_notifications_today");
-			$timeline .= $this->timelineItemWithMessage($title, $message);
-		} else {
-			foreach ($notifications as $notification) {
-				$timeline .= $this->timelineItemForNotification($notification);
-			}
-		}
+		// events for today
+		$events = $this->db->getEventsForToday($userid);
 		// module notifications for today
 		$mh = \creamy\ModuleHandler::getInstance();
 		$modNots = $mh->applyHookOnActiveModules(
 			CRM_MODULE_HOOK_NOTIFICATIONS, 
 			array(CRM_NOTIFICATION_PERIOD => CRM_NOTIFICATION_PERIOD_TODAY), 
 			CRM_MODULE_MERGING_STRATEGY_APPEND);
-		if (isset($modNots)) { $timeline .= $modNots; }
+
+		// generate timeline items for today.
+		if (empty($notifications) && empty($events) && empty($modNots)) {
+			$title = $this->lh->translationFor("message");
+			$message = $this->lh->translationFor("no_notifications_today");
+			$timeline .= $this->timelineItemWithMessage($title, $message);
+		} else {
+			// notifications
+			foreach ($notifications as $notification) {
+				$timeline .= $this->timelineItemForNotification($notification);
+			}
+			// events
+			foreach ($events as $event) {
+				$timeline .= $this->timelineItemForEvent($event);
+			}
+			if (isset($modNots)) { $timeline .= $modNots; }
+		}
 		
         // past week
         $pastWeek = $this->lh->translationFor(CRM_NOTIFICATION_PERIOD_PASTWEEK);
 		$timeline .= $this->timelineIntermediateLabel($pastWeek);
-
+		// notifications for past week.
         $notifications = $this->db->getNotificationsForPastWeek($userid);
-		if (empty($notifications)) {
+		// module notifications for past week
+		$modNots = $mh->applyHookOnActiveModules(
+			CRM_MODULE_HOOK_NOTIFICATIONS, 
+			array(CRM_NOTIFICATION_PERIOD => CRM_NOTIFICATION_PERIOD_PASTWEEK), 
+			CRM_MODULE_MERGING_STRATEGY_APPEND);
+
+		if (empty($notifications) && empty($modNots)) {
 			$title = $this->lh->translationFor("message");
 			$message = $this->lh->translationFor("no_notifications_past_week");
 			$timeline .= $this->timelineItemWithMessage($title, $message);
@@ -2155,14 +2244,8 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			foreach ($notifications as $notification) {
 				$timeline .= $this->timelineItemForNotification($notification);
 			}
+			if (isset($modNots)) { $timeline .= $modNots; }
 		}
-		// module notifications for past week
-		$modNots = $mh->applyHookOnActiveModules(
-			CRM_MODULE_HOOK_NOTIFICATIONS, 
-			array(CRM_NOTIFICATION_PERIOD => CRM_NOTIFICATION_PERIOD_PASTWEEK), 
-			CRM_MODULE_MERGING_STRATEGY_APPEND);
-		if (isset($modNots)) { $timeline .= $modNots; }
-
 		// end timeline
 		$timeline .= $this->timelineEnd();
         

@@ -178,9 +178,16 @@ class Updater {
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
-			// add attachements for messages
-			$this->updateLog .= "Adding attachements table for message attachements...";
-			if (!$this->addAttachementsTables()) {
+			// add attachments for messages
+			$this->updateLog .= "Adding attachments table for message attachments...";
+			if (!$this->addAttachmentsTables()) {
+				$this->updateLog .= "Failed!<br/>\n";
+				return false;
+			} else { $this->updateLog .= "Done<br/>\n"; }
+						
+			// add events
+			$this->updateLog .= "Adding events table for calendar events...";
+			if (!$this->addAttachmentsTables()) {
 				$this->updateLog .= "Failed!<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
@@ -188,6 +195,13 @@ class Updater {
 			// set message field in messages as longtext.
 			$this->updateLog .= "Extending message fields to longtext...";
 			if (!$this->extendMessageFields()) {
+				$this->updateLog .= "Failed!<br/>\n";
+				return false;
+			} else { $this->updateLog .= "Done<br/>\n"; }
+
+			// set email column in users table as unique.
+			$this->updateLog .= "Setting email column as unique in users table...";
+			if (!$this->setEmailFieldAsUniqueInUsersTable()) {
 				$this->updateLog .= "Failed!<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
@@ -248,8 +262,8 @@ class Updater {
 		return $adminEmailFound;
 	}
 
-	/** Version 1.0 adds the attachements table for message attachements */
-	private function addAttachementsTables() {
+	/** Version 1.0 adds the attachments table for message attachments */
+	private function addAttachmentsTables() {
 		$fields = array(
 		  	"message_id" => "INT(11) NOT NULL",
 		  	"folder_id" => "INT(11) NOT NULL",
@@ -258,11 +272,30 @@ class Updater {
 		  	"filesize" => "INT(11) NOT NULL"
 		);
 		// inbox
-		if (!$this->dbConnector->createTable(CRM_ATTACHEMENTS_TABLE_NAME, $fields, null)) {
-			$this->error = "Creamy install: Failed to create table ".CRM_ATTACHEMENTS_TABLE_NAME."."; 
+		if (!$this->dbConnector->createTable(CRM_ATTACHMENTS_TABLE_NAME, $fields, null)) {
 			return false;
 		}
 	}
+
+	/** Version 1.0 adds the events table for calendar events */
+	private function addEventsTable() {
+		$fields = array(
+			"user_id" => "INT(11) NOT NULL",
+			"title" => "VARCHAR(512) NOT NULL",
+			"all_day" => "INT(1) NOT NULL",
+			"start_date" => "DATETIME NULL",
+			"end_date" => "DATETIME NULL",
+			"url" => "VARCHAR(512) NULL",
+			"alarm" => "VARCHAR(80) NULL",
+			"notification_sent" => "INT(1) NOT NULL DEFAULT 0",
+			"color" => "INT(80) NOT NULL" 
+		);
+		if (!$this->dbConnector->createTable(CRM_EVENTS_TABLE_NAME, $fields, null)) {
+			return false;
+		}
+		return true;
+	}
+
 	
 	/** Sets general settings parameters of the CRM */
 	private function setGeneralParametersInSettings() {
@@ -289,6 +322,14 @@ class Updater {
 		
 		// statistics system enabled (1 by default)
 		$data = array("setting" => CRM_SETTING_STATISTICS_SYSTEM_ENABLED, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
+		// email notifications of events.
+		$data = array("setting" => CRM_SETTING_EVENTS_EMAIL, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
+
+		// job scheduling frequency
+		$data = array("setting" => CRM_SETTING_JOB_SCHEDULING_MIN_FREQ, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_JOB_SCHEDULING_DAILY);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// active plugins (empty by default)
@@ -345,6 +386,12 @@ class Updater {
 		return true;
 	}
 	
+	/** Version 1.0 requires the email field of users to be unique */
+	private function setEmailFieldAsUniqueInUsersTable() {
+		return $this->dbConnector->setColumnAsUnique(CRM_USERS_TABLE_NAME, "email");
+	}
+	
+	
 	/** Utils */
 	
 	/** Returns the log */
@@ -367,5 +414,4 @@ class Updater {
 		return $this->dbConnector->addColumnToTable($table, $column, $type, $notNull);
 	}
 }
-
 ?>

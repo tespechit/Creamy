@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 
@@ -51,10 +52,8 @@ if ($validated == 1) {
 	// delete user
 	$result = $db->deleteUser($userid);
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_user");
-	} else print "success";
-	
-	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

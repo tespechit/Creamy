@@ -25,9 +25,9 @@
 
 namespace creamy;
 
+require_once('CRMDefaults.php');
 require_once('ModuleHandler.php');
 require_once('Module.php');
-require_once('CRMDefaults.php');
 include('Session.php');
 
 $mh = \creamy\ModuleHandler::getInstance();
@@ -43,10 +43,8 @@ if (isset($_POST["module_name"]) && isset($_POST["hook_name"])) {
 		unset($_POST["module_name"]);
 		// apply the custom hook on the module.
 		$result = $mh->applyHookOnModule($modulename, $hookname, $_POST);
-		if (isset($result)) { print $result; }
+		if (isset($result)) { ob_clean(); print $result; }
 		else die("Unable to run $hookname on module $modulename");
 	} else { die("Unable to process module action. Module $modulename is not enabled."); }
 } else { die("Unable to process module action. Module name or method not found."); } 
-
-
 ?>

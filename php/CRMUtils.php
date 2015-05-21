@@ -109,7 +109,7 @@ class CRMUtils {
 	 */
 	public static function creamyBaseDirectoryPath($includeLastSlash = true) {
 		$result = dirname(dirname(__FILE__));
-		if ($includeLastSlash) $result .= "/";
+		if ($includeLastSlash) $result .= DIRECTORY_SEPARATOR;
 		return $result;
 	}
 
@@ -154,7 +154,7 @@ class CRMUtils {
 		$filepath = $baseDirInDisk.$filename;
 		while (file_exists($filepath)) { // add -$i to filename
 			$components = pathinfo($filename, PATHINFO_DIRNAME | PATHINFO_BASENAME | PATHINFO_EXTENSION | PATHINFO_FILENAME);
-			$filename = $components["filename"]."-$i".$components["extension"];
+			$filename = $components["filename"]."-$i".(isset($components["extension"]) ? $components["extension"] : "");
 			$filepath = $baseDirInDisk.$filename;
 			$i++;
 		}
@@ -191,12 +191,3 @@ class CRMUtils {
 
 }
 ?>
-
-
-
-
-
-
-
-
-

@@ -22,10 +22,13 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+
+// dependencies
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
-
+// variables
 $lh = \creamy\LanguageHandler::getInstance();
 $user = \creamy\CreamyUser::currentUser();
 
@@ -44,7 +47,7 @@ if (!isset($_POST["customerid"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// get name (mandatory)
+	// get name (mandatory), customer id and customer type
 	$name = $_POST["name"];
 	$name = stripslashes($name);
 	$name = $db->escape_string($name);
@@ -55,8 +58,6 @@ if ($validated == 1) {
 	$customerType = stripslashes($customerType);
 	$customerType = $db->escape_string($customerType);
 	$createdByUser = $user->getUserId();
-	
-	// get optional values
 	
 	// email
 	$email = NULL; if (isset($_POST["email"])) { 
@@ -159,10 +160,10 @@ if ($validated == 1) {
 		$donotsendemail = 1;
 	}
 
+	// modify customer
 	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("unable_modify_customer"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	// return result
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("unable_modify_customer"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

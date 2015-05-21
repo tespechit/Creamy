@@ -41,5 +41,4 @@ if (!isset($_SESSION["avatar"])) {
 }
 
 include_once('CreamyUser.php');
-
 ?>

@@ -60,6 +60,9 @@ function fatal_error($sErrorMessage = '') {
     die( $sErrorMessage );
 }
 
+/**
+ * This function applies the module hooks for the list fields to be returned.
+ */
 function filteredResultsForCustomerColumn($customer, $customer_type) {
 	$result = array();
 	// Module Handler 
@@ -76,7 +79,11 @@ function filteredResultsForCustomerColumn($customer, $customer_type) {
 	return isset($result) ? $result : $customer;
 }
 
-function actionButtonToCustomer($customer, $customer_type) {
+/**
+ * This function generates the HTML code for the trailing button that allows the user to
+ * perform custom actions for a given user.
+ */
+function actionButtonToCustomer($customer, $customer_type, $db) {
 	// Language Handler
 	$lh = \creamy\LanguageHandler::getInstance();
 	// Module Handler 
@@ -88,6 +95,18 @@ function actionButtonToCustomer($customer, $customer_type) {
 	$modifyLink = "editcustomer.php?customerid=".$customer["id"]."&customer_type=$customer_type";
 	$modifyOption = $ui->actionForPopupButtonWithLink($modifyLink, $lh->translationFor("modify"));
 	$deleteOption = $ui->actionForPopupButtonWithOnClickCode($lh->translationFor("delete"), "deleteCustomer", array($customer["id"], $customer_type));
+	$eventOption = $ui->actionForPopupButtonWithOnClickCode($lh->translationFor("create_reminder_event"), "createEventForCustomer", array($customer["id"], $customer_type));
+	$separator = $ui->separatorForPopupButton();
+	
+	// change customer type. One for every customer type except current one.
+	$typeOptions = "";
+	$customerTypes = $db->getCustomerTypes();
+	foreach ($customerTypes as $otherCustomerType) {
+		if ($otherCustomerType["table_name"] != $customer_type) { // add a change to... button.
+			$changeTypeText = $lh->translationFor("move_to")." ".$otherCustomerType["description"];
+			$typeOptions .= $ui->actionForPopupButtonWithOnClickCode($changeTypeText, "changeCustomerType", array($customer["id"], $customer_type, $otherCustomerType["table_name"]));
+		}
+	}
 	
 	// add any module action.
 	$args = array(
@@ -97,7 +116,7 @@ function actionButtonToCustomer($customer, $customer_type) {
 	$moduleActions = $mh->applyHookOnActiveModules(CRM_MODULE_HOOK_CUSTOMER_LIST_POPUP, $args, CRM_MODULE_MERGING_STRATEGY_APPEND);
 	
 	// build the pop up action button and return it.
-	$result = $ui->popupActionButton($lh->translationFor("choose_action"), array($modifyOption, $deleteOption, $moduleActions), array("default"));
+	$result = $ui->popupActionButton($lh->translationFor("choose_action"), array($modifyOption, $moduleActions, $eventOption, $separator, $typeOptions, $separator, $deleteOption), array("default"));
 	return $result;
 }
 
@@ -162,10 +181,9 @@ $output = array(
 foreach ($result as $customer) {
 	$filtered = filteredResultsForCustomerColumn($customer, $customer_type);
 	$filtered = array_values($filtered);
-	$filtered[] = actionButtonToCustomer($customer, $customer_type);
+	$filtered[] = actionButtonToCustomer($customer, $customer_type, $db);
 	$output['aaData'][] = $filtered;
 }
-//error_log(json_encode($output, JSON_PRETTY_PRINT));
+ob_clean();
 echo json_encode($output);
-
 ?>

@@ -32,7 +32,6 @@ require_once('Module.php');
 
 // paths constants
 define ('CRM_MODULES_MAIN_FILENAME', 'module.php');
-define ('CRM_MODULES_BASEDIR', 'modules');
 
 // hooks constants
 define ('CRM_MODULE_HOOK_DASHBOARD', 'dashboardHook');
@@ -70,6 +69,9 @@ define ('CRM_MODULE_MERGING_STRATEGY_OR', 'or');
 define ('CRM_MODULE_MERGING_STRATEGY_FIRST', 'first');
 define ('CRM_MODULE_MERGING_STRATEGY_LAST', 'last');
 define ('CRM_MODULE_MERGING_STRATEGY_RANDOM', 'random');
+
+// misc
+define ('CRM_MODULE_JOB_SCHEDULING', 'scheduledJobForModule');
 
 /**
  * ModuleReference. This class contains all data used to identify, instantiate and 
@@ -617,6 +619,20 @@ class ModuleHandler {
 	    return $result;
     }    
     
+    /** Job scheduling */
+    
+    public function scheduleJobsOnActiveModules($period) {
+		// safety checks.
+		if (!$this->enabled) 					{ return null; } // module system is not enabled   
+		if (count($this->activeModules) < 1) 	{ return null; } // no active modules, nothing to do.
+
+		foreach ($this->activeModules as $modulename) {
+			$md = $this->getDefinitionOfModuleNamed($modulename);
+			if (isset($md)) { return $md->runMethodOnModule(CRM_MODULE_JOB_SCHEDULING, array("period" => $period)); }
+		}
+    }
+    
+    
     /** Custom utils */
     
     /**
@@ -662,15 +678,6 @@ class ModuleHandler {
 	public static function pageLinkForModule($module, $args, $basedir = "") {
 		return $basedir."modulepage.php?module_name=".urlencode($module)."&args=".\creamy\ModuleHandler::encodeModuleArguments($args);
 	}
-	
-	/**
-	 * Returns the custom hook module page link. The module name and parameters must be sent to that page by POST variables.
-	 * @param String $basedir	a relative path to be prefixed to the module page (for inclusion in different contexts).
-	 */
-	public static function customHookLinkForModule($basedir = "./") {
-		return $basedir."php".DIRECTORY_SEPARATOR."ModuleCustomAction.php";
-	}
-
 	
 	/**
 	 * Encodes some parameters for inclusion as arguments in the link for a module's main page.
@@ -775,7 +782,6 @@ class ModuleHandler {
             $classes = $final;
         }
         return $classes[0];
-    }
-    
+    }   
 }
-
+?>

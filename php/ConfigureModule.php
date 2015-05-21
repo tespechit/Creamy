@@ -42,11 +42,10 @@ if ($validated == 1) {
 	}
 	
 	$result = $mh->configureModule($_POST["module_name"], $_POST);
-	if ($result === true) { print "success"; }
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	else { // failure.
-		if ($enabled == "1") { $lh->translateText("unable_enable_module"); }
-		else { $lh->translateText("unable_disable_module"); } 
+		if ($enabled == "1") { ob_clean(); $lh->translateText("unable_enable_module"); }
+		else { ob_clean(); $lh->translateText("unable_disable_module"); } 
 	} 
 } else { $lh->translateText("some_fields_missing"); }
-
 ?>

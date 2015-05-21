@@ -59,7 +59,7 @@
     <link href="css/iCheck/minimal/blue.css" rel="stylesheet" type="text/css" />
     <!-- Creamy style -->
     <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-    <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+    <?php print $ui->creamyThemeCSS(); ?>
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -87,7 +87,7 @@
     <script src="js/app.min.js" type="text/javascript"></script>
 
   </head>
-  <body class="skin-blue">
+  <?php print $ui->creamyBody(); ?>
     <div class="wrapper">
       <!-- header logo: style can be found in header.less -->
 	  <?php print $ui->creamyHeader($user); ?>
@@ -127,7 +127,7 @@
             
             <!-- main content right side column -->
             <div class="col-md-9">
-              <div class="box box-primary">
+              <div class="box box-default">
                 <div class="box-header with-border">
                   <h3 class="box-title"><?php $lh->translateText("messages"); ?></h3>
                 </div><!-- /.box-header -->
@@ -152,12 +152,7 @@
           </div><!-- /.row -->
         </section><!-- /.content -->
       </div><!-- /.content-wrapper -->
-      <footer class="main-footer">
-        <div class="pull-right hidden-xs">
-          <b>Version</b> 1.0
-        </div>
-        <strong>Copyright &copy; 2014 <a href="http://digitalleaves.com">Digital Leaves</a> - <a href="http://woloweb.com">Woloweb</a>.</strong> All rights reserved.
-      </footer>
+	  <?php print $ui->creamyFooter(); ?>
     </div><!-- ./wrapper -->
 
         <!-- Page script -->
@@ -228,14 +223,14 @@
 					$("#messages-message-box").hide();
 					$.post("./php/MarkMessagesAsFavorite.php", 
 						{ "favorite": favorite, "messageids": [e.currentTarget.id], "folder": folder } ,function(data){
-						if (data == "success") { 
+						if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { 
 							// toggle visual change.
 				            $(selectedItem).toggleClass("fa-star");
 				            $(selectedItem).toggleClass("fa-star-o");
 						}
 						else {
 							<?php
-								$msg = $ui->calloutErrorMessage($lh->translateText("message")); 
+								$msg = $ui->calloutErrorMessage($lh->translationFor("message")); 
 								print $ui->fadingInMessageJS($msg, "messages-message-box");
 							?>
 						}

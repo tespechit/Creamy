@@ -99,8 +99,10 @@ class MessageOfTheDay extends Module {
 	}
 	
 	private function sectionWithCustomQuote($customQuote, $author) {
+		// quote box
 		$quoteBox = $this->ui()->boxWithQuote($this->lh()->translationFor("message_of_the_day"), $customQuote, $author);
-		return $this->ui()->fullRowWithContent($quoteBox);
+		$result = $this->ui()->fullRowWithContent($quoteBox);
+		return $result;
 	}
 
 	private function dateIsToday($date) {
@@ -224,7 +226,7 @@ class MessageOfTheDay extends Module {
 		$result = $this->db()->getOne($this->databaseTableName());
 		$currentQuote = isset($result) ? $result["favorite_quote"] : "";
 		// generate form with request. We have one quote input text and two hidden fields.
-		$quoteField = $this->ui()->singleFormInputGroup( $this->ui()->singleFormInputElement(
+		$quoteField = $this->ui()->singleFormGroupWithInputGroup( $this->ui()->singleFormInputElement(
 				"quote", 										// input id
 				"quote", 										// input name
 				"text", 										// input type (text).

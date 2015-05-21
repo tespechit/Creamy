@@ -24,6 +24,7 @@
 */
 
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require('Session.php');
 
@@ -111,6 +112,13 @@ if ($validated == 1) {
 		$country = stripslashes($country);
 		$country = $db->escape_string($country);
 	}
+		
+	// notes
+	$notes = NULL; if (isset($_POST["notes"])) { 
+		$notes = $_POST["notes"]; 
+		$notes = stripslashes($notes);
+		$notes = $db->escape_string($notes);
+	}
 	
 	// fecha de nacimiento
 	$birthdate = NULL; if (isset($_POST["birthdate"])) { 
@@ -147,10 +155,9 @@ if ($validated == 1) {
 		$donotsendemail = 1;
 	}
 
-	$result = $db->createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("unable_create_customer"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	// create customer and return result.
+	$result = $db->createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("unable_create_customer"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

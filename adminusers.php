@@ -24,6 +24,7 @@
 	*/
 	
 	require_once('./php/UIHandler.php');
+	require_once('./php/CRMDefaults.php');
     require_once('./php/LanguageHandler.php');
     include('./php/Session.php');
 
@@ -44,7 +45,7 @@
         <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -61,7 +62,7 @@
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
@@ -87,11 +88,11 @@
                 <?php if ($user->userHasAdminPermission()) { ?>
                     <div class="row">
                         <div class="col-xs-12">
-                            <div class="box">
+                            <div class="box box-default">
                                 <div class="box-header">
                                     <h3 class="box-title"><?php $lh->translateText("users"); ?></h3>
                                 </div><!-- /.box-header -->
-                                <div class="box-body table-responsive" id="users_table">
+                                <div class="box-body table" id="users_table">
 									<?php print $ui->getAllUsersAsTable(); ?>
                                 </div><!-- /.box-body -->
                             </div><!-- /.box -->
@@ -103,13 +104,14 @@
                         <!-- left column -->
                         <section class="col-lg-12 connectedSortable">
                             <!-- general form elements -->
-                            <div class="box box-primary">
+                            <div class="box box-default">
                                 <div class="box-header">
                                     <h3 class="box-title"><?php $lh->translateText("new_user"); ?></h3>
                                 </div><!-- /.box-header -->
                                 <!-- form start -->
                                 <form role="form" id="createuser" name="createuser" method="post" action="" enctype="multipart/form-data">
                                     <div class="box-body">
+	                                    <?php print $ui->getUserActivationEmailWarning(); ?>
 										<div class="form-group">
 											<div class="row">
 											<div class="col-lg-6">
@@ -121,7 +123,7 @@
 											<div class="col-lg-6">
 			                                    <div class="input-group">
 			                                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
-			                                        <input type="text" id="email" name="email" class="form-control"placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>">
+			                                        <input type="text" id="email" name="email" class="form-control required email-required" placeholder="<?php $lh->translateText("email")." (".$lh->translationFor("optional").")"; ?>">
 			                                    </div>
 											</div>
 											</div>
@@ -226,6 +228,7 @@
 				$("#createuser").validate({
 					rules: {
 						name: "required",
+						email: "required email",
 						password1: "required",
 					    password2: {
 					      minlength: 8,
@@ -233,7 +236,7 @@
 					    }
 			   		},
 					submitHandler: function(e) {
-						//submit the form
+							//submit the form
 							$("#resultmessage").html();
 							$("#resultmessage").hide();
 							var formData = new FormData(e);
@@ -245,16 +248,13 @@
 							  contentType: false,
 							  type: 'POST',
 							  success: function(data) {
-									if (data == 'success') {
-										$("#resultmessage").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check">\
-										</i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
-										<b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("user_successfully_created"); ?>');
-										$("#resultmessage").fadeIn(); //show confirmation message
+									if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
+										<?php print $ui->reloadLocationJS(); ?>
 									} else {
-										$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i>\
-										<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
-										<b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_create_user"); ?>: '+ data);
-										$("#resultmessage").fadeIn(); //show confirmation message
+										<?php 
+											$errorMsg = $ui->dismissableAlertWithMessage($lh->translationFor("unable_create_user"), false, true);
+											print $ui->fadingInMessageJS($errorMsg, "resultmessage"); 
+										?>
 									}
 							    }
 							});
@@ -271,7 +271,7 @@
 					if (r == true) {
 						var user_id = $(this).attr('href');
 						$.post("./php/DeleteUser.php", { userid: user_id } ,function(data){
-							if (data == "success") { location.reload(); }
+							if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 							else { alert ("<?php $lh->translateText("unable_delete_user"); ?>"); }
 						});
 					}
@@ -295,7 +295,7 @@
 					e.preventDefault();
 					var user_id = $(this).attr('href');
 					$.post("./php/SetUserStatus.php", { "userid": user_id, "status": 0 } ,function(data){
-						if (data == "success") { location.reload(); }
+						if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 						else { alert ("<?php $lh->translateText("unable_set_user_status"); ?>"); }
 					});
 				 });
@@ -307,7 +307,7 @@
 					e.preventDefault();
 					var user_id = $(this).attr('href');
 					$.post("./php/SetUserStatus.php", { "userid": user_id, "status": 1 } ,function(data){
-						if (data == "success") { location.reload(); }
+						if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 						else { alert ("<?php $lh->translateText("unable_set_user_status"); ?>"); }
 					});
 				 });
@@ -343,7 +343,7 @@
 						$("#adminpasswordform").serialize(), 
 							function(data){
 								//if message is sent
-								if (data == 'success') {
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
 									$("#changepasswordadminresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("password_successfully_changed"); ?>');
 									$("#changepasswordadminresult").fadeIn(); //show confirmation message
 									$("change-password-admin-ok-button").fadeOut();

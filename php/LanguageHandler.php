@@ -267,5 +267,4 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 		return null;
 	}
 }
-
 ?>

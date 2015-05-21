@@ -40,11 +40,13 @@
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+        <!-- iCheck -->
+        <link href="css/iCheck/minimal/blue.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -64,7 +66,7 @@
         <script src="js/app.min.js" type="text/javascript"></script>
 
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
@@ -93,7 +95,7 @@
 				<!-- Unfinished tasks row -->
 				<div class="row">
                     <div class="col-xs-12">
-                        <div class="box">
+                        <div class="box box-default">
                             <div class="box-header">
                                 <i class="ion ion-clipboard"></i>
                                 <h3 class="box-title"><?php $lh->translateText("unfinished_tasks"); ?></h3>
@@ -110,7 +112,7 @@
        
                 <div class="row">
                     <div class="col-xs-12">
-						<div class="box collapsed-box">
+						<div class="box collapsed-box box-default">
                             <div class="box-header">
 	                            <div class="box-tools pull-right">
                                     <button class="btn btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
@@ -136,7 +138,7 @@
                 <div class="row">
                     <div class="col-xs-12">
 
-                        <div class="box box-primary">
+                        <div class="box box-default">
                             <div class="box-header">
                                 <h3 class="box-title"><?php $lh->translateText("new_task"); ?></h3>
                             </div><!-- /.box-header -->
@@ -180,6 +182,7 @@
 				?>
            
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 
 	<!-- CHANGE TASK MODAL -->
@@ -203,7 +206,7 @@
                     </div>
                     <div class="modal-footer clearfix">
                         <button type="button" class="btn btn-danger pull-right" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
-                        <button type="submit" class="btn btn-primary pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
+                        <button type="submit" class="btn btn-warning pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
                     </div>
                 </form>
             </div><!-- /.modal-content -->
@@ -217,7 +220,7 @@
 	<!-- END TASK DIALOGS -->
 
 		<script type="text/javascript">
-			$(document).ready(function() {
+		$(document).ready(function() {
 			/** 
 			 * Creates a new task.
 		 	 */
@@ -233,7 +236,7 @@
 						$("#createtask").serialize(), 
 							function(data){
 								//if message is sent
-								if (data == 'success') {
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
 									location.reload();
 								} else {
 									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_create_task"); ?>: '+ data);
@@ -254,7 +257,7 @@
 				if (r == true) {
 					var taskid = $(this).attr('href');
 					$.post("./php/DeleteTask.php", { "taskid": taskid } ,function(data){
-						if (data == "success") { location.reload(); }
+						if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 						else { alert ("<?php $lh->translateText("unable_delete_task"); ?>"); }
 					});
 				}
@@ -287,7 +290,7 @@
 						$("#edit-task-form").serialize(), 
 							function(data){
 								//if message is sent
-								if (data == 'success') {
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
 									location.reload();
 								} else {
 									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_modify_task"); ?>: '+ data);
@@ -316,20 +319,21 @@
 		        ele.toggleClass("done");
 				$.post("./php/CompleteTask.php", {"complete-task-taskid": task_id, "complete-task-progress": "100" }, 
 				function(data){
-					if (data == "success") { location.reload(); }
+					if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 					else {
 						$("#changetaskresult").html(data);
 						$("#changetaskresult").fadeIn();
 					}
 				});
 		    });
-		
-		    $('input', this).on('ifUnchecked', function(event) {
-		        var ele = $(this).parents("li").first();
-		        ele.toggleClass("done");
+
+		    $('input').iCheck({
+		    	checkboxClass: 'icheckbox_minimal-blue',
+				radioClass: 'iradio_minimal-blue'
 		    });
-			
+		
 		});
+		
 		</script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>

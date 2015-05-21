@@ -22,6 +22,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
@@ -40,14 +41,13 @@ if (!isset($_POST["customer-type-id"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// get mandatory
+	// get mandatory fields
 	$customerTypeId = $_POST["customer-type-id"];
 	$newDescription = $_POST["newname"];
-
+	// modify customer type/description
 	$result = $db->modifyCustomerDescription($customerTypeId, $newDescription);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("error_editing_customer_name"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	// return results.
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("error_editing_customer_name"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

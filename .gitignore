@@ -1,3 +1,5 @@
 .DS_Store
 installed.txt
 php/Config.php
+uploads/*
+img/avatars/*.jpg

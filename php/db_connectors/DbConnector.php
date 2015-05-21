@@ -173,6 +173,16 @@ interface DbConnector {
      */
     public function dropColumnFromTable($tableName, $columnName);
 
+	/**
+	 * ALTER table, adding a unique field to the table.
+	 *
+     * @param string  $tableName The name of the database table to drop the column from.
+     * @param string  $columnName The name of the column to drop.
+     *
+     * @return boolean Indicates success. 0 or 1.
+	 */
+    public function setColumnAsUnique($tableName, $columnName);
+
     /**
      * ADD column to table query. Use with caution.
      * @param string  $tableName The name of the database table to drop the column from.

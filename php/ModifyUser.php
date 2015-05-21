@@ -1,4 +1,28 @@
 <?php
+/**
+	The MIT License (MIT)
+	
+	Copyright (c) 2015 Ignacio Nieto Carvajal
+	
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
@@ -13,6 +37,7 @@ if (!isset($_POST["modifyid"])) {
 	$validated = 0;
 }
 
+// check and process new avatar file if necessary
 $avatarOrigin = NULL;
 $imageFileType = NULL;
 if ((!empty($_FILES["avatar"])) && (!empty($_FILES["avatar"]["name"]))) {
@@ -41,12 +66,12 @@ if ((!empty($_FILES["avatar"])) && (!empty($_FILES["avatar"]["name"]))) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// collect new user data.	
 	$modifyid = $_POST["modifyid"];
-	$email = NULL; if (isset($_POST["email"])) { 
-		$email = $_POST["email"]; 
-		$email = stripslashes($email);
-		$email = $db->escape_string($email); 
+	$name = NULL; if (isset($_POST["name"])) { 
+		$name = $_POST["name"]; 
+		$name = stripslashes($name);
+		$name = $db->escape_string($name); 
 
 	}
 	$phone = NULL; if (isset($_POST["phone"])) { 
@@ -57,22 +82,27 @@ if ($validated == 1) {
 	$avatar = NULL; 
 	if (!empty($avatarOrigin)) {
 		$imageHandler = new \creamy\ImageHandler();
-		$avatar = $imageHandler->generateProcessedImageFileFromSourceImage($avatarOrigin, $imageFileType);
+		$avatar = $imageHandler->generateAvatarFileAndReturnURL($avatarOrigin, $imageFileType);
 		if (empty($avatar)) {
 			$lh->translateText("unable_generate_user_image");
 			return;
 		}
 	}
-	$userrole = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $userrole = $_POST["role"]; } 	
+	$userrole = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $userrole = $_POST["role"]; } 
 		
-	$result = $db->modifyUser($modifyid, $email, $phone, $userrole, $avatar);
+	// modify user data
+	$result = $db->modifyUser($modifyid, $name, $phone, $userrole, $avatar);
+	
+	// analyze results.
 	if ($result === true) {
 		if ($modifyid == $user->getUserId()) { // am I modifying myself?
-			// if so, update avatar (if needed).
+			// if so, update user data locally.
+			if (!empty($name)) { $user->setUserName($name); }
+			if (!empty($userrole)) { $user->setUserRole($userrole); }
 			if (!empty($avatar)) { $user->setUserAvatar($avatar); }
 		}
-		print "success"; 
-	} else { $lh->translateText("unable_modify_user"); };	
-} else { print $reason; }
-
+		ob_clean();
+		print CRM_DEFAULT_SUCCESS_RESPONSE; 
+	} else { ob_clean(); $lh->translateText("unable_modify_user"); };	
+} else { ob_clean(); print $reason; }
 ?>

@@ -47,7 +47,7 @@
 		
 		if ($password1 == $password2 && !empty($password1) && !empty($password2)) {
 			$db = new \creamy\DbHandler();
-			if ($db->checkPasswordResetValidity($email, $date, $nonce, $code)) {
+			if ($db->checkEmailSecurityCode($email, $date, $nonce, $code)) {
 				if ($db->changePasswordForUserIdentifiedByEmail($email, $password1)) {
 					$result = $lh->translationFor("password_reset_successfully");
 					$success = true;
@@ -67,7 +67,7 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->

@@ -186,13 +186,7 @@ define('DB_PORT', '3306');
 			if ($dbInstaller->setupCustomerTables($customersType, $customerNames)) {
 				// enable customers statistic retrieval
 				if ($dbInstaller->setupCustomersStatistics($customersType, $customerNames)) {
-					// create the notifications triggers.
-					if ($dbInstaller->setupCommonTriggers($customersType, $customerNames)) {
-						$success = true;
-					} else {
-						$success = false;
-						$error = $lh->translationFor("unable_create_triggers");
-					}
+					$success = true;
 				} else { 
 					$success = false;
 					$error = $lh->translationFor("unable_set_statistics").": ".$dbInstaller->error;
@@ -216,6 +210,7 @@ define('DB_PORT', '3306');
 	} else {
 		session_unset();
 	}
+
 ?>
 <html class="lockscreen">
     <head>
@@ -234,7 +229,6 @@ define('DB_PORT', '3306');
         <script src="js/jstz-1.0.4.min.js" type="text/javascript"></script>
     </head>
     
-    <!-- OLD -->
     <body class="login-page">
         <div class="login-box install-box" id="login-box">
 			<div class="margin text-center">
@@ -392,6 +386,12 @@ define('DB_PORT', '3306');
 		            	if (isset($error)) print ($error); 
 		        	?>
 	        	</div>
+	            <h3><?php $lh->translateText("enable_creamy_events"); ?></h3>
+				<p><?php $lh->translateText("creamy_events_description"); ?></p>
+				<pre><?php require_once('php/CRMUtils.php'); ?>
+# Creamy event job scheduling
+0 * * * *	php "<?php print \creamy\CRMUtils::creamyBaseDirectoryPath(true)."job-scheduler.php"; ?>" &>/dev/null</pre>
+				<p><?php $lh->translateText("dont_know_cronjob"); ?></p><br>
 				<form method="post">	
 	                <div class="row">
 						<div class="col-xs-3"></div>

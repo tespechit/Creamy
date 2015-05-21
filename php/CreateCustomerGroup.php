@@ -24,6 +24,7 @@
 */
 
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
@@ -37,14 +38,12 @@ if (!isset($_POST["newdesc"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// check description	
 	$newdescription = $_POST["newdesc"];
 	if (empty($newdescription) || strlen(trim($newdescription)) < 1) { $lh->translateText("some_fields_missing"); return; }
-
+	// create customer group
 	$result = $db->addNewCustomerType(trim($newdescription));
-	if ($result === true) { print "success"; }
-	else { print $lh->translationFor("unable_add_customer_group")." ($result)"; } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); print $lh->translationFor("unable_add_customer_group")." ($result)"; } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

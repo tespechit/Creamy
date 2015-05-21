@@ -37,7 +37,6 @@ define('CRM_MODULE_INCLUDE_DIRECTORY', \creamy\CRMUtils::creamyBaseDirectoryPath
 define('CRM_MODULE_MAX_TABLENAME_LENGTH', 63);
 define('CRM_MODULE_LANGUAGE_DIRECTORY_NAME', 'lang');
 define('CRM_MODULE_ASSETS_DIRECTORY_NAME', 'assets');
-define('CRM_MODULE_MAIN_PAGE_TEMPLATE_PATH', '/../skel/moduleMainPage.php');
 define('CRM_MODULE_TEMPLATE_TAG_TITLE', '{title}');
 define('CRM_MODULE_TEMPLATE_TAG_SUBTITLE', '{subtitle}');
 define('CRM_MODULE_TEMPLATE_TAG_ICON', '{icon}');
@@ -217,10 +216,16 @@ abstract class Module implements ModuleMetadata {
 	
 	// module paths and directories
 
-	/** Gets the base directory of the module */
+	/** Gets the base directory of this module */
 	protected function getModuleDirectory() {
 		$rc = new \ReflectionClass(get_class($this));
 		return dirname($rc->getFileName());
+	}
+	
+	/** Gets the base URL for the module */
+	protected function getModuleBaseURL() {
+		$baseURL = \creamy\CRMUtils::creamyBaseURL();
+		return $baseURL."/".CRM_MODULES_BASEDIR."/".$this->getModuleShortName();
 	}
 	
 	/** Gets the module short name, equivalent to the directory name */
@@ -242,8 +247,17 @@ abstract class Module implements ModuleMetadata {
 	}
 	
 	/** Returns the assets directory, where resources, images and other files can be found. */	
-	public function getAssetsDirectory() { return $this->getModuleDirectory().DIRECTORY_SEPARATOR.CRM_MODULE_ASSETS_DIRECTORY_NAME; }
+	public function getAssetsDirectory($includeFinalPathSeparator = true) { 
+		$finalCode = $includeFinalPathSeparator ? DIRECTORY_SEPARATOR : "";
+		return $this->getModuleDirectory().DIRECTORY_SEPARATOR.CRM_MODULE_ASSETS_DIRECTORY_NAME.$finalCode; 
+	}
 	
+	/** Returns the assets relative URL, where resources, images and other files can be found. */	
+	public function getAssetsRelativeURL($includeFinalPathSeparator = true) { 
+		$finalCode = $includeFinalPathSeparator ? "/" : "";
+		return $this->getModuleBaseURL()."/".CRM_MODULE_ASSETS_DIRECTORY_NAME.$finalCode; 
+	}
+
 	// Views
 	
 	/** 
@@ -262,26 +276,6 @@ abstract class Module implements ModuleMetadata {
 	 */
 	public function needsSettingsDisplay() { return false; }
 		
-	/**
-	 * Returns the main page of the module. It allows to show information 
-	 * and content data relative to the plugin. This method builds the page
-	 * structure and inserts the content returned by mainPageContent().
-	 * It also sets the icon and title of the page by calling the methods
-	 * mainPageIcon(), mainPageTitle() and mainPageSubtitle()
-	 * @return String the code for the main page.
-	 */
-	public final function mainPageView($args = array()) {
-		$templateContents = file_get_contents(CRM_MODULE_MAIN_PAGE_TEMPLATE_PATH);
-		// replace title & subtitle.
-		$templateContents = str_replace(CRM_MODULE_TEMPLATE_TAG_TITLE, $this->mainPageViewTitle(), $templateContents);
-		$templateContents = str_replace(CRM_MODULE_TEMPLATE_TAG_SUBTITLE, $this->mainPageViewSubtitle(), $templateContents);
-	
-		// replace content.
-		$templateContents = str_replace(CRM_MODULE_TEMPLATE_TAG_CONTENT, $this->mainPageViewContent($args), $templateContents);
-		
-		return $templateContents;
-	}
-	
 	/**
 	 * Returns the content to be included in the main page. Every module must
 	 * implement this function to add the content to be shown. In order to build
@@ -339,14 +333,7 @@ abstract class Module implements ModuleMetadata {
 	public final function mainPageViewURL($args = null, $basedir = "") {
 		return \creamy\ModuleHandler::pageLinkForModule($this->getModuleShortName(), $args, $basedir);
 	}
-	
-	/**
-	 * Returns a link to the custom hook action page of this module.
-	 */
-	public final function customHookPageViewURL($basedir = "") {
-		return \creamy\ModuleHandler::customHookLinkForModule($basedir);
-	}
-	
+
 	// settings
 	
 	/**
@@ -434,6 +421,24 @@ abstract class Module implements ModuleMetadata {
 			return $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data);
 		}
 	}
+	
+	// scheduled jobs
+	
+	/**
+	 * This method allows the module to execute tasks periodically. It will be called
+	 * by the job-scheduler on a regular basis (default 1/day). Methods that want to
+	 * be called periodically and respond to regular scheduled jobs must implement
+	 * this method. If the module wants to check the last time it was invoked, it
+	 * should use a setting to store the last time it was invoked, and update it
+	 * with the current time when this function is invoked.
+	 * The module will receive the period of the scheduled job, one of CRM_JOB_SCHEDULING_*,
+	 * and it should respond only for the periods that are of interest for the module.
+	 * I.E: A module could be interested only in performing some tasks every hour and then
+	 * every month, but not daily or weekly.
+	 * @param Int Period for the job scheduling, one of $period CRM_JOB_SCHEDULING_*.
+	 * @return nothing.
+	 */
+	public function scheduledJobForModule($period) {  } // do nothing by default.
 	
 	// hooks
 	
@@ -694,6 +699,4 @@ interface ModuleMetadata {
 	 */
 	static function getModuleDescription();
 } 
-
-
 ?>

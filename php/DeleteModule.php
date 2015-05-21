@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 require_once('LanguageHandler.php');
+require_once('CRMDefaults.php');
 require_once('ModuleHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
@@ -44,9 +45,8 @@ if ($validated == 1) {
 	// first we disable the module
 	$db->changeModuleStatus($moduleName, "0");
 	
-	// now we delete the module
-	if (\creamy\ModuleHandler::getInstance()->deleteModule($moduleName)) { print "success"; }
-	else { $lh->translateText("unable_disable_module"); } 
-} else { $lh->translateText("some_fields_missing"); }
-
+	// now we delete the module and returnt the response.
+	if (\creamy\ModuleHandler::getInstance()->deleteModule($moduleName)) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("unable_disable_module"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

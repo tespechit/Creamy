@@ -23,31 +23,37 @@
 	THE SOFTWARE.
 */
 
+require_once('DbHandler.php');
 require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
-require_once('Config.php');
-require_once('DbHandler.php');
+require('Session.php');
 
-$db = new \creamy\DbHandler();
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
-// get current timezone.
-$timezone = $db->getTimezoneSetting();
-if (!isset($timezone)) {
-	if (defined("CRM_TIMEZONE")) $timezone = CRM_TIMEZONE;
+// check required fields
+$validated = 1;
+if (!isset($_POST["customerid"])) {
+	$validated = 0;
 }
-if (isset($timezone)) { 
-    ini_set('date.timezone', $timezone);
-	date_default_timezone_set($timezone);
+if (!isset($_POST["old_customer_type"])) {
+	$validated = 0;
 }
-
-// try to store statistics for today	
-$date = date('d-m-Y');
-$result = $db->generateStatisticsForToday();
-if ($result == false) { // if an error happened, try to send an email to the administrator.
-	$adminMail = $this->getMainAdminEmail();
-	if (isset($adminMail)) { mail($adminMail, $lh->translationFor("error_storing_statistics").$date, $lh->translationFor("error_storing_statistics").$date); }
+if (!isset($_POST["new_customer_type"])) {
+	$validated = 0;
 }
 
-	
+if ($validated == 1) {
+	$db = new \creamy\DbHandler();
+
+	// parameters
+	$customerid = $_POST["customerid"];
+	$oldCustomerType = $_POST["old_customer_type"];
+	$newCustomerType = $_POST["new_customer_type"];
+
+	// create customer and return result.
+	$result = $db->changeCustomerType($customerid, $oldCustomerType, $newCustomerType);
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("unable_modify_customer"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

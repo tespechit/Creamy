@@ -44,7 +44,7 @@
         <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -63,7 +63,7 @@
         <script src="js/app.min.js" type="text/javascript"></script>
 
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
 		<?php print $ui->creamyHeader($user); ?>
             <!-- Left side column. contains the logo and sidebar -->
@@ -104,7 +104,7 @@
 									<?php print $upd->getUpdateLog(); 
 										$contentText = $result ? $lh->translationFor("crm_update_succeed") : $lh->translationFor("crm_update_failed");
 										print $ui->formWithContent("go_back_form", 
-											  $contentText, $lh->translationFor("accept"), CRM_UI_STYLE_PRIMARY,
+											  $contentText, $lh->translationFor("accept"), CRM_UI_STYLE_DEFAULT,
 											  CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, "adminsettings.php");
 
 									?>
@@ -121,6 +121,7 @@
 				?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
         <!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>

@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('DbHandler.php');
 require('Session.php');
 $user = \creamy\CreamyUser::currentUser();
@@ -39,14 +40,13 @@ if (!isset($_POST["folder"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// get userid, message ids and folder	
 	$userid = $user->getUserId();
 	$messageids = $_POST["messageids"];
 	$folder = $_POST["folder"];
-
+	// junk messages and return result.
 	$result = $db->junkMessages($userid, $messageids, $folder);
+	ob_clean();
 	print $result;
-	return;
-} else { print "0"; }
-
+} else { ob_clean(); print "0"; }
 ?>

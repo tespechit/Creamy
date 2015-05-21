@@ -48,8 +48,8 @@ if ($validated == 1) {
 	
 	$result = $db->setTaskCompletionStatus($taskid, $progress, $userid);
 	if ($result === true) {
-		print "success";
-	} else { $lh->translateText("unable_modify_task"); };	
-} else { $lh->translateText("some_fields_missing"); }
-
+		ob_clean();
+		print CRM_DEFAULT_SUCCESS_RESPONSE;
+	} else { ob_clean(); $lh->translateText("unable_modify_task"); };	
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

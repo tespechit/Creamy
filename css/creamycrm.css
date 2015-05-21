@@ -184,6 +184,9 @@ body {
 .fixed .right-side {
   padding-top: 50px;
 }
+a.dropdown-toggle {
+	height: 50px;
+} 
 @media (max-width: 767px) {
   .fixed .content-wrapper,
   .fixed .right-side {
@@ -341,6 +344,7 @@ a:focus {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   padding: 0 15px;
   font-weight: 600;
+  overflow: hidden;
 }
 .main-header .navbar-brand {
   color: #fff;
@@ -1544,6 +1548,8 @@ a:focus {
 .todo-list > li .text {
   display: inline-block;
   margin-left: 5px;
+  align: left;
+  width: 90%;
   font-weight: 600;
 }
 .todo-list > li .label {
@@ -1836,7 +1842,7 @@ a:focus {
   position: relative;
   overflow: hidden;
 }
-.btn-file input.attachement {
+.btn-file input.attachment {
     position: absolute;
     top: 0;
     right: 0;
@@ -4154,3 +4160,22 @@ Gradient Background colors
     white-space: normal!important;
   }
 }
+/**
+ * Admin users table.
+ */
+/* low resolution, 480px and below */
+@media only screen and (max-width: 480px){
+	.hide-on-low { display: none!important; }
+}
+
+/* medium resolution, 481 px to 1023px */
+@media only screen and (min-width: 481px) and (max-width: 1023) {
+	.hide-on-medium { display: none!important; }
+}
+
+/* high resolution, 1024px or higher */
+@media only screen and (min-width: 1024px){
+}
+ 
+ 
+

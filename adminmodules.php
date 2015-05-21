@@ -42,7 +42,7 @@
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
 		<!-- Scripts -->
         <script src="js/jquery.min.js"></script>
@@ -61,7 +61,7 @@
           <script src="js/respond.min.js"></script>
         <![endif]-->
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
         <div class="wrapper">
@@ -88,11 +88,11 @@
                 	<!-- tabla muestra los usuarios -->
                     <div class="row">
                         <div class="col-xs-12">
-                            <div class="box">
+                            <div class="box box-default">
                                 <div class="box-header">
                                     <h3 class="box-title"><?php $lh->translateText("modules"); ?></h3>
                                 </div><!-- /.box-header -->
-                                <div class="box-body table-responsive" id="users_table">
+                                <div class="box-body table" id="users_table">
 									<?php print $ui->getModulesAsList(); ?>
                                 </div><!-- /.box-body -->
                             </div><!-- /.box -->

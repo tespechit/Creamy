@@ -62,10 +62,9 @@ class CreamyUser {
 	public function getUserId() { return $this->userid; }
 	public function getUserRole() { return $this->userrole; }
 	public function getUserAvatar() { return $this->avatar; }
-	public function setUserAvatar($avatar) {
-		$this->avatar = $avatar;
-		$_SESSION["avatar"] = $avatar;
-	}
+	public function setUserRole($role) { $this->userrole = $role; $_SESSION["userrole"] = $role; }
+	public function setUserName($name) { $this->username = $name; $_SESSION["username"] = $name; }
+	public function setUserAvatar($avatar) { $this->avatar = $avatar; $_SESSION["avatar"] = $avatar; }
 
 	public function userHasAdminPermission() {
 		if ($this->userrole === CRM_DEFAULTS_USER_ROLE_ADMIN) return true;
@@ -87,6 +86,4 @@ class CreamyUser {
 		return false;
 	}
 }
-
-	
 ?>

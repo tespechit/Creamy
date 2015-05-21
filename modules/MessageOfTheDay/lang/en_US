@@ -34,5 +34,8 @@ quote_set = "Quote set"
 unable_set_quote = "There was an error setting the quote for the customer. Please contact the author."
 some_random_quotes = "Some random quotes"
 see_more_quotes = "See more quotes"
+know_more = "Know more"
+wanna_know_more = "Would you like to know more about 'Message of the day'?"
+yeah_sure = "Yeah sure!"
 
 

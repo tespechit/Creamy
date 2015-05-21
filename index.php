@@ -47,7 +47,7 @@ $colors = $ui->generateStatisticsColors();
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -67,7 +67,7 @@ $colors = $ui->generateStatisticsColors();
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
 	        <!-- header logo: style can be found in header.less -->
 			<?php print $ui->creamyHeader($user); ?>
@@ -101,7 +101,7 @@ $colors = $ui->generateStatisticsColors();
                         <!-- Left col -->
                         <section class="col-md-7"> 
 	                    	<!-- Gráfica de clientes -->   
-	                        <div class="box box-info">
+	                        <div class="box box-default">
 	                            <div class="box-header">
 	                                <i class="fa fa-bar-chart-o"></i>
 	                                <h3 class="box-title"><?php $lh->translateText("customer_statistics"); ?></h3>
@@ -114,7 +114,7 @@ $colors = $ui->generateStatisticsColors();
 						<!-- Left col -->
                         <section class="col-md-5"> 
 	                    	<!-- Gráfica de clientes -->   
-	                        <div class="box box-info">
+	                        <div class="box box-default">
 	                            <div class="box-header">
 	                                <i class="fa fa-bar-chart-o"></i>
 	                                <h3 class="box-title"><?php $lh->translateText("current_customer_distribution"); ?></h3>
@@ -136,6 +136,7 @@ $colors = $ui->generateStatisticsColors();
 
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>

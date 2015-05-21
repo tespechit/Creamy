@@ -23,10 +23,13 @@
 		THE SOFTWARE.
 	*/
 	
+	require_once('./php/CRMDefaults.php');
 	require_once('./php/UIHandler.php');
+	require_once('./php/DbHandler.php');
 	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
 
+	$db = new \creamy\DbHandler();
 	$ui = \creamy\UIHandler::getInstance();    
     $lh = \creamy\LanguageHandler::getInstance();
 	$user = \creamy\CreamyUser::currentUser();
@@ -45,11 +48,9 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- bootstrap wysihtml5 - text editor -->
-        <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -61,14 +62,12 @@
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js" type="text/javascript"></script>
         <script src="js/jquery-ui.min.js" type="text/javascript"></script>
-        <!-- Bootstrap WYSIHTML5 -->
-        <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
 		<?php print $ui->creamyHeader($user); ?>
@@ -91,9 +90,56 @@
 
                 <!-- Main content -->
                 <section class="content">
-                	<?php print $ui->getEditUserForm($userid, $user->getUserId(), $user->userHasAdminPermission()) ?>
+	                <?php // build edit user form
+		               	$userobj = NULL;
+						$errormessage = NULL;
+						
+						if (!empty($userid)) {
+							if (($user->getUserId() == $userid) || ($user->userHasAdminPermission())) { 
+				    			// if it's the same user or we have admin privileges.
+				    			$userobj = $db->getDataForUser($userid);
+							} else {
+				    			$errormessage = $lh->translationFor("not_permission_edit_user_information");
+							}
+						} else {
+				    		$errormessage = $lh->translationFor("unknown_error");
+						}
+						
+						if (!empty($userobj)) {							
+							// build fields
+							// modify id (hidden).
+							$hidden_f = $ui->hiddenFormField("modifyid", $userid);
+							// name
+							$name_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("name", "name", "text", $lh->translationFor("name"), $userobj["name"], "user", true));
+							// email
+							$email_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("email", "email", "text", $lh->translationFor("email"), $userobj["email"], "envelope", true, true));
+							// phone 
+							$phone_text = $lh->translationFor("phone").' ('.$lh->translationFor("optional").')';
+							$phone_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("phone", "phone", "text", $phone_text, $userobj["phone"], "phone"));
+							// avatar (optional)
+							$currentUserAvatar = empty($userobj["avatar"]) ? "" : $ui->imageWithData($userobj["avatar"], "img-circle", array("width" => 100, "height" => 100), "User image");
+							$avatar_l = $lh->translationFor("user_avatar").' ('.$lh->translationFor("optional").')';
+							$avatar_b = $lh->translationFor("choose_image");
+							$avatar_f = $ui->singleFormGroupWithFileUpload("avatar", "avatar", $currentUserAvatar, $avatar_l, $avatar_b);
+							// if requesting user is admin, we can change the user role
+							$setUserRoleCode = "";
+							if ($user->userHasAdminPermission()) {
+								$userRolesAsFormSelect = $ui->getUserRolesAsFormSelect($userobj["role"]);
+								$setUserRoleCode = $ui->singleFormGroupWrapper($userRolesAsFormSelect, $lh->translationFor("user_role"));
+							}	
+
+							// generate the form
+							$fields = $hidden_f.$name_f.$email_f.$phone_f.$avatar_f.$setUserRoleCode;
+							// generate and show the box
+							$box = $ui->boxWithForm("modifyuser", $lh->translationFor("insert_new_data"), $fields, $lh->translationFor("edit_user"));
+							print $box;
+						} else {
+							print $ui->calloutErrorMessage($errormessage);
+						}
+		            ?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 
 		<!-- Modal Dialogs -->
@@ -118,16 +164,16 @@
 						  contentType: false,
 						  type: 'POST',
 						  success: function(data) {
-								if (data == 'success') {
-									$("#resultmessage").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check">\
-									</i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
-									<b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("data_successfully_modified"); ?>');
-									$("#resultmessage").fadeIn(); //show confirmation message
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
+								<?php 
+								$errorMsg = $ui->dismissableAlertWithMessage($lh->translationFor("data_successfully_modified"), true, false);
+								print $ui->fadingInMessageJS($errorMsg, "resultmessage"); 
+								?>
 								} else {
-									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i>\
-									<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>\
-									<b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("error_modifying_data"); ?>: '+ data);
-									$("#resultmessage").fadeIn(); //show confirmation message
+								<?php 
+								$errorMsg = $ui->dismissableAlertWithMessage($lh->translationFor("error_modifying_data"), false, true);
+								print $ui->fadingInMessageJS($errorMsg, "resultmessage"); 
+								?>
 								}
 						    }
 						});
@@ -136,11 +182,6 @@
 			});
 			 
 		});
-		</script>
-
-        <script>
-        	// load data.
-            $(".textarea").wysihtml5();
 		</script>
 
     </body>

@@ -36,7 +36,6 @@ if (!$user->userHasAdminPermission()) {
 	exit;
 }
 
-
 // check required fields
 $validated = 1;
 if (!isset($_POST["usertochangepasswordid"])) {
@@ -50,21 +49,17 @@ if (!isset($_POST["new_password_2"])) {
 }
 
 if ($validated == 1) {
-
 	// check password	
 	$userid = $_POST["usertochangepasswordid"];
 	$password1 = $_POST["new_password_1"];
 	$password2 = $_POST["new_password_2"];
 	if ($password1 !== $password2) {
 		$lh->translateText("passwords_dont_match");
-		exit;
+	} else {
+		$db = new \creamy\DbHandler();
+		$result = $db->changePasswordAdmin($userid, $password1);
+		if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+		else { ob_clean(); $lh->translateText("error_changing_password"); } 
 	}
-	
-	$db = new \creamy\DbHandler();
-	$result = $db->changePasswordAdmin($userid, $password1);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("error_changing_password"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

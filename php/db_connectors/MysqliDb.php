@@ -462,11 +462,11 @@ class MysqliDb implements \creamy\DbConnector
 
         $stmt = $this->_buildQuery($numRows);
         if (empty($stmt)) { return NULL; }
-        $stmt->execute();
+        $status = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
 
-        return ($stmt->affected_rows > 0);
+        return $status;
     }
 
 
@@ -565,6 +565,30 @@ class MysqliDb implements \creamy\DbConnector
 
         return $result;
     }
+
+	/**
+	 * ALTER table, adding a unique field to the table.
+	 *
+     * @param string  $tableName The name of the database table to drop the column from.
+     * @param string  $columnName The name of the column to drop.
+     *
+     * @return boolean Indicates success. 0 or 1.
+	 */
+    public function setColumnAsUnique($tableName, $columnName)
+    {
+        if ($this->isSubQuery)
+            return false;
+
+        $this->_query = "ALTER TABLE " . self::$_prefix . $tableName . " ADD UNIQUE ($columnName)";
+        $stmt = $this->_buildQuery();
+        if (empty($stmt)) { return false; }
+        $result = $stmt->execute();
+        $this->_stmtError = $stmt->error;
+        $this->reset();
+
+        return $result;
+    }
+	
 
 	/**
 	 * CREATE a table.

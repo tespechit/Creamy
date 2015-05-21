@@ -43,13 +43,15 @@ if ($validated == 1) {
 	// get mandatory
 	$moduleName = $_POST["module_name"];
 	$enabled = $_POST["enabled"];
-
-	ob_clean();
+	
+	// enable-disable module
 	$result = $mh->enableOrDisableModule($moduleName, $enabled);
-	if ($result === true) { print "success"; }
+	
+	// return result.
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	else { // failure.
-		if ($enabled == "1") { $lh->translateText("unable_enable_module"); die(); }
-		else { $lh->translateText("unable_disable_module"); die(); } 
+		if ($enabled == "1") { ob_clean(); $lh->translateText("unable_enable_module"); die(); }
+		else { ob_clean(); $lh->translateText("unable_disable_module"); die(); } 
 	} 
-} else { $lh->translateText("some_fields_missing"); die(); }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); die(); }
 ?>

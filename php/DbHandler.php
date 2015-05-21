@@ -75,11 +75,18 @@ class DbHandler {
      */
     public function createUser($name, $password, $email, $phone, $role, $avatarURL) {
         // First check if user already existed in db
-        if (!$this->userExistsIdentifiedByName($name)) {
+        if ($this->userExistsIdentifiedByName($name) || $this->userExistsIdentifiedByEmail($email)) {
+            // User with same email already existed in the db
+            return USER_ALREADY_EXISTED;
+        } else {
             // Generating password hash
             $password_hash = \creamy\PassHash::hash($password);
             if (empty($avatarURL)) $avatarURL = CRM_DEFAULTS_USER_AVATAR;
 
+			// check if confirmation email needs to be sent
+			$needsConfirmation = $this->getSettingValueForKey(CRM_SETTING_CONFIRMATION_EMAIL);
+			// start transaction
+			$this->dbConnector->startTransaction();
             // insert query
             $data = Array(
 	            "name" => $name,
@@ -89,31 +96,44 @@ class DbHandler {
 	            "role" => $role,
 	            "avatar" => $avatarURL,
 	            "creation_date" => $this->dbConnector->now(),
-	            "status" => "1"
+	            "status" => ($needsConfirmation ? "0" : "1")
             );
             $id = $this->dbConnector->insert(CRM_USERS_TABLE_NAME, $data);
             // Check for successful insertion
             if ($id) { // User successfully inserted
-                return USER_CREATED_SUCCESSFULLY;
+	            // send confirmation email if needed.
+	            if ($needsConfirmation) {
+					require_once('MailHandler.php');
+					$mh = \creamy\MailHandler::getInstance();
+					if ($mh->sendAccountActivationEmail($email)) {
+						$this->dbConnector->commit();
+	                	return USER_CREATED_SUCCESSFULLY;
+					} else {
+						$this->dbConnector->rollback();
+	                	return USER_CREATE_FAILED;
+					}            
+	            } else {
+		            // return result
+					$this->dbConnector->commit();
+	                return USER_CREATED_SUCCESSFULLY;
+	            }
             } else { // Failed to create user
+				$this->dbConnector->rollback();
                 return USER_CREATE_FAILED;
             }
-        } else {
-            // User with same email already existed in the db
-            return USER_ALREADY_EXISTED;
         }
     }
 
 	/**
 	 * Modifies user's data.
 	 * @param Int $modifyid id of the user to be modified.
-	 * @param String $email new email for the user.
+	 * @param String $name new email for the user.
 	 * @param String $phone new phone for the user.
 	 * @param String $role new role for the user.
 	 * @param String $avatar new avatar URI for the user. Old avatar will be deleted from disk.
 	 * return boolean true if user was successfully modified, false otherwise.
 	 */
-	public function modifyUser($modifyid, $email, $phone, $role, $avatar) {
+	public function modifyUser($modifyid, $name, $phone, $role, $avatar) {
 		// prepare query depending on parameters.
 		$this->dbConnector->where("id", $modifyid);
 		if (!empty($avatar)) { // If we are modifying the user's avatar, make sure to delete the old one.
@@ -123,9 +143,9 @@ class DbHandler {
 			$ih->removeUserAvatar($userdata["avatar"]);
 			
 			// update with new avatar
-			$data = Array("email" => $email, "phone" => $phone, "avatar" => $avatar, "role" => $role);
+			$data = Array("name" => $name, "phone" => $phone, "avatar" => $avatar, "role" => $role);
 		} else { // no avatar change required, just update the values.
-			$data = Array("email" => $email, "phone" => $phone, "role" => $role);
+			$data = Array("name" => $name, "phone" => $phone, "role" => $role);
 		}
 
 		// execute and return results
@@ -139,16 +159,50 @@ class DbHandler {
 	 * return boolean true if user was successfully deleted, false otherwise.
 	 */
 	 public function deleteUser($userid) {
+	 	// safety checks
 	 	if (empty($userid)) return false;
+	 	
+	 	// start transaction because we will perform several atomic operations.
+	 	$this->dbConnector->startTransaction();
+	 	 	
 	 	// first check if we need to remove the avatar.
 	 	$data = $this->getDataForUser($userid);
 	 	if (isset($data["avatar"])) {
 		 	$ih = new \creamy\ImageHandler();
-		 	$ih->removeUserAvatar($data["avatar"]);
+		 	if (!$ih->removeUserAvatar($data["avatar"])) { $this->dbConnector->rollback(); return false; }
 	 	}
-	 	// then remove the entry at the database
+	 	// delete the user notifications
+	 	$this->dbConnector->where("target_user", $userid);
+	 	if (!$this->dbConnector->delete(CRM_NOTIFICATIONS_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	
+	 	// delete the user events.
+	 	$this->dbConnector->where("user_id", $userid);
+	 	if (!$this->dbConnector->delete(CRM_EVENTS_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	
+	 	// deletes the user tasks
+	 	$this->dbConnector->where("user_id", $userid);
+	 	if (!$this->dbConnector->delete(CRM_TASKS_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	
+	 	// delete the user messages.
+	 	// inbox
+	 	$this->dbConnector->where("user_to", $userid);
+	 	if (!$this->dbConnector->delete(CRM_MESSAGES_INBOX_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	// outbox
+	 	$this->dbConnector->where("user_from", $userid);
+	 	if (!$this->dbConnector->delete(CRM_MESSAGES_OUTBOX_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	// junk
+	 	$this->dbConnector->where("user_to", $userid)->where("origin_folder", CRM_MESSAGES_INBOX_TABLE_NAME);
+	 	if (!$this->dbConnector->delete(CRM_MESSAGES_JUNK_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	$this->dbConnector->where("user_from", $userid)->where("origin_folder", CRM_MESSAGES_OUTBOX_TABLE_NAME);
+	 	if (!$this->dbConnector->delete(CRM_MESSAGES_JUNK_TABLE_NAME)) { $this->dbConnector->rollback(); return false; }
+	 	
+	 	// last remove the user entry at the database
 	 	$this->dbConnector->where("id", $userid);
-	 	return $this->dbConnector->delete(CRM_USERS_TABLE_NAME);
+	 	$result = $this->dbConnector->delete(CRM_USERS_TABLE_NAME);
+	 	if ($result === true) {
+		 	$this->dbConnector->commit();
+		 	return true;
+	 	} else  { $this->dbConnector->rollback(); return false; }
 	 }
 
     /**
@@ -281,6 +335,17 @@ class DbHandler {
 	    $cols = array("id", "name", "email", "phone", "role", "avatar", "creation_date");
 	    return $this->dbConnector->getOne(CRM_USERS_TABLE_NAME, null, $cols);
     }
+        
+    /**
+     * Gets the data of a user.
+     * @param String $userid id of the user to get data from.
+     * @return object an associative array containing the user's relevant data if the user id valid, NULL otherwise.
+     */
+    public function getDataForUserWithEmail($email) {
+	    $this->dbConnector->where("email", $email);
+	    $cols = array("id", "name", "email", "phone", "role", "avatar", "creation_date");
+	    return $this->dbConnector->getOne(CRM_USERS_TABLE_NAME, null, $cols);
+    }
     
     /**
      * Returns an array containing all enabled users (those with status=1).
@@ -337,8 +402,8 @@ class DbHandler {
 	/** Password recovery */
 
 	/** Checks link validity for a password reset code */
-	public function checkPasswordResetValidity($email, $date, $nonce, $code) {
-		$checkCode = $this->generatePasswordResetCode($email, $date, $nonce);
+	public function checkEmailSecurityCode($email, $date, $nonce, $code) {
+		$checkCode = $this->generateEmailSecurityCode($email, $date, $nonce);
 		if ($checkCode == $code) { // if codes match (not tainted data)
 			$parsed = date_parse_from_format('Y-m-d-H-i-s', $date);
 			$requestTimestamp = mktime(
@@ -358,7 +423,7 @@ class DbHandler {
 	}
 
 	/** Generates a password reset code, a md5($email + $date + $nonce + CRM_SECURITY_TOKEN) */
-	public function generatePasswordResetCode($email, $date, $nonce) {
+	public function generateEmailSecurityCode($email, $date, $nonce) {
 		$baseString = $email.$date.$nonce.CRM_SECURITY_TOKEN;
 		return md5($baseString);
 	}
@@ -394,13 +459,14 @@ class DbHandler {
 	public function setSettingValueForKey($key, $value, $context = CRM_SETTING_CONTEXT_CREAMY) {
 		$this->dbConnector->where("setting", $key);
 		$this->dbConnector->where("context", $context);
-		$data = array("value" => $value);
-		if ($this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $data)) {
-			// update succeed.
-			return true;
-		} else { // unable to upload. Perhaps the key didn't exist?
-			// try to insert instead.
+		// update or insert?
+		if ($this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME)) {
+			// exists previously, update.
 			$this->dbConnector->where("setting", $key);
+			$this->dbConnector->where("context", $context);
+			$data = array("value" => $value);
+			return $this->dbConnector->update(CRM_SETTINGS_TABLE_NAME, $data);
+		} else { // Insert the new value
 			$data = array("setting" => $key, "context" => $context, "value" => $value);
 			return $this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data);
 		}
@@ -443,6 +509,8 @@ class DbHandler {
 	}
 	
 	// special settings that need some extra work.
+
+	public function getNotificationsForEventsSetting() { return $this->getSettingValueForKey(CRM_SETTING_EVENTS_EMAIL); }
 	
 	public function getLocaleSetting() { return $this->getSettingValueForKey(CRM_SETTING_LOCALE); }
 
@@ -540,9 +608,10 @@ class DbHandler {
 	 * @param $donotsendemail Int a integer/boolean to indicate whether the customer doesn't want to receive email (=1) or is just fine receiving them (=0).
 	 * @param $createdByUser Int id of the user that inserted the customer in the system.  
 	 * @param $gender Int gender of the customer (female=0, male=1).  
+	 * @param $notes String notes for the customer (test, annotations, etc).  
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender) {
+	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes) {
 		// sanity checks
 		if (empty($customerType)) return false;
 		
@@ -569,6 +638,7 @@ class DbHandler {
 			"created_by" => $createdByUser,
 			"do_not_send_email" => $donotsendemail,
 			"gender" => $gender,
+			"notes" => $notes
 		);
 		
 		if ($this->dbConnector->insert($customerType, $data)) { return true; }
@@ -683,6 +753,40 @@ class DbHandler {
 		}
 		$this->dbConnector->rollback();
 		return false;
+	}
+	
+	/**
+	 * Changes a customer identified by a customerid from one customer type to the other.
+	 * The function first gets all data from the customer, then deletes the customer from
+	 * the old table, and then adds the customer in the new table. These actions are
+	 * performed atomically thanks to the use of transactions.
+	 * @param Int $customerid 			The id of the customer to change.
+	 * @param String $oldCustomerType	The old table name (customer type) for the customer.
+	 * @param String $newCustomerType	The new table name (customer type) for the customer.
+	 * @return Bool						true if change was successful, false otherwise.
+	 */
+	public function changeCustomerType($customerid, $oldCustomerType, $newCustomerType) {
+		// safety checks.
+		if (empty($customerid) || empty($oldCustomerType) || empty($newCustomerType)) { return false; }
+		if ($oldCustomerType == $newCustomerType) { return false; }
+		// start transaction to ensure atomic operation.
+		$this->dbConnector->startTransaction();
+		
+		// 1. Retrieve all data from the customer.
+		$this->dbConnector->where("id", $customerid);
+		$oldCustomerData = $this->dbConnector->getOne($oldCustomerType);
+		if (!isset($oldCustomerData)) { $this->dbConnector->rollback(); return false; }
+		
+		// 2. Delete customer from the old table.
+		$this->dbConnector->where("id", $customerid);
+		if (!$this->dbConnector->delete($oldCustomerType)) { $this->dbConnector->rollback(); return false; }
+		
+		// 3. Add customer to the new table.
+		unset($oldCustomerData["id"]); // generate new id in new table
+		if ($this->dbConnector->insert($newCustomerType, $oldCustomerData)) { // success
+			$this->dbConnector->commit();
+			return true;
+		} else { $this->dbConnector->rollback(); return false; }
 	}
 	
 	private function createNewCustomersTable($tablename) {
@@ -898,18 +1002,26 @@ class DbHandler {
 	 * @param Int $touserid 				id of the user to send the message to.
 	 * @param String $subject 				A valid RFC 2047 subject. See http://www.faqs.org/rfcs/rfc2047
 	 * @param String $message 				body of the message to send (text/rich html).
-	 * @param Array $attachements 			array of $_FILES with the attachements.
-	 * @param String $attachementTag		Tag that contains the attachement files in the $_FILES array.
+	 * @param Array $attachments 			array of $_FILES with the attachments.
+	 * @param String $attachmentTag		Tag that contains the attachment files in the $_FILES array.
 	 * @param Array $external_recipients 	A valid RFC 2822 recipients set. See http://www.faqs.org/rfcs/rfc2822
 	 * @return boolean 						true if successful, false otherwise
 	 */
-	public function sendMessage($fromuserid, $touserid, $subject, $message, $attachements, $external_recipients = null, $attachementTag) {
+	public function sendMessage($fromuserid, $touserid, $subject, $message, $attachments, $external_recipients = null, $attachmentTag) {
 		// sanity checks
 		if (empty($fromuserid) || empty($touserid)) return false;
 		if (empty($subject)) $subject = "(".$this->lh->translationFor("no_subject").")";
 		if (empty($message)) $message = "(".$this->lh->translationFor("no_message").")";
 		
-		// 1st try to store the inbox message for the target user. Start transaction because we could have attachements.
+		// first send to external recipients (if any), because we are moving them later with the call to move_uploaded_file.
+		if (!empty($external_recipients)) {
+			require_once('MailHandler.php');
+			$mh = \creamy\MailHandler::getInstance();
+			$result = $mh->sendMailWithAttachments($external_recipients, $subject, $message, $attachments, $attachmentTag);
+		}
+		
+		// Now store the message in our database.
+		// try to store the inbox message for the target user. Start transaction because we could have attachments.
 		$this->dbConnector->startTransaction();		
 		// message data.
 		$data = array(
@@ -931,62 +1043,58 @@ class DbHandler {
 		$outboxmsgid = $this->dbConnector->insert(CRM_MESSAGES_OUTBOX_TABLE_NAME, $data);
 		if (!$outboxmsgid) { $this->dbConnector->rollback(); return false; }
 	
-		// insert attachements (if any).
-		if (!$this->addAttachementsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachements, $attachementTag)) {
+		// insert attachments (if any).
+		if (!$this->addAttachmentsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachments, $attachmentTag)) {
 			$this->dbConnector->rollback();
 			return false;			
 		}
 		// success! commit transactions.
 		$this->dbConnector->commit();
 	
-		// send to external recipients (if any).
-		if (!empty($external_recipients)) {
-			require_once('MailHandler.php');
-			\creamy\MailHandler::getInstance()->sendMailWithAttachements($external_recipients, $subject, $message, $attachements, $attachementTag);
-		}
+
 		return true; // because we stored the message in our database successfully anyway. 
 	}
 	
 	/**
-	 * Adds the attachements for a given message idenfitied by messageid, from user fromuserid and to
-	 * user touserid. This method will create a new file in the /uploads directory for each attachement
-	 * and add a link in the attachements table to both the fromuserid (in the output folder) and the
+	 * Adds the attachments for a given message idenfitied by messageid, from user fromuserid and to
+	 * user touserid. This method will create a new file in the /uploads directory for each attachment
+	 * and add a link in the attachments table to both the fromuserid (in the output folder) and the
 	 * touserid (in the inbox folder).
 	 * @param Int $fromuserid 				id of the user sending the message.
 	 * @param Int $touserid 				id of the user to send the message to.
 	 * @param String $inboxmsgid			id of the message inserted in inbox.
 	 * @param String $outboxmsgid			id of the message inserted in inbox.
-	 * @param Array $attachements 			array of $_FILES with the attachements.
+	 * @param Array $attachments 			array of $_FILES with the attachments.
 	 * @return boolean 						true if successful, false otherwise
 	 */
-	protected function addAttachementsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachements, $attachementTag) {
+	protected function addAttachmentsForMessage($inboxmsgid, $outboxmsgid, $fromuserid, $touserid, $attachments, $attachmentTag) {
 		// no files, empty files.
-		if (!isset($attachements)) { return true; }
-		if (!is_array($attachements)) { return true; }
-		if (count($attachements) < 1) { return true; }
+		if (!isset($attachments)) { return true; }
+		if (!is_array($attachments)) { return true; }
+		if (count($attachments) < 1) { return true; }
 
 		// Assign a new hashed name for files and store them.
 		require_once('CRMUtils.php');
-		// iterate through all the attachements and create the inbox/outbox links.
-		for ($i = 0; $i < count($attachements[$attachementTag]["tmp_name"]); $i++) {
-			if ($attachements[$attachementTag]['error'][$i] != UPLOAD_ERR_OK) { return false; }
-			$relativeURL = \creamy\CRMUtils::generateUploadRelativePath($attachements[$attachementTag]['name'][$i], true);
+		// iterate through all the attachments and create the inbox/outbox links.
+		for ($i = 0; $i < count($attachments[$attachmentTag]["tmp_name"]); $i++) {
+			if ($attachments[$attachmentTag]['error'][$i] != UPLOAD_ERR_OK) { return false; }
+			$relativeURL = \creamy\CRMUtils::generateUploadRelativePath($attachments[$attachmentTag]['name'][$i], true);
 			$filepath = \creamy\CRMUtils::creamyBaseDirectoryPath().$relativeURL;
-			if (move_uploaded_file($attachements[$attachementTag]['tmp_name'][$i], $filepath)) { // successfully moved upload.
-				// inbox attachement.
+			if (move_uploaded_file($attachments[$attachmentTag]['tmp_name'][$i], $filepath)) { // successfully moved upload.
+				// inbox attachment.
 				$data = array(
 					"message_id" => $inboxmsgid, 
 					"folder_id" => MESSAGES_GET_INBOX_MESSAGES,
 					"filepath" => $relativeURL,
-					"filetype" => $attachements[$attachementTag]['type'][$i], // I know, I know, I shouldn't trust this, but...
-					"filesize" => $attachements[$attachementTag]['size'][$i]
+					"filetype" => $attachments[$attachmentTag]['type'][$i], // I know, I know, I shouldn't trust this, but...
+					"filesize" => $attachments[$attachmentTag]['size'][$i]
 				);
-				if (!$this->dbConnector->insert(CRM_ATTACHEMENTS_TABLE_NAME, $data)) { return false; }
+				if (!$this->dbConnector->insert(CRM_ATTACHMENTS_TABLE_NAME, $data)) { return false; }
 				
-				// outbox attachement.
+				// outbox attachment.
 				$data["message_id"] = $outboxmsgid;
 				$data["folder_id"] = MESSAGES_GET_SENT_MESSAGES;
-				if (!$this->dbConnector->insert(CRM_ATTACHEMENTS_TABLE_NAME, $data)) { return false; }				
+				if (!$this->dbConnector->insert(CRM_ATTACHMENTS_TABLE_NAME, $data)) { return false; }				
 			} else { return false; }
 		}
 		return true;
@@ -1031,26 +1139,24 @@ class DbHandler {
 		if (empty($tableName)) { return NULL; }
 
 		if ($type == MESSAGES_GET_INBOX_MESSAGES) { // all inbox messages.
-			$this->dbConnector->where("$tableName.user_to", $userid);
-			$this->dbConnector->where("$tableName.user_from = ".CRM_USERS_TABLE_NAME.".id");
+			$this->dbConnector->where("m.user_to", $userid);
+			$this->dbConnector->join(CRM_USERS_TABLE_NAME." u", "m.user_from = u.id", "LEFT");
+		} else if ($type == MESSAGES_GET_DELETED_MESSAGES) {
+			$this->dbConnector->join(CRM_USERS_TABLE_NAME." u", "m.user_from = u.id", "LEFT");
 		} else if ($type == MESSAGES_GET_UNREAD_MESSAGES) { // unread messages.
-			$this->dbConnector->where("$tableName.user_to", $userid);
-			$this->dbConnector->where("$tableName.user_from = ".CRM_USERS_TABLE_NAME.".id");
-			$this->dbConnector->where("$tableName.message_read", 0);
-		} else if ($type == MESSAGES_GET_DELETED_MESSAGES) { // deleted messages.
-			$this->dbConnector->where("($tableName.user_to = $userid AND $tableName.user_from = users.id) OR ($tableName.user_from = $userid AND $tableName.user_to = users.id)");
+			$this->dbConnector->where("m.user_to", $userid);
+			$this->dbConnector->where("m.message_read", 0);
+			$this->dbConnector->join(CRM_USERS_TABLE_NAME." u", "m.user_from = u.id", "LEFT");
 		} else if ($type == MESSAGES_GET_SENT_MESSAGES) { // sent messages.
-			$this->dbConnector->where("$tableName.user_from", $userid);
-			$this->dbConnector->where("$tableName.user_to = users.id");
+			$this->dbConnector->where("m.user_from", $userid);
+			$this->dbConnector->join(CRM_USERS_TABLE_NAME." u", "m.user_to = u.id", "LEFT");
 		} else if ($type == MESSAGES_GET_FAVORITE_MESSAGES) { // favorite inbox messages
-			$this->dbConnector->where("$tableName.user_to", $userid);
-			$this->dbConnector->where("$tableName.user_from = users.id");
-			$this->dbConnector->where("$tableName.favorite", 1);
+			$this->dbConnector->where("m.user_to", $userid);
+			$this->dbConnector->where("m.favorite", 1);
+			$this->dbConnector->join(CRM_USERS_TABLE_NAME." u", "m.user_from = u.id", "LEFT");
 		} else { return NULL; }
 		
-		// return the messages.
-		$cols = array("$tableName.id", "$tableName.user_from", "$tableName.user_to", "$tableName.subject", "$tableName.message", "$tableName.date", "$tableName.message_read", "$tableName.favorite", "users.name as remote_user", "users.avatar as remote_avatar");
-		return $this->dbConnector->get("$tableName, users", null, $cols);
+		return $this->dbConnector->get("$tableName m", null, "m.id, m.user_from, m.user_to, m.subject, m.message, m.date, m.message_read, m.favorite, u.id as remote_id, u.name as remote_user, u.avatar as remote_avatar");
 	}
 	
 	/**
@@ -1062,25 +1168,13 @@ class DbHandler {
 		if ($tableName == NULL || $userid == NULL || $messageid == NULL) { return NULL; }
 
 		// determine to/from of the message.
-		$remoteuseridfield = "user_from";
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) {
 			 $useridfield = "user_from";
-			 $remoteuseridfield = "user_to";
 		}
 		
-		// calculate query message.
-		if ($folder == MESSAGES_GET_DELETED_MESSAGES) {
-			$params = array($messageid, $userid, $userid);		
-			$query = "SELECT * FROM $tableName m, users u WHERE m.id = ? AND ((m.$useridfield = ? AND m.$useridfield = u.id) OR (m.$remoteuseridfield = ? AND m.$useridfield = u.id))";
-		} else {
-			$params = array($userid, $messageid);
-			$query = "SELECT * FROM $tableName m, users u WHERE m.$useridfield = ? AND m.$remoteuseridfield = u.id AND m.id = ?";
-				
-		}
-		// execute the query
-		if ($result = $this->dbConnector->rawQuery($query, $params)) { return $result[0]; }
-		else { return NULL; }
+		$this->dbConnector->where("id", $messageid);
+		return $this->dbConnector->getOne($tableName);
 	}
 	
 	/**
@@ -1183,14 +1277,14 @@ class DbHandler {
 		$tableName = $this->getTableNameForFolder($folder);
 		if ($tableName == NULL) return false;
 		if (!$this->array_contains_only_numeric_values($messageids)) return false;
-
+		error_log("Deleting from folder $folder message ids: ".var_export($messageids, true));
 		// determine required user id (depending on folder).
 		$useridfield = "user_to";
 		if ($folder == MESSAGES_GET_SENT_MESSAGES) $useridfield = "user_from";
 
-		// delete attachaments first. We must check for orfan attachement files.
-		if (!$this->deleteAttachementsAndCheckForOrphanFiles($messageids, $folder)) { return false; }
-
+		// delete attachaments first. We must check for orfan attachment files.
+		if (!$this->deleteAttachmentsAndCheckForOrphanFiles($messageids, $folder)) { return false; }
+		error_log("Deleted attachements");
 		// now delete the message.
 		$this->dbConnector->where($useridfield, $userid);
 		$this->dbConnector->where("id IN (".implode(',',$messageids).")");
@@ -1198,32 +1292,35 @@ class DbHandler {
 	}
 
 	/**
-	 * This function iterates through a series of attachements (defined by messageid and folder)
-	 * and deletes that attachement from the database. If the file referenced by this attachement
+	 * This function iterates through a series of attachments (defined by messageid and folder)
+	 * and deletes that attachment from the database. If the file referenced by this attachment
 	 * doesn't exist anymore (orphan file) we delete it from disk.
 	 * @param $messageids Array a set of Int values containing the ids of the messages.
 	 * @param $folder Int folder id the messages belong to.
 	 * @return true if operation was successful, false otherwise.
 	 */ 
-	protected function deleteAttachementsAndCheckForOrphanFiles($messageids, $folder) {
+	protected function deleteAttachmentsAndCheckForOrphanFiles($messageids, $folder) {
+		$basedir = \creamy\CRMUtils::creamyBaseDirectoryPath();
 		foreach ($messageids as $messageid) { // iterate through all messages.
 			$this->dbConnector->where("message_id", $messageid);
-			$this->dbConnector->where("folder_id", $folder);			
-			$attachements = $this->dbConnector->get(CRM_ATTACHEMENTS_TABLE_NAME);
-			if ($this->dbConnector->count > 0) { // do we have any attachements
-				foreach ($attachements as $attachement) { // get id and delete the attachement
-					$this->dbConnector->where("id", $attachement["id"]);
-					if ($this->dbConnector->delete(CRM_ATTACHEMENTS_TABLE_NAME)) { // success
-						// Now check for orphan file. Try to look for other attachement referencing the same file.
-						$filepath = \creamy\CRMUtils::creamyBaseDirectoryPath().$attachement["filepath"];
-						$this->dbConnector->where("filepath", $filepath);
-						if (!$this->dbConnector->getOne(CRM_ATTACHEMENTS_TABLE_NAME)) { // orphan file
-							unlink($attachement["filepath"]); // remove it.
+			$this->dbConnector->where("folder_id", $folder);
+			error_log("Deleting attachements from message $messageid in folder $folder");			
+			$attachments = $this->dbConnector->get(CRM_ATTACHMENTS_TABLE_NAME);
+			if ($this->dbConnector->count > 0) { // do we have any attachments
+				foreach ($attachments as $attachment) { // get id and delete the attachment
+					$this->dbConnector->where("id", $attachment["id"]);
+					if ($this->dbConnector->delete(CRM_ATTACHMENTS_TABLE_NAME)) { // success
+						// Now check for orphan file. Try to look for other attachment referencing the same file.
+						$this->dbConnector->where("filepath", $attachment["filepath"]);
+						if (!$this->dbConnector->getOne(CRM_ATTACHMENTS_TABLE_NAME)) { // orphan file
+							error_log("Removing file ".$basedir.$attachment["filepath"]);
+							unlink($basedir.$attachment["filepath"]); // remove it
 						}
-					}
+					} else { return false; }
 				}
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -1253,22 +1350,45 @@ class DbHandler {
 			$this->dbConnector->where("id", $messageid);
 			$oldData = $this->dbConnector->getOne($tableName, array("user_from", "user_to", "subject", "message", "date", "message_read", "favorite"));
 			if ($oldData) {
+				// start a transaction so all operations happen or not atomically.
+				$this->dbConnector->startTransaction();
 				// add origin folder
 				$oldData["origin_folder"] = $tableName;
 				// insert old data in messages_junk
 				$newJunkId = $this->dbConnector->insert(CRM_MESSAGES_JUNK_TABLE_NAME, $oldData);
-				if ($newJunkId) {
+				if ($newJunkId) { // try to delete old message.
 					$this->dbConnector->where($useridfield, $userid);
 					$this->dbConnector->where("id", $messageid);
 					if ($deleteOriginal = $this->dbConnector->delete($tableName)) {
-					$messagesJunked = $messagesJunked + 1;
-					}
-
-				}
+						// now move the attachement references.
+						if ($this->adjustAttachementsFromMessage($messageid, $folder, $newJunkId, MESSAGES_GET_DELETED_MESSAGES)) {
+							// commit and increment junked messages count.
+							$this->dbConnector->commit();
+							$messagesJunked = $messagesJunked + 1;						
+						} else { $this->dbConnector->rollback(); }
+					} else { $this->dbConnector->rollback(); }
+				} else { $this->dbConnector->rollback(); }
 			}
 		}
 		
 		return $messagesJunked;
+	}
+
+	/**
+	 * This function moves the references from the attachements of an origin message to a
+	 * new message. This is useful when you are moving a message from one folder to the junk
+	 * folder or viceversa.
+	 * @param Int $originMsgId			Id of the message in the origin folder
+	 * @param Int $originFolder			Id of the folder the original message was in.
+	 * @param Int $destinationMsgId		Id of the message in the destination folder
+	 * @param Int $destinationFolder	Id of the folder for the new message
+	 * @return Bool true if the attachements were successfully moved, false otherwise.
+	 */
+	private function adjustAttachementsFromMessage($originMsgId, $originFolder, $destinationMsgId, $destinationFolder) {
+		$this->dbConnector->where("message_id", $originMsgId);
+		$this->dbConnector->where("folder_id", $originFolder);
+		$data = array("message_id" => $destinationMsgId, "folder_id" => $destinationFolder);
+		return $this->dbConnector->update(CRM_ATTACHMENTS_TABLE_NAME, $data);
 	}
 
 	/**
@@ -1308,18 +1428,129 @@ class DbHandler {
 	}
 	
 	/**
-	 * Retrieves the attachements for a given message.
+	 * Retrieves the attachments for a given message.
 	 * @param Int $messageid 	identifier for the message.
 	 * @param Int $folderid 	identifier for the folder.
-	 * @return Array an array containing the attachements data.
+	 * @return Array an array containing the attachments data.
 	 */
-	public function getMessageAttachements($messageid, $folderid) {
+	public function getMessageAttachments($messageid, $folderid) {
 		$this->dbConnector->where("message_id", $messageid);
 		$this->dbConnector->where("folder_id", $folderid);
-		return $this->dbConnector->get(CRM_ATTACHEMENTS_TABLE_NAME);
+		return $this->dbConnector->get(CRM_ATTACHMENTS_TABLE_NAME);
+	}
+	
+	/** Events */
+	
+	/**
+	 * Creates a new event associated to the user and to a customer, 
+	 * without being assigned a specific date, for a "all day" duration.
+	 * @param Int $userid			ID of the user this event will belong to.
+	 * @param String $customerid	ID of the customer this event will be associated to.
+	 * @param String $customertype	Customer type
+	 * @param Bool $allDay			true if this event is programmed to last for the entire day.
+	 * @param String $startDate		Start date expressed in mysql format.
+	 * @param String $endDate		End date expressed in mysql format.
+	 * @param String $alarm			Custom alarm for the event.
+	 * @return Int The id of the newly created event, 0 if there was an error.
+	 */
+	public function createContactEventForCustomer($userid, $customerid, $customertype, $allDay = true, $startDate = null, $endDate = null, $alarm = null) {
+		// Grab customer data.
+		$customerData = $this->getDataForCustomer($customerid, $customertype);
+		if (!isset($customerData)) { return false; }
+		// build event parameters: title, url...
+		$title = $this->lh->translationFor("contact_reminder_for")." ".$customerData["name"];
+		if (!empty($customerData["mobile"])) { $title .= " (".$customerData["mobile"].")"; } // mobile preferred over phone.
+		else if (!empty($customerData["phone"])) { $title .= " (".$customerData["phone"].")"; } // phone preferred over email.
+		else if (!empty($customerData["email"])) { $title .= " (".$customerData["email"].")"; } // phone preferred over email.
+		$url = "editcustomer.php?customerid=$customerid&customer_type=$customertype";
+		$color = CRM_UI_COLOR_DEFAULT_NAME;
+		return $this->createEvent($userid, $title, $color, $allDay, $startDate, $endDate, $url, $alarm);
+	}
+	
+	/**
+	 * Creates a new event associated to the user, without being assigned a specific date, for a "all day" duration.
+	 * @param Int $userid		ID of the user this event will belong to.
+	 * @param String $title		title of the event.
+	 * @param String $color		Color for the event in the format #RRGGBB
+	 * @param Bool $allDay		true if this event is programmed to last for the entire day.
+	 * @param String $startDate	Start date expressed in mysql format.
+	 * @param String $endDate	End date expressed in mysql format.
+	 * @param String $url		URL associated with this event.
+	 * @param String $alarm		Custom alarm for the event.
+	 * @return Int The id of the newly created event, 0 if there was an error.
+	 */
+	public function createEvent($userid, $title, $color, $allDay = true, $startDate = null, $endDate = null, $url = null, $alarm = null) {
+		$data = array(
+			"user_id" => $userid,
+			"title" => $title,
+			"color" => $color,
+			"all_day" => $allDay,
+			"start_date" => $startDate,
+			"end_date" => $endDate,
+			"alarm" => $alarm,
+			"url" => $url
+		);
+		$id = $this->dbConnector->insert(CRM_EVENTS_TABLE_NAME, $data);
+		if ($id) { return $id; } else return 0;
 	}
 
-	/** Notificaciones */
+	public function getUnassignedEventsForUser($userid) {
+		$this->dbConnector->where("user_id", $userid);
+		$this->dbConnector->where("start_date IS NULL");
+		return $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
+	}	
+
+	public function getAssignedEventsForUser($userid) {
+		$this->dbConnector->where("user_id", $userid);
+		$this->dbConnector->where("start_date IS NOT NULL");
+		return $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
+	}
+	
+	public function modifyEvent($userid, $eventid, $startDate, $endDate, $allDay) {
+		// calculate new values.
+		$newStartDate = date("Y-m-d H:i:s", $startDate);
+		$newEndDate = date("Y-m-d H:i:s", $endDate);
+		$newAllDay = $allDay ? "1" : "0";
+		$data = array("start_date" => $newStartDate, "end_date" => $newEndDate, "all_day" => $newAllDay);
+		// perform update in ddbb.
+		$this->dbConnector->where("user_id", $userid)->where("id", $eventid);
+		return $this->dbConnector->update(CRM_EVENTS_TABLE_NAME, $data);
+	}
+	
+	public function getEventsForToday($userid, $onlyUnnotifiedEvents = false) {
+		// prepare query
+		if (empty($userid)) return array();
+		$whereClause = "((DATE(start_date) = CURDATE()) OR (DATE(end_date) = CURDATE())) AND (user_id = ?)";
+		if ($onlyUnnotifiedEvents) $whereClause .= " AND (notification_sent = 0)";
+		$this->dbConnector->where($whereClause, array($userid));
+		$events = $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
+		return $events;
+	}
+	
+	public function getEventsForTodayForAllUsers($onlyUnnotifiedEvents = false) {
+		// prepare query
+		$whereClause = "((DATE(start_date) = CURDATE()) OR (DATE(end_date) = CURDATE()))";
+		if ($onlyUnnotifiedEvents) $whereClause .= " AND (notification_sent = 0)";
+		$this->dbConnector->where($whereClause);
+		$events = $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
+		return $events;
+	}
+
+	public function getNumberOfTodayEvents($userid) {
+		// prepare query
+		if (empty($userid)) return NULL;
+		$this->dbConnector->where("((DATE(start_date) = CURDATE()) OR (DATE(end_date) = CURDATE())) AND (user_id = ?)", array($userid));
+		return $this->dbConnector->getValue(CRM_EVENTS_TABLE_NAME, "count(*)");
+	}
+
+	public function setEventAsNotified($eventid) {
+		if (!isset($eventid)) { return false; }
+		$data = array("notification_sent" => 1);
+		$this->dbConnector->where("id", $eventid);
+		return $this->dbConnector->update(CRM_EVENTS_TABLE_NAME, $data);
+	}
+
+	/** Notifications */
 	
 	/**
 	 * Gets the number of notifications for today for the user.
@@ -1367,7 +1598,7 @@ class DbHandler {
 		if (empty($customerTypes)) return true;
 
 		// build the query by adding customer types
-		$data = array("date" => $this->dbConnector->now());
+		$data = array("timestamp" => $this->dbConnector->now());
 		foreach ($customerTypes as $customerType) {
 			$numCustomers = $this->getNumberOfClientsFromTable($customerType["table_name"]);
 			$customerKey = $customerType["table_name"];

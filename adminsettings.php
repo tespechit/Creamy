@@ -43,7 +43,7 @@
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
         <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
-        <link href="css/skins/skin-blue.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -59,7 +59,7 @@
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
         <div class="wrapper">
 		<?php print $ui->creamyHeader($user); ?>
             <!-- Left side column. contains the logo and sidebar -->
@@ -83,21 +83,6 @@
                 <section class="content">
                 <?php if ($user->userHasAdminPermission()) { ?>
 					<!-- Filas con acciones, formularios y demás -->
-
-                    <div class="row">
-                        <section class="col-lg-12 connectedSortable">
-                            <!-- quick email widget -->
-                            <div class="box box-info">
-                                <div class="box-header">
-                                    <i class="fa fa-wrench"></i>
-                                    <h3 class="box-title"><?php $lh->translateText("settings"); ?></h3>
-                                </div>
-                                <div class="box-body">
-	                                <?php print $ui->getGeneralSettingsForm(); ?>
-                                </div>
-                            </div>
-                        </section>
-                    </div>   <!-- /.row -->
                     
                     <div class="row">
                         <section class="col-lg-12">
@@ -107,7 +92,7 @@
 								$upd = \creamy\Updater::getInstance();
 								$currentVersion = $upd->getCurrentVersion();
 							?>
-                            <div class="box box-info">
+                            <div class="box box-default">
                                 <div class="box-header">
                                     <i class="fa fa-refresh"></i>
                                     <h3 class="box-title"><?php print $lh->translationFor("version")." ".number_format($currentVersion, 1); ?></h3>
@@ -124,7 +109,7 @@
 													"update_form", 						// form id
 													$contentText, 						// form content
 													$lh->translationFor("update"), 		// submit text
-													CRM_UI_STYLE_PRIMARY,				// submit style
+													CRM_UI_STYLE_DEFAULT,				// submit style
 													CRM_UI_DEFAULT_RESULT_MESSAGE_TAG,	// resulting message tag
 													"update.php");						// form PHP action URL.
 											} else { // we cannot update?
@@ -132,6 +117,21 @@
 											}
 										}
 									?>
+                                </div>
+                            </div>
+                        </section>
+                    </div>   <!-- /.row -->
+
+                    <div class="row">
+                        <section class="col-lg-12 connectedSortable">
+                            <!-- quick email widget -->
+                            <div class="box box-default">
+                                <div class="box-header">
+                                    <i class="fa fa-wrench"></i>
+                                    <h3 class="box-title"><?php $lh->translateText("settings"); ?></h3>
+                                </div>
+                                <div class="box-body">
+	                                <?php print $ui->getGeneralSettingsForm(); ?>
                                 </div>
                             </div>
                         </section>
@@ -145,9 +145,48 @@
 				?>
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
         <!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
+		<script type="text/javascript">
+		$(document).ready(function() {
+			/** 
+			 * modifies a user.
+		 	 */
+			$("#adminsettings").validate({
+				submitHandler: function(e) {
+					//submit the form
+					$("#<?php print CRM_UI_DEFAULT_RESULT_MESSAGE_TAG; ?>").html();
+					$("#<?php print CRM_UI_DEFAULT_RESULT_MESSAGE_TAG; ?>").hide();
+					var formData = new FormData(e);
+	
+					$.ajax({
+					  url: "./php/ModifySettings.php",
+					  data: formData,
+					  processData: false,
+					  contentType: false,
+					  type: 'POST',
+					  success: function(data) {
+							if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
+							<?php 
+								print $ui->reloadLocationJS();
+							?>
+							} else {
+							<?php 
+							    $ko_text = $lh->translationFor("error_changing_settings");
+								print $ui->fadingInMessageJS($ko_text, CRM_UI_DEFAULT_RESULT_MESSAGE_TAG); 
+							?>
+							}
+					    }
+					});
+					
+					return false; //don't let the form refresh the page...
+				}					
+			});
+			 
+		});
+		</script>
 
     </body>
 </html>

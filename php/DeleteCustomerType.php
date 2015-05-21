@@ -38,18 +38,16 @@ if (!isset($_POST["customertype"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// check customer type	
 	$customerType = $_POST["customertype"];
 	if ($customerType == 1) { // we can't delete the basic client customer type
 		$lh->translateText("unable_delete_contacts_type");
 	} else { // proceed
 		$result = $db->deleteCustomerType($customerType);
 		if ($result === false) {
+			ob_clean(); 
 			$lh->translateText("unable_delete_customer_type");
-		} else print "success";
+		} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	}
-
-	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

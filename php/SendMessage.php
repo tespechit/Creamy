@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 
@@ -58,12 +59,11 @@ if ($validated == 1) {
 		$external_recipients = rtrim($external_recipients, " ]");
 	} else { $external_recipients = null; }
 
-
 	// send message and analyze results
 	$result = $db->sendMessage($fromuserid, $touserid, $subject, $message, $_FILES, $external_recipients, "attachment");
-	ob_clean();
 	if ($result === true) {
-		print "success"; die();
-	} else { $lh->translateText("unable_send_message"); die(); }
-} else { $lh->translateText("some_fields_missing"); die(); }
+		ob_clean(); 
+		print CRM_DEFAULT_SUCCESS_RESPONSE;
+	} else { ob_clean(); $lh->translateText("unable_send_message"); die(); }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); die(); }
 ?>

@@ -24,7 +24,9 @@
 */
 
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
+require_once('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
 
@@ -48,9 +50,21 @@ if ($validated == 1) {
 	$taskInitialProgress = 0;
 
 	$result = $db->createTask($userid, $taskDescription, $taskInitialProgress);
-	if ($result === true) { print "success"; }
-	else { print $lh->translationFor("unable_create_task")." ($result)"; } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	if ($result === true) {
+		// if the task was assigned to the user by another user, send the receiver a message.
+		$user = \creamy\CreamyUser::currentUser();
+		if (isset($user)) {
+			$myId = $user->getUserId();
+			if ($myId != $userid) { // I'm creating a task for another user. Mail that user.
+				require_once('MailHandler.php');
+				$mh = \creamy\MailHandler::getInstance();
+				$mh->sendNewTaskMailToUser($myId, $userid, $taskDescription);
+				error_log("Sending email of new task to $userid");
+			}
+		} 
+		// return result	
+		ob_clean();
+		print CRM_DEFAULT_SUCCESS_RESPONSE; 
+	} else { ob_clean(); print $lh->translationFor("unable_create_task")." ($result)"; } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

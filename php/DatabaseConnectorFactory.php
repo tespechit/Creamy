@@ -114,6 +114,5 @@ class DatabaseConnectorFactory {
 		    return false;
 	    }
     }
-}
-	
+}	
 ?>
