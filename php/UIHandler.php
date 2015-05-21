@@ -1211,7 +1211,10 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			$boxes .= $this->infoBox($this->lh->translationFor("new_customers"), $this->db->getNumberOfNewCustomers(), $customersURL, "users", "green",  $columnSize);
 		}
 		// notifications
-		$boxes .= $this->infoBox($this->lh->translationFor("notifications"), $this->db->getNumberOfTodayNotifications($userid), "notifications.php", "clock-o", "yellow", $columnSize);
+		$numNotifications = intval($this->db->getNumberOfTodayNotifications($userid));
+		$numEvents = intval($this->db->getNumberOfTodayEvents($userid));
+		$num = $numNotifications + $numEvents;
+		$boxes .= $this->infoBox($this->lh->translationFor("notifications"),$num , "notifications.php", "clock-o", "yellow", $columnSize);
 		// events today // TODO: Change
 		$boxes .= $this->infoBox($this->lh->translationFor("unfinished_tasks"), $this->db->getUnfinishedTasksNumber($userid), "tasks.php", "calendar", "red", $columnSize);
 

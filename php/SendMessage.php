@@ -44,7 +44,6 @@ if (!isset($_POST["subject"])) {
 	$validated = 0;
 }
 
-
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 

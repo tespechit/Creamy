@@ -1050,9 +1050,7 @@ class DbHandler {
 		}
 		// success! commit transactions.
 		$this->dbConnector->commit();
-	
-
-		return true; // because we stored the message in our database successfully anyway. 
+		return true;
 	}
 	
 	/**
@@ -1077,7 +1075,7 @@ class DbHandler {
 		require_once('CRMUtils.php');
 		// iterate through all the attachments and create the inbox/outbox links.
 		for ($i = 0; $i < count($attachments[$attachmentTag]["tmp_name"]); $i++) {
-			if ($attachments[$attachmentTag]['error'][$i] != UPLOAD_ERR_OK) { return false; }
+			if ($attachments[$attachmentTag]['error'][$i] != UPLOAD_ERR_OK) { continue; }
 			$relativeURL = \creamy\CRMUtils::generateUploadRelativePath($attachments[$attachmentTag]['name'][$i], true);
 			$filepath = \creamy\CRMUtils::creamyBaseDirectoryPath().$relativeURL;
 			if (move_uploaded_file($attachments[$attachmentTag]['tmp_name'][$i], $filepath)) { // successfully moved upload.

@@ -35,7 +35,6 @@
 // global constants
 define ('CRM_INSTALL_VERSION', '1.0');
 define ('CRM_INSTALLED_FILE', 'installed.txt');
-define ('CRM_GETTING_STARTED_FILE', './help/gettingstarted.html');
 define ('CRM_SKEL_DIRECTORY', 'skel');
 define ('CRM_RECOVERY_EMAIL_FILE', 'creamyEmail.html');
 define ('CRM_PHP_CONFIG_FILE', 'php'.DIRECTORY_SEPARATOR.'Config.php');

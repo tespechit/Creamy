@@ -226,7 +226,7 @@ define('DB_PORT', '3306');
         <!-- Javascript -->
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jstz-1.0.4.min.js" type="text/javascript"></script>
+        <script src="js/plugins/timezone/jstz-1.0.4.min.js" type="text/javascript"></script>
     </head>
     
     <body class="login-page">

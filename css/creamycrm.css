@@ -184,7 +184,7 @@ body {
 .fixed .right-side {
   padding-top: 50px;
 }
-a.dropdown-toggle {
+.nav a.dropdown-toggle {
 	height: 50px;
 } 
 @media (max-width: 767px) {
@@ -1549,7 +1549,7 @@ a:focus {
   display: inline-block;
   margin-left: 5px;
   align: left;
-  width: 90%;
+  width: 85%;
   font-weight: 600;
 }
 .todo-list > li .label {

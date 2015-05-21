@@ -278,9 +278,9 @@ class MessageOfTheDay extends Module {
 		return $success ? CRM_DEFAULT_SUCCESS_RESPONSE : $this->lh()->translationFor("unable_set_quote");
 	}
 		
-	public function notificationsHook($period) {
+	/*public function notificationsHook($period) {
 		return $this->ui()->timelineItemWithData("Hola mundo", "Hola como estás mundo?", "2015-04-11 22:57:15", "http://duckduckgo.com", "Touch me!");
-	}
+	}*/
 	
 	public function taskListHoverHook($taskid) {
 		$this->db()->where("id", $taskid);
