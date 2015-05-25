@@ -4,7 +4,7 @@ Creamy is a free, open source CRM for managing contacts & customers, lightweight
 
 Thanks to its [three-step installation process](https://github.com/DigitalLeaves/Creamy/wiki/Installation), you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible. Anyway, there is a [short guide](https://github.com/DigitalLeaves/Creamy/wiki/Installation) to help you install Creamy.
 
-![](http://creamycrm.com/img/responsive.jpg)
+![](http://creamycrm.com/img/responsive.png)
 
 Creamy is under heavy development right now, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
 
@@ -19,7 +19,7 @@ Creamy is a multi-user CRM. You can have as many users as you need. In order to 
 * **Readers**: Readers are those users who need to query some information from the CRM from time to time, but don't really bother updating the customers and contacts. They have read access to customers and clients, and can access the notifications and messaging system.
 * **Guests**: Guests don't have any permission on the system. They cannot access any information apart from the main page. They don't have access to customers, contacts, messages or notifications.
 
-![](http://creamycrm.com/img/features.jpg)
+![](http://creamycrm.com/img/features.png)
 
 ## Topbar
 
