@@ -43,6 +43,8 @@ function get_timezone_offset($remote_tz, $origin_tz = null) {
     return $offset;
 }
 
+error_log("Modifying event. Data: ".var_export($_POST, true));
+
 $lh = \creamy\LanguageHandler::getInstance();
 $user = \creamy\CreamyUser::currentUser();
 
@@ -60,6 +62,7 @@ if ($validated == 1) {
 	// calculate proper start and end date, including timezone offset
 	$offset = get_timezone_offset($db->getTimezoneSetting(), "UTC");
 	$startDate = null; $endDate = null; $allDay = null;
+	
 	if (isset($_POST["start_date"])) $startDate = intval($_POST["start_date"])/1000 + intval($offset);
 	if (isset($_POST["end_date"])) $endDate = intval($_POST["end_date"]/1000) + intval($offset);
 	if (isset($_POST["all_day"])) $allDay = filter_var($_POST["all_day"], FILTER_VALIDATE_BOOLEAN);

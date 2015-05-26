@@ -23,6 +23,7 @@
 		THE SOFTWARE.
 	*/
 	
+	error_reporting(E_ERROR | E_PARSE);
 
 	require_once('./php/LanguageHandler.php');
 	require_once('./php/DbHandler.php');

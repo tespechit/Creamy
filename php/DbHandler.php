@@ -215,7 +215,8 @@ class DbHandler {
         // fetching user by name and password
         $this->dbConnector->where("name", $name);
         $userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
-
+		
+		error_log("User with name $name found: ".var_export($userobj, true));
 		if ($userobj) { // first match valid?
 			$password_hash = $userobj["password_hash"];
 			$status = $userobj["status"];
@@ -452,10 +453,22 @@ class DbHandler {
 		$this->dbConnector->where("context", $context);
 		if ($result = $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME)) {
 			return $result["value"];
-		} 
-		return NULL;
+		} else return NULL;
 	}
 	
+	/** Returns the value for a setting with a given key */
+	public function getSettingValueForKeyAsBooleanValue($key, $context = CRM_SETTING_CONTEXT_CREAMY) {
+		$rawValue = $this->getSettingValueForKey($key, $context);
+		if (!isset($rawValue)) { return false; } // default value.
+		else return filter_var($rawValue, FILTER_VALIDATE_BOOLEAN); 
+	}	
+	
+	/** 
+	 * Sets the value for a setting.
+	 * @param String $key		name or key for the setting
+	 * @param Any $value		value for the setting
+	 * @param String $context	The context indicates if it is a Creamy core setting of belongs to a module.
+	 */
 	public function setSettingValueForKey($key, $value, $context = CRM_SETTING_CONTEXT_CREAMY) {
 		$this->dbConnector->where("setting", $key);
 		$this->dbConnector->where("context", $context);
@@ -609,9 +622,10 @@ class DbHandler {
 	 * @param $createdByUser Int id of the user that inserted the customer in the system.  
 	 * @param $gender Int gender of the customer (female=0, male=1).  
 	 * @param $notes String notes for the customer (test, annotations, etc).  
+	 * @param $website String Website of the customer. 
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes) {
+	public function createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes, $website) {
 		// sanity checks
 		if (empty($customerType)) return false;
 		
@@ -638,7 +652,8 @@ class DbHandler {
 			"created_by" => $createdByUser,
 			"do_not_send_email" => $donotsendemail,
 			"gender" => $gender,
-			"notes" => $notes
+			"notes" => $notes,
+			"website" => $website
 		);
 		
 		if ($this->dbConnector->insert($customerType, $data)) { return true; }
@@ -665,9 +680,10 @@ class DbHandler {
 	 * @param $createdByUser Int id of the user that inserted the customer in the system.  
 	 * @param $gender Int gender of the customer (female=0, male=1).  
 	 * @param $notes String notes for the customer 
+	 * @param $website String Website of the customer. 
 	 * @return boolean true if insert was successful, false otherwise.
 	 */
-	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes) {
+	public function modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes, $website) {
 		// determine customer type (target table) and sanity checks.
 		$correctDate = NULL;
 		if (!empty($birthdate)) $correctDate = date('Y-m-d',strtotime(str_replace('/','-', $birthdate)));
@@ -691,6 +707,7 @@ class DbHandler {
 			"do_not_send_email" => $donotsendemail,
 			"gender" => $gender,
 			"notes" => $notes,
+			"website" => $website
 		);
 		$this->dbConnector->where("id", $customerid);
 		return $this->dbConnector->update($customerType, $data);
@@ -921,7 +938,8 @@ class DbHandler {
 		$this->dbConnector->where("user_id", $userid);
 		$this->dbConnector->where("completed", 100, "<");
 		$this->dbConnector->orderBy("creation_date", "Desc");
-		return $this->dbConnector->get(CRM_TASKS_TABLE_NAME);
+		$result = $this->dbConnector->get(CRM_TASKS_TABLE_NAME);
+		return isset($result) ? $result : array();
 	 }
 	 
 	/**
@@ -1461,7 +1479,7 @@ class DbHandler {
 		else if (!empty($customerData["phone"])) { $title .= " (".$customerData["phone"].")"; } // phone preferred over email.
 		else if (!empty($customerData["email"])) { $title .= " (".$customerData["email"].")"; } // phone preferred over email.
 		$url = "editcustomer.php?customerid=$customerid&customer_type=$customertype";
-		$color = CRM_UI_COLOR_DEFAULT_NAME;
+		$color = CRM_UI_COLOR_DEFAULT_HEX;
 		return $this->createEvent($userid, $title, $color, $allDay, $startDate, $endDate, $url, $alarm);
 	}
 	
@@ -1488,6 +1506,7 @@ class DbHandler {
 			"alarm" => $alarm,
 			"url" => $url
 		);
+		error_log("Creando evento con datos: ".var_export($data, true));
 		$id = $this->dbConnector->insert(CRM_EVENTS_TABLE_NAME, $data);
 		if ($id) { return $id; } else return 0;
 	}
@@ -1522,7 +1541,7 @@ class DbHandler {
 		if ($onlyUnnotifiedEvents) $whereClause .= " AND (notification_sent = 0)";
 		$this->dbConnector->where($whereClause, array($userid));
 		$events = $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
-		return $events;
+		return isset($events) ? $events : array();
 	}
 	
 	public function getEventsForTodayForAllUsers($onlyUnnotifiedEvents = false) {
@@ -1531,7 +1550,7 @@ class DbHandler {
 		if ($onlyUnnotifiedEvents) $whereClause .= " AND (notification_sent = 0)";
 		$this->dbConnector->where($whereClause);
 		$events = $this->dbConnector->get(CRM_EVENTS_TABLE_NAME);
-		return $events;
+		return isset($events) ? $events : array();
 	}
 
 	public function getNumberOfTodayEvents($userid) {
@@ -1623,6 +1642,36 @@ class DbHandler {
 	public function getNumberOfNewContacts() {
 		$this->dbConnector->where("DATE(creation_date) BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE()");
 		return $this->dbConnector->getValue(CRM_CONTACTS_TABLE_NAME, "count(*)");
+	}
+	
+	/**
+	 * This function returns true if and only if we have some valid statistics to show to the user, i.e: we
+	 * have a statistics line whose customer numbers are not set to zero (valid information about customers).
+	 */
+	public function weHaveSomeValidStatistics() {
+		$stats = $this->dbConnector->get(CRM_STATISTICS_TABLE_NAME);
+		if (empty($stats)) { return false; }
+		$customerTypes = $this->getCustomerTypes();
+		if (empty($customerTypes)) { return false; }
+		foreach ($stats as $stat) {
+			foreach ($customerTypes as $customerType) {
+				error_log("Number of customers of type ".$customerType["table_name"].": ".intval($stat[$customerType["table_name"]]));
+				if (intval($stat[$customerType["table_name"]]) > 0) { return true; }
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Gets the total number of customers in all customers tables.
+	 */
+	public function weHaveAtLeastOneCustomerOrContact() {
+		$customerTypes = $this->getCustomerTypes();
+		if (empty($customerTypes)) { return false; }
+		foreach ($customerTypes as $customerType) {
+			if ($this->getNumberOfClientsFromTable($customerType["table_name"]) > 0) { return true; }
+		}		
+		return false;
 	}
 	
 	/**

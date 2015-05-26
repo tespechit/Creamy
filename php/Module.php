@@ -35,6 +35,8 @@ require_once('DatabaseConnectorFactory.php');
 // constants.
 define('CRM_MODULE_INCLUDE_DIRECTORY', \creamy\CRMUtils::creamyBaseDirectoryPath().'php'.DIRECTORY_SEPARATOR);
 define('CRM_MODULE_MAX_TABLENAME_LENGTH', 63);
+define('CRM_MODULE_CUSTOM_ACTION_PAGE', 'ModuleCustomAction.php');
+define('CRM_MODULE_PHP_DIRECTORY_NAME', 'php');
 define('CRM_MODULE_LANGUAGE_DIRECTORY_NAME', 'lang');
 define('CRM_MODULE_ASSETS_DIRECTORY_NAME', 'assets');
 define('CRM_MODULE_TEMPLATE_TAG_TITLE', '{title}');
@@ -91,7 +93,6 @@ abstract class Module implements ModuleMetadata {
 		// UI
 	    $this->uiHandler = \creamy\UIHandler::getInstance();
 
-	
 		// module custom initialization function.
 		$this->uponInit();
 	}
@@ -258,6 +259,29 @@ abstract class Module implements ModuleMetadata {
 		return $this->getModuleBaseURL()."/".CRM_MODULE_ASSETS_DIRECTORY_NAME.$finalCode; 
 	}
 
+	/** Returns the php directory, where custom php pages can be found. */
+	public function getPHPDirectory($includeFinalPathSeparator = true) { 
+		$finalCode = $includeFinalPathSeparator ? DIRECTORY_SEPARATOR : "";
+		return $this->getModuleDirectory().DIRECTORY_SEPARATOR.CRM_MODULE_PHP_DIRECTORY_NAME.$finalCode; 
+	}
+	
+	/** Returns the php relative URL, where custom php pages can be found. */	
+	public function getPHPRelativeURL($includeFinalPathSeparator = true) { 
+		$finalCode = $includeFinalPathSeparator ? "/" : "";
+		return $this->getModuleBaseURL()."/".CRM_MODULE_PHP_DIRECTORY_NAME.$finalCode; 
+	}
+
+	/** 
+	 * Returns the custom action page for a module. This page is used by the module to perform custom
+	 * actions, like adjusting database records, CRUD operations and such. This module page will call 
+	 * the module custom hook contained in the parameter hook_name, with the parameters received in
+	 * $_POST. For more 
+	 */	
+	public function customActionModulePageURL() {
+		$baseURL = \creamy\CRMUtils::creamyBaseURL();
+		return $baseURL."/php/".CRM_MODULE_CUSTOM_ACTION_PAGE;
+	}
+
 	// Views
 	
 	/** 
@@ -399,7 +423,13 @@ abstract class Module implements ModuleMetadata {
 		$this->dbConnector->where("context", $settingContext);
 		$this->dbConnector->where("setting", $setting);
 		$result = $this->dbConnector->getOne(CRM_SETTINGS_TABLE_NAME);
-		if ((isset($result)) && (array_key_exists("value", $result))) { 
+		if ((isset($result)) && (array_key_exists("value", $result))) {
+			$type = $this->typeOfSetting($setting); 
+			// boolean?
+			if ($type == CRM_SETTING_TYPE_BOOL) {
+				return filter_var($result["value"], FILTER_VALIDATE_BOOLEAN);
+			}
+			// other
 			return $result["value"]; 
 		}
 		else return $this->defaultValueForSetting($setting);

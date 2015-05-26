@@ -33,10 +33,17 @@ if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed
 require_once('./php/Session.php');
 include_once('./php/UIHandler.php');
 require_once('./php/LanguageHandler.php');
+require_once('./php/DbHandler.php');
 $ui = \creamy\UIHandler::getInstance();
 $lh = \creamy\LanguageHandler::getInstance();
 $user = \creamy\CreamyUser::currentUser();
 $colors = $ui->generateStatisticsColors();
+
+// calculate number of statistics and customers
+$db = new \creamy\DbHandler();
+$statsOk = $db->weHaveSomeValidStatistics();
+$custsOk = $db->weHaveAtLeastOneCustomerOrContact();
+
 ?>
 <html>
     <head>
@@ -91,6 +98,42 @@ $colors = $ui->generateStatisticsColors();
                 <!-- Main content -->
                 <section class="content">
 
+					<!-- Update (if needed) -->
+                    <?php
+						require_once('./php/Updater.php');
+						$upd = \creamy\Updater::getInstance();
+						$currentVersion = $upd->getCurrentVersion();
+						if (!$upd->CRMIsUpToDate()) {
+					?>
+                    <div class="row">
+                        <section class="col-lg-12">
+                            <!-- version -->
+                            <div class="box box-danger">
+                                <div class="box-header">
+                                    <i class="fa fa-refresh"></i>
+                                    <h3 class="box-title"><?php print $lh->translationFor("version")." ".number_format($currentVersion, 1); ?></h3>
+                                </div>
+                                <div class="box-body">
+									<?php
+									if ($upd->canUpdateFromVersion($currentVersion)) { // update needed
+										$contentText = $lh->translationFor("you_need_to_update");
+										print $ui->formWithContent(
+											"update_form", 						// form id
+											$contentText, 						// form content
+											$lh->translationFor("update"), 		// submit text
+											CRM_UI_STYLE_DEFAULT,				// submit style
+											CRM_UI_DEFAULT_RESULT_MESSAGE_TAG,	// resulting message tag
+											"update.php");						// form PHP action URL.
+									} else { // we cannot update?
+										$lh->translateText("crm_update_impossible");
+									}
+									?>
+                                </div>
+                            </div>
+                        </section>
+                    </div>   <!-- /.row -->
+					<?php } ?>
+
                     <!-- Status boxes -->
 					<div class="row">
 						<?php print $ui->dashboardInfoBoxes($user->getUserId()); ?>
@@ -107,7 +150,11 @@ $colors = $ui->generateStatisticsColors();
 	                                <h3 class="box-title"><?php $lh->translateText("customer_statistics"); ?></h3>
 	                            </div>
                                 <div class="box-body" id="graph-box"><div>
+	                            <?php if ($statsOk) { ?>
 									<canvas id="lineChart" height="250"></canvas>
+	                            <?php } else { 
+		                        	print $ui->calloutWarningMessage($lh->translationFor("no_statistics_yet"));
+		                        } ?>
 	                            </div></div>
 	                        </div>
                         </section><!-- /.Left col -->
@@ -120,6 +167,7 @@ $colors = $ui->generateStatisticsColors();
 	                                <h3 class="box-title"><?php $lh->translateText("current_customer_distribution"); ?></h3>
 	                            </div>
                                 <div class="box-body" id="graph-box">
+		                            <?php if ($custsOk) { ?>
 	                                <div class="row">
 										<div class="col-md-8">
 											<canvas id="pieChart" height="250"></canvas>
@@ -127,6 +175,10 @@ $colors = $ui->generateStatisticsColors();
 		                            	<div class="col-md-4 chart-legend" id="customers-chart-legend">
 		                            	</div>
 	                                </div>
+		                            <?php } else { 
+			                        	print $ui->calloutWarningMessage($lh->translationFor("no_customers_yet"));
+			                        	print $ui->simpleLinkButton("no_customers_add_customer", $lh->translationFor("create_new"), "customerslist.php?customer_type=clients_1");
+			                        } ?>
 	                            </div>
 	                        </div>
                         </section><!-- /.Left col -->
@@ -142,6 +194,7 @@ $colors = $ui->generateStatisticsColors();
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 
 		<!-- Statistics -->
+		<?php if ($statsOk) { ?>
 		<script type="text/javascript">
 			
 			var lineChartData = {
@@ -195,7 +248,10 @@ $colors = $ui->generateStatisticsColors();
         var lineChartCanvas = $("#lineChart").get(0).getContext("2d");
         var lineChart = new Chart(lineChartCanvas);
         lineChart.Line(lineChartData, lineChartOptions);
-
+		</script>
+		<?php } ?>
+		<?php if ($custsOk) { ?>
+		<script type="text/javascript">
 
         //-------------
         //- PIE CHART -
@@ -233,5 +289,6 @@ $colors = $ui->generateStatisticsColors();
 		$('#customers-chart-legend').html(pieChart.generateLegend());
 
 		</script>
+		<?php } ?>
     </body>
 </html>

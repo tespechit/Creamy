@@ -368,9 +368,10 @@ daily = "Daily"
 weekly = "Weekly"
 monthly = "Monthly"
 min_event_frequency = "Min scheduled jobs frequency"
-
-
-
+website = "Website"
+no_customers_yet = "It seems you don't have any customers registered right now, why don't you add one now?"
+no_statistics_yet = "It seems we don't have any statistical data yet. Statistics about your customers are collected every week by default. More than a week has passed and still no data in here? Please, make sure the job scheduler task for Creamy is properly scheduled for execution."
+you_need_to_update = "It seems that the current version of Creamy you are using has not been updated to work properly. <strong>Please, update Creamy right now</strong> so you can get the most out of it. It's just a matter of seconds..."
 
 
 

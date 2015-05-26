@@ -229,10 +229,10 @@ class MysqliDb implements \creamy\DbConnector
 
 		$this->_query = "SELECT FOUND_ROWS() AS total";
 		$stmt = $this->_prepareQuery();
-		if (empty($stmt)) return;
+		if (empty($stmt)) { $this->reset(); return; }
         $stmt->execute();
-        $this->_stmtError = $stmt->error;
         $this->reset();
+        $this->_stmtError = $stmt->error;
 
 		$results = $this->_dynamicBindResults($stmt);
 		$this->unlimitedCount = $results["0"]["total"];
@@ -254,7 +254,7 @@ class MysqliDb implements \creamy\DbConnector
 	    if ($countFilteredResults) { $this->_query = str_ireplace("SELECT", "SELECT SQL_CALC_FOUND_ROWS", $this->_query); }
         if ($sanitize) $this->_query = filter_var ($query, FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
         $stmt = $this->_prepareQuery();
-        if (empty($stmt)) return NULL;
+        if (empty($stmt)) { $this->reset(); return NULL; }
 
         if (is_array($bindParams) === true) {
             $params = array(''); // Create the empty 0 index
@@ -290,7 +290,7 @@ class MysqliDb implements \creamy\DbConnector
         $this->_query = filter_var($query, FILTER_SANITIZE_STRING);
 	    if ($countFilteredResults) { $this->_query = str_ireplace("SELECT", "SELECT SQL_CALC_FOUND_ROWS", $this->_query); }
         $stmt = $this->_buildQuery($numRows);
-        if (empty($stmt)) { return NULL; }
+        if (empty($stmt)) { $this->reset(); return NULL; }
         $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -324,10 +324,12 @@ class MysqliDb implements \creamy\DbConnector
         $column = is_array($columns) ? implode(', ', $columns) : $columns; 
         $this->_query = "SELECT $calcFoundRows $column FROM " . self::$_prefix . $tableName;
         $stmt = $this->_buildQuery($numRows);
-        if (empty($stmt)) { return NULL; }
+        if (empty($stmt)) { 
+	        $this->reset(); 
+	        return null; 
+	    }
 
-        if ($this->isSubQuery)
-            return $this;
+        if ($this->isSubQuery) { return $this; }
 
         $stmt->execute();
         $this->_stmtError = $stmt->error;
@@ -350,9 +352,7 @@ class MysqliDb implements \creamy\DbConnector
     public function getOne($tableName, $columns = '*', $countFilteredResults = false) 
     {
         $res = $this->get ($tableName, 1, $columns, $countFilteredResults);
-
-        if (is_object($res))
-            return $res;
+        if (is_object($res)) return $res;
 
         if (isset($res[0]))
             return $res[0];
@@ -391,7 +391,7 @@ class MysqliDb implements \creamy\DbConnector
 
         $this->_query = "INSERT into " .self::$_prefix . $tableName;
         $stmt = $this->_buildQuery(null, $insertData);
-        if (empty($stmt)) { return NULL; }
+        if (empty($stmt)) { $this->reset(); return null; }
         $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -436,7 +436,7 @@ class MysqliDb implements \creamy\DbConnector
         $this->_query = "UPDATE " . self::$_prefix . $tableName ." SET ";
 
         $stmt = $this->_buildQuery (null, $tableData);
-        if (empty($stmt)) { return NULL; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $status = $stmt->execute();
         $this->reset();
         $this->_stmtError = $stmt->error;
@@ -461,10 +461,10 @@ class MysqliDb implements \creamy\DbConnector
         $this->_query = "DELETE FROM " . self::$_prefix . $tableName;
 
         $stmt = $this->_buildQuery($numRows);
-        if (empty($stmt)) { return NULL; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $status = $stmt->execute();
-        $this->_stmtError = $stmt->error;
         $this->reset();
+        $this->_stmtError = $stmt->error;
 
         return $status;
     }
@@ -485,7 +485,7 @@ class MysqliDb implements \creamy\DbConnector
         $this->_query = "DROP TABLE " . self::$_prefix . $tableName.($cascade ? " CASCADE" : "");
 
         $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -509,7 +509,7 @@ class MysqliDb implements \creamy\DbConnector
         $this->_query = "ALTER TABLE " . self::$_prefix . $tableName . " DROP COLUMN $columnName";
 
         $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -533,7 +533,7 @@ class MysqliDb implements \creamy\DbConnector
 	    $this->_query = "ALTER TABLE " . self::$_prefix . $tableName . " MODIFY $columnName $columnNewType";
 
         $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -558,7 +558,7 @@ class MysqliDb implements \creamy\DbConnector
 		$defaultString = empty($defaultValue) ? "" : "DEFAULT $defaultValue";
         $this->_query = "ALTER TABLE " . self::$_prefix . $tableName . " ADD COLUMN $columnName $columnType $defaultString";
         $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -581,7 +581,7 @@ class MysqliDb implements \creamy\DbConnector
 
         $this->_query = "ALTER TABLE " . self::$_prefix . $tableName . " ADD UNIQUE ($columnName)";
         $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -620,10 +620,11 @@ class MysqliDb implements \creamy\DbConnector
 		
 		// add unique keys
 		if (isset($unique_keys) && is_array($unique_keys)) {
-			$unique_string = rtrim(implode(",", $unique_keys), ",");
+			$unique_string = "";
+			foreach ($unique_keys as $unique_key) { if (!empty($unique_key)) $unique_string .= "`$unique_key`,"; }
+			$unique_string = rtrim($unique_string, " ,");
 			if (!empty($unique_string) && strlen($unique_string) > 0) {
-				$unique_name = str_replace(",", "_", $unique_string);
-				$this->_query .= "\nKEY `Unique $unique_name` (`$unique_string`),";
+				$this->_query .= "\nKEY `Unique unique_name` ($unique_string),";
 			}
 		}
 		
@@ -631,10 +632,10 @@ class MysqliDb implements \creamy\DbConnector
 		$this->_query = rtrim($this->_query, ",\n");
 		// finish query string.
 		$this->_query .= "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1";
-		
+				
 		// execute query and retrn the results.
-        $stmt = $this->_buildQuery();
-        if (empty($stmt)) { return false; }
+        $stmt = $this->_prepareQuery();
+        if (empty($stmt)) { $this->reset(); return false; }
         $result = $stmt->execute();
         $this->_stmtError = $stmt->error;
         $this->reset();
@@ -642,6 +643,21 @@ class MysqliDb implements \creamy\DbConnector
         return $result;
 	}
 
+	/**
+	 * Drops an event from the database if it exists.
+	 * @param String $eventName name of the event to drop.
+	 * @return bool true if deletion succeed, false otherwise.
+	 */
+	public function dropEvent($eventName) {
+        if ($this->isSubQuery) return false;
+
+		$sanitizedEventName = filter_var($eventName, FILTER_SANITIZE_STRING);
+        $this->_query = "DROP EVENT IF EXISTS $sanitizedEventName";
+        $result = $this->_mysqli->query($this->_query);
+        $this->reset();
+
+        return $result;		
+	}
 
     /**
      * This method allows you to specify multiple (method chaining optional) AND WHERE statements for SQL queries.
@@ -1139,7 +1155,7 @@ class MysqliDb implements \creamy\DbConnector
     protected function _prepareQuery()
     {
         if (!$stmt = $this->_mysqli->prepare($this->_query)) {
-            trigger_error("Problem preparing query ($this->_query) " . $this->_mysqli->error, E_USER_ERROR);
+            //trigger_error("Problem preparing query ($this->_query) " . $this->_mysqli->error, E_USER_ERROR);
 			return NULL;
         }
         return $stmt;

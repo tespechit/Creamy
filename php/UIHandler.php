@@ -33,6 +33,7 @@ require_once('ModuleHandler.php');
 
 // constants
 define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
+error_reporting(E_ERROR | E_PARSE);
 
 /**
  *  UIHandler.
@@ -327,7 +328,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	public function formWithContent($id, $content, $submit_text = null, $submitStyle = CRM_UI_STYLE_DEFAULT, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
 		if (empty($submit_text)) { $submit_text = $this->lh->translationFor("send"); }
 		$button = '<button type="submit" class="btn btn-'.$submitStyle.'">'.$submit_text.'</button>';
-		return $this->formWithCustomFooterButtons($id, $content, $button, $messagetag);
+		return $this->formWithCustomFooterButtons($id, $content, $button, $messagetag, $action);
 	}
 	
 	public function formForCustomHook($id, $modulename, $hookname, $content, $submit_text = null, $messagetag = CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, $action = "") {
@@ -827,8 +828,9 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 	    $tz = $this->db->getSettingValueForKey(CRM_SETTING_TIMEZONE);
 	    $lo = $this->db->getSettingValueForKey(CRM_SETTING_LOCALE);
 	    $ct = $this->db->getSettingValueForKey(CRM_SETTING_THEME);
-	    $ce = $this->db->getSettingValueForKey(CRM_SETTING_CONFIRMATION_EMAIL);
-	    $cv = $this->db->getSettingValueForKey(CRM_SETTING_EVENTS_EMAIL);
+	    if (empty($ct)) { $ct = CRM_SETTING_DEFAULT_THEME; }
+	    $ce = $this->db->getSettingValueForKeyAsBooleanValue(CRM_SETTING_CONFIRMATION_EMAIL);
+	    $cv = $this->db->getSettingValueForKeyAsBooleanValue(CRM_SETTING_EVENTS_EMAIL);
 	    $cn = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_NAME);
 	    $cl = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_LOGO);
 	    if (isset($cl)) { $cl = $this->imageWithData($cl, "", null); }
@@ -854,7 +856,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			  '.$this->singleFormGroupWithInputGroup($this->singleFormInputElement("base_url", "base_url", "text", $bu_text, $baseURL, "globe"), $bu_text).'
 	    	  <label>'.$this->lh->translationFor("messages").'</label>
 			  '.$this->checkboxInputWithLabel($em_text, "confirmationEmail", "confirmationEmail", $ce).'
-			  '.$this->checkboxInputWithLabel($ev_text, "eventEmail", "eventEmail", $ce).'
+			  '.$this->checkboxInputWithLabel($ev_text, "eventEmail", "eventEmail", $cv).'
 			  '.$this->singleFormGroupWithSelect($mf_text, "jobScheduling", "jobScheduling", $fOpts, $cf, true).'
 			  '.$this->singleFormGroupWithInputGroup($this->singleFormInputElement("company_name", "company_name", "text", $cn_text, $cn, "building-o"), $cn_text).'
 			  '.$this->singleFormGroupWithFileUpload("company_logo", "company_logo", $cl, $cl_text, null).'
@@ -1268,8 +1270,6 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
                                     
         $result .= $this->getTopbarMenuFooter($this->lh->translationFor("see_all_tasks"), "tasks.php");
         return $result;
-
-        return '';
     }
 
 	/**
@@ -1658,6 +1658,11 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$c_and_z_row = $this->rowWithVariableContents(array("6", "6"), array($zip_f, $country_f));
 		$c_and_z_field = $this->singleFormGroupWrapper($c_and_z_row);
 		
+		// website.
+		$ws = $this->lh->translationFor("website");
+		$vw = isset($customerobj["website"]) ? $customerobj["website"] : null;
+		$ws_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("website", "website", "text", $ws, $vw, "globe"));
+		
 		// textarea
 		$ph = $this->lh->translationFor("notes");
 		$vl = isset($customerobj["notes"]) ? $customerobj["notes"] : null;
@@ -1701,7 +1706,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 		$hidden .= $this->hiddenFormField("customerid", $customerid);
 
 		// join all fields
-		$formcontent = $name_f.$ptype_f.$idnum_f.$email_f.$phone_f.$mobile_f.$address_f.$c_and_s_field.$c_and_z_field.$notes_f.$ms_f.$gender_f.$birth_f.$dnsm_f.$hidden;
+		$formcontent = $name_f.$ptype_f.$idnum_f.$email_f.$phone_f.$mobile_f.$address_f.$c_and_s_field.$c_and_z_field.$ws_f.$notes_f.$ms_f.$gender_f.$birth_f.$dnsm_f.$hidden;
 		return $formcontent;
 	}
 	
@@ -1997,7 +2002,7 @@ define ('CRM_UI_DEFAULT_RESULT_MESSAGE_TAG', "resultmessage");
 			// id
 			$eventId = $event["id"];
 			// title
-			$title = $event["title"];
+			$title = str_replace("'", "\\'", $event["title"]);
 			// end and start date.
 			$startDate = strtotime($event["start_date"]);
 			if (empty($event["end_date"])) { continue; } // no end date? no way!

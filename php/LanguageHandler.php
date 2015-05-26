@@ -49,6 +49,7 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 	/** Variables and constants */
 	private $texts = array();
 	private $locale;
+	private static $ignoreLocales = array("datatables");
 	
 	/** Creation and class lifetime management */
 	
@@ -245,7 +246,7 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 		$files = scandir(\creamy\CRMUtils::creamyBaseDirectoryPath(false).CRM_LANGUAGE_BASE_DIR);
 		$result = array();
 		foreach ($files as $file) {
-			if (!is_dir($file) && (!\creamy\CRMUtils::startsWith($file, "."))) {
+			if (!is_dir($file) && (!\creamy\CRMUtils::startsWith($file, ".")) && (!in_array($file, LanguageHandler::localesToIgnore()))) {
 				$localeCodeForFile = str_replace("_", "-", $file);
 				$languageForLocale = utf8_decode(\Locale::getDisplayLanguage($localeCodeForFile));
 				$result[$file] = "$file ($languageForLocale)";
@@ -253,6 +254,12 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 		}
 		return $result;
 	}
+	
+	/** These locales will be ignored by the CRM (i.e: datatables and other locale information not to be used as true locale). */
+	public function localesToIgnore() {
+		return LanguageHandler::$ignoreLocales;
+	}
+	
 	
 	/** Datatables */
 	public function urlForDatatablesTranslation() {

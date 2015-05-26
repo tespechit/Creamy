@@ -118,6 +118,13 @@ if ($validated == 1) {
 		$country = $db->escape_string($country);
 	}
 	
+	// website
+	$website = NULL; if (isset($_POST["website"])) { 
+		$website = $_POST["website"]; 
+		$website = stripslashes($website);
+		$website = $db->escape_string($website);
+	}	
+	
 	// birthdate
 	$birthdate = NULL; if (isset($_POST["birthdate"])) { 
 		$birthdate = $_POST["birthdate"]; 
@@ -161,7 +168,7 @@ if ($validated == 1) {
 	}
 
 	// modify customer
-	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
+	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes, $website);
 	// return result
 	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	else { ob_clean(); $lh->translateText("unable_modify_customer"); } 

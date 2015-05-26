@@ -50,6 +50,7 @@ if ($validated == 1) {
 	} else { // normal event
 		$title = $_POST["title"];
 		$color = (isset($_POST["color"])) ? $_POST["color"] : CRM_UI_COLOR_DEFAULT_HEX;
+		error_log("Creando evento con color $color");
 		$result = $db->createEvent($user->getUserId(), $title, $color, true, null, null, null);
 	}
 	// return result	

@@ -22,6 +22,7 @@
 		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 		THE SOFTWARE.
 	*/
+	error_reporting(E_ERROR | E_PARSE);
 
 	require_once('./php/CRMDefaults.php');
 	// check installation before login.
@@ -52,7 +53,7 @@
 			$password = stripslashes($password);
 			$username = $db->escape_string($username);
 			$password = $db->escape_string($password);
-			
+
 			// Check password and redirect accordingly
 			$result = null;
 			if(filter_var($username, FILTER_VALIDATE_EMAIL)) {

@@ -83,6 +83,7 @@ class DBInstaller {
 	    if ($this->setupNotificationsTable() == false) { return false; }
 	    if ($this->setupMaritalStatusTable() == false) { return false; }
 	    if ($this->setupMessagesTables() == false) { return false; }
+	    if ($this->setupEventsTable() == false) { return false; }
 	    if ($this->setupAttachmentsTables() == false) { return false; }
 	    
 	    return true;
@@ -138,7 +139,7 @@ class DBInstaller {
 	public function setupSettingTable($timezone, $locale, $securityToken) {
 		// create setting data table.
 		$fields = array("setting" => "VARCHAR(255) NOT NULL", "context" => "VARCHAR(255) NOT NULL", "value" => "LONGTEXT");
-		if (!$this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting"])) { return false; }
+		if (!$this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting", "context"])) { return false; }
 		
 		// fill the settings table.
 
@@ -228,7 +229,7 @@ class DBInstaller {
 			"url" => "VARCHAR(512) NULL",
 			"alarm" => "VARCHAR(80) NULL",
 			"notification_sent" => "INT(1) NOT NULL DEFAULT 0",
-			"color" => "INT(80) NOT NULL" 
+			"color" => "VARCHAR(80) NOT NULL" 
 		);
 		if (!$this->dbConnector->createTable(CRM_EVENTS_TABLE_NAME, $fields, null)) {
 			$this->error = "Creamy install: Failed to create table ".CRM_EVENTS_TABLE_NAME."."; 
@@ -316,6 +317,7 @@ class DBInstaller {
 			$this->error = "Creamy install: Failed to create table ".CRM_ATTACHMENTS_TABLE_NAME."."; 
 			return false;
 		}
+		return true;
 	}
 
 	private function generateIdentifiersForCustomers($schema, $customCustomers) {

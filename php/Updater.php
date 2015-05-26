@@ -153,56 +153,63 @@ class Updater {
 			// add settings table
 			$this->updateLog .= "Creating settings table... ";
 			if (!$this->addSettingsTable()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
 			// Set admin account in settings.
 			$this->updateLog .= "Setting admin account... ";
 			if (!$this->setAdminAccountInSettings()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
 			// Set general parameters in settings.
 			$this->updateLog .= "Setting general parameters in settings... ";
 			if (!$this->setGeneralParametersInSettings()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
 			// add company_name and website fields to customers and contacts.
 			$this->updateLog .= "Adding company and website fields to customers... ";
 			if (!$this->addCompanyAndWebsiteFieldsToCustomers()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
 			// add attachments for messages
 			$this->updateLog .= "Adding attachments table for message attachments...";
 			if (!$this->addAttachmentsTables()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 						
 			// add events
 			$this->updateLog .= "Adding events table for calendar events...";
-			if (!$this->addAttachmentsTables()) {
-				$this->updateLog .= "Failed!<br/>\n";
+			if (!$this->addEventsTable()) {
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 			
 			// set message field in messages as longtext.
 			$this->updateLog .= "Extending message fields to longtext...";
 			if (!$this->extendMessageFields()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 
 			// set email column in users table as unique.
 			$this->updateLog .= "Setting email column as unique in users table...";
 			if (!$this->setEmailFieldAsUniqueInUsersTable()) {
-				$this->updateLog .= "Failed!<br/>\n";
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
+				return false;
+			} else { $this->updateLog .= "Done<br/>\n"; }
+
+			// removing statistics mysql event
+			$this->updateLog .= "Removing deprecated statistics mysql event...";
+			if (!$this->removeMysqlStatisticsEvent()) {
+				$this->updateLog .= "Failed! (".$this->dbConnector->getLastError().")<br/>\n";
 				return false;
 			} else { $this->updateLog .= "Done<br/>\n"; }
 
@@ -234,7 +241,7 @@ class Updater {
 	/** Version 1.0 adds the settings table */
 	private function addSettingsTable() {
 		$fields = array("setting" => "VARCHAR(255) NOT NULL", "context" => "VARCHAR(255) NOT NULL" , "value" => "LONGTEXT");
-		return $this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting"]);
+		return $this->dbConnector->createTable(CRM_SETTINGS_TABLE_NAME, $fields, ["setting", "context"]);
 	}
 	
 	/** Searchs for the admin user (first user with admin role) and sets it as the administrator of the CRM. */
@@ -275,6 +282,7 @@ class Updater {
 		if (!$this->dbConnector->createTable(CRM_ATTACHMENTS_TABLE_NAME, $fields, null)) {
 			return false;
 		}
+		return true;
 	}
 
 	/** Version 1.0 adds the events table for calendar events */
@@ -288,7 +296,7 @@ class Updater {
 			"url" => "VARCHAR(512) NULL",
 			"alarm" => "VARCHAR(80) NULL",
 			"notification_sent" => "INT(1) NOT NULL DEFAULT 0",
-			"color" => "INT(80) NOT NULL" 
+			"color" => "VARCHAR(80) NOT NULL" 
 		);
 		if (!$this->dbConnector->createTable(CRM_EVENTS_TABLE_NAME, $fields, null)) {
 			return false;
@@ -296,6 +304,10 @@ class Updater {
 		return true;
 	}
 
+	/** Version 1.0 changes the event system, so it no longer relies on MySQL events. */
+	private function removeMysqlStatisticsEvent() {
+		return $this->dbConnector->dropEvent("creamy_retrieve_statistics");
+	}
 	
 	/** Sets general settings parameters of the CRM */
 	private function setGeneralParametersInSettings() {
@@ -316,7 +328,7 @@ class Updater {
 		$data = array("setting" => CRM_SETTING_INSTALLATION_DATE, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $dbDate);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
-		// plugin system enabled (1 by default)
+		// module system enabled (1 by default)
 		$data = array("setting" => CRM_SETTING_MODULE_SYSTEM_ENABLED, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => true);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 		
@@ -332,12 +344,13 @@ class Updater {
 		$data = array("setting" => CRM_SETTING_JOB_SCHEDULING_MIN_FREQ, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_JOB_SCHEDULING_DAILY);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
-		// active plugins (empty by default)
+		// active modules (empty by default)
 		$data = array("setting" => CRM_SETTING_ACTIVE_MODULES, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => "");
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// customer list fields
 		$data = array("setting" => CRM_SETTING_CUSTOMER_LIST_FIELDS, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_SETTING_DEFAULT_CUSTOMER_LIST_FIELDS);
+		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// timezone
 		if (defined('CRM_TIMEZONE')) {
@@ -379,7 +392,7 @@ class Updater {
 	private function extendMessageFields() {
 		$tableNames = array(CRM_MESSAGES_INBOX_TABLE_NAME, CRM_MESSAGES_OUTBOX_TABLE_NAME, CRM_MESSAGES_JUNK_TABLE_NAME);
 		foreach ($tableNames as $tableName) {
-			if (!$this->dbConnector->alterColumnFromTable("message", $columnName, "LONGTEXT")) {
+			if (!$this->dbConnector->alterColumnFromTable($tableName, "message", "LONGTEXT")) {
 				return false;
 			}
 		}

@@ -101,12 +101,30 @@
                                     <h3 class="box-title"><?php $lh->translateText("results"); ?></h3>
                                 </div>
                                 <div class="box-body">
-									<?php print $upd->getUpdateLog(); 
+									<?php 
+										// Show installation blog.
+										print '<h3>'.$lh->translationFor("results").'</h3>';
+										print '<pre>'.$upd->getUpdateLog().'</pre>'; 
+												
+										// success?								
+										if ($result) {
+											print '<p class="label label-success">'.$lh->translationFor("success").'</p>';
+											// Talk about cronjobs
+											print '<h3>'.$lh->translationFor("enable_creamy_events").'</h3>';
+											print '<p>'.$lh->translationFor("creamy_events_description").'</p>';
+											require_once('php/CRMUtils.php');
+											# Creamy event job scheduling
+											print '<pre>0 * * * *	php "'.\creamy\CRMUtils::creamyBaseDirectoryPath(true).'job-scheduler.php'.'" &>/dev/null</pre>';
+											print '<p>'.$lh->translationFor("dont_know_cronjob").'</p><br>';
+										} else {
+											print '<p class="label label-danger">'.$lh->translationFor("error").'</p>';
+										}
+
+										// Accept button.
 										$contentText = $result ? $lh->translationFor("crm_update_succeed") : $lh->translationFor("crm_update_failed");
 										print $ui->formWithContent("go_back_form", 
 											  $contentText, $lh->translationFor("accept"), CRM_UI_STYLE_DEFAULT,
 											  CRM_UI_DEFAULT_RESULT_MESSAGE_TAG, "adminsettings.php");
-
 									?>
                                 </div>
                             </div>

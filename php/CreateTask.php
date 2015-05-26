@@ -59,7 +59,6 @@ if ($validated == 1) {
 				require_once('MailHandler.php');
 				$mh = \creamy\MailHandler::getInstance();
 				$mh->sendNewTaskMailToUser($myId, $userid, $taskDescription);
-				error_log("Sending email of new task to $userid");
 			}
 		} 
 		// return result	

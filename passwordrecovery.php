@@ -22,6 +22,7 @@
 		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 		THE SOFTWARE.
 	*/
+	error_reporting(E_ERROR | E_PARSE);
 	
 	require_once('./php/LanguageHandler.php');
 	$lh = \creamy\LanguageHandler::getInstance();

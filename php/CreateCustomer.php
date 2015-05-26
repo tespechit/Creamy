@@ -112,7 +112,14 @@ if ($validated == 1) {
 		$country = stripslashes($country);
 		$country = $db->escape_string($country);
 	}
-		
+	
+	// website
+	$website = NULL; if (isset($_POST["website"])) { 
+		$website = $_POST["website"]; 
+		$website = stripslashes($website);
+		$website = $db->escape_string($website);
+	}	
+			
 	// notes
 	$notes = NULL; if (isset($_POST["notes"])) { 
 		$notes = $_POST["notes"]; 
@@ -156,7 +163,7 @@ if ($validated == 1) {
 	}
 
 	// create customer and return result.
-	$result = $db->createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
+	$result = $db->createCustomer($customerType, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes, $website);
 	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	else { ob_clean(); $lh->translateText("unable_create_customer"); } 
 } else { ob_clean(); $lh->translateText("some_fields_missing"); }

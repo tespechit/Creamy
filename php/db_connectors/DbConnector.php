@@ -201,7 +201,13 @@ interface DbConnector {
 	 */
 	public function createTable($tableName, $fields, $unique_keys = null);
 
-
+	/**
+	 * Drops an event from the database if it exists.
+	 * @param String $eventName name of the event to drop.
+	 * @return bool true if deletion succeed, false otherwise.
+	 */
+	public function dropEvent($eventName);
+	
     /**
      * This method allows you to specify multiple (method chaining optional) AND WHERE statements for SQL queries.
      * @uses $MySqliDb->where('id', 7)->where('title', 'MyTitle');

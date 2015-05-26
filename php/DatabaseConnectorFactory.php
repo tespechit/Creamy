@@ -86,12 +86,15 @@ class DatabaseConnectorFactory {
 		    require_once("db_connectors/MysqliDb.php");
 		    $mysqldb = new \MysqliDb(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);
 		    // try to set the timezone (for dates).
-		    $mysqldb->where("setting", CRM_SETTING_TIMEZONE);
+			$mysqldb->where("setting", CRM_SETTING_TIMEZONE);
 			$mysqldb->where("context", CRM_SETTING_CONTEXT_CREAMY);
 			if ($result = $mysqldb->getOne(CRM_SETTINGS_TABLE_NAME)) {
 				$timezone = $result["value"];
 				if (isset($timezone)) { date_default_timezone_set($timezone); } 
-			} 
+			} else { // fallback.
+				if (defined('CRM_TIMEZONE')) { $timezone = CRM_TIMEZONE; }
+				if (defined('CRM_LOCALE')) { date_default_timezone_set($timezone); }			
+			}
 		    // return MySQL database connector
 		    return $mysqldb;
 		    

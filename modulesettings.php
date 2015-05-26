@@ -73,6 +73,10 @@ if ($error) { $title = $lh->translationFor("error"); }
         <script src="js/jquery-ui.min.js" type="text/javascript"></script>
 		<!-- Forms and actions -->
 		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+		<!-- Input mask for date textfields -->
+		<script src="js/plugins/input-mask/jquery.inputmask.js" type="text/javascript"></script>
+		<script src="js/plugins/input-mask/jquery.inputmask.date.extensions.js" type="text/javascript"></script>
+		<script src="js/plugins/input-mask/jquery.inputmask.extensions.js" type="text/javascript"></script>
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
 
@@ -126,7 +130,6 @@ if ($error) { $title = $lh->translationFor("error"); }
         </div><!-- ./wrapper -->
 
 		<!-- Modal Dialogs -->
-		<?php include_once "./php/ModalPasswordDialogs.php" ?>
-		
+		<?php include_once "./php/ModalPasswordDialogs.php" ?>		
     </body>
 </html>

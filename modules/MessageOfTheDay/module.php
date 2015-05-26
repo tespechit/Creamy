@@ -251,7 +251,7 @@ class MessageOfTheDay extends Module {
 		$successText = $this->ui()->calloutInfoMessage($this->lh()->translationFor("quote_set"));
 		$js = $this->ui()->formPostJS(
 			"quote_form", 													// name of the form.
-			$this->customHookPageViewURL(), 								// page to send the Ajax POST request
+			$this->customActionModulePageURL(), 								// page to send the Ajax POST request
 			$this->ui()->fadingInMessageJS($successText, "quote_result"),	// on success message
 			$this->ui()->fadingInMessageJS($failureText, "quote_result"),	// on failure message
 			$this->ui()->fadingOutMessageJS(false, "quote_result"));		// preamble JS: clean result message.
@@ -311,7 +311,7 @@ class MessageOfTheDay extends Module {
 		for ($i = 1; $i <= 10; $i++) { $authors["author_$i"] = $this->lh()->translationFor("author_$i"); }
 		return array("show_quote_author" => CRM_SETTING_TYPE_BOOL, "custom_quote" => CRM_SETTING_TYPE_STRING, "custom_quote_day" => CRM_SETTING_TYPE_DATE, "favorite_author" => $authors, "number_of_quotes" => CRM_SETTING_TYPE_INT); 
 	}
-
+	
 }
 
 ?>

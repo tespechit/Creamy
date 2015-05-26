@@ -368,6 +368,8 @@ daily = "Diariamente"
 weekly = "Semanalmente"
 monthly = "Mensualmente"
 min_event_frequency = "Frecuencia mínima de eventos periódicos"
-
-
+website = "Página web"
+no_customers_yet = "Parece que no tienes ningún cliente ni contacto registrado actualmente. ¿Por qué no creas uno?"
+no_statistics_yet = "Parece que no disponemos de datos estadísticos sobre tus clientes todavía. Las estadísticas sobre los clientes se recogen cada semana por defecto. ¿Ha pasado más de una semana y sigues sin ver nada aquí? Por favor, asegúrate que el gestor de tareas periódicas de Creamy está activado y ejecutándose regularmente."
+you_need_to_update = "Parece que la versión actual de Creamy que estás usando no ha sido actualizada para funcionar correctamente. <strong>Por favor, actualiza Creamy ahora mismo</strong> para sacarle el máximo partido, será cuestión de segundos..."
 
