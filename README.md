@@ -4,6 +4,8 @@ Creamy is a free, open source CRM for managing contacts & customers, lightweight
 
 Thanks to its [three-step installation process](https://github.com/DigitalLeaves/Creamy/wiki/Installation), you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible. Anyway, there is a [short guide](https://github.com/DigitalLeaves/Creamy/wiki/Installation) to help you install Creamy.
 
+Creamy is open source, so you can download it for free, use it, modify it to suit your needs, share it, etc. You 
+
 ![](http://creamycrm.com/img/responsive.png)
 
 Creamy is under heavy development right now, and it's still in beta, so use at your own risk. Did you find a bug? Please let me know. It's probably full of them, so the sooner you notify me, the sooner I will try to fix them ;).
@@ -43,8 +45,11 @@ These sections contains all the contacts, customers and clients registered in yo
 ### Messages
 In the messages section you can access a messaging system for the users of the CRM. This is an inner communication tool to give you a quick way of sending messages, questions and meeting appointments to other members of your company or business.
 
+### Events and Calendar
+The calendar allows you to set events and reminders. Creamy will automatically notify you by email when you have an important event for today. You can use the calendar to set reminders for contacting customers, meetings, or any other event you can think of. You can separate your events by calendars identified by different colors.
+
 ### Notifications
-This section will give you a timeline with information about all the important events that happened today or occurred during the past week, warning you of anything that's worth your attention: new customers, calendar events, and other issues. You will be able to access more details about the notification with just a click.
+This section will give you a timeline with information about all the important events you have scheduled for today or important events from last week, notifying you of anything that's worth your attention: new customers, calendar events, and other issues. You will be able to access more details about the notification with just a click.
 
 ### Tasks
 This section helps you to manage your time by registering tasks for your pending activities, meetings and work. You can mark them as completed, edit them, or delete them altogether. If you have manager or admin permissions, you will be able to assign tasks to other users as well.
@@ -61,12 +66,7 @@ You don't need to be a developer. I am also looking to translate Creamy to more 
 ## To-Do List
 
 * Automatic updates and versioning.
-* Modular system with plug-n-play modules.
-* Support for different databases. rename DbHandler to MysqlHandler and leave DbHandler as a generic interface.
-* Calendar functionality
-* Assign tasks to customers/contacts and to a calendar date
-* Add a Creamy table at the database with versioning and general information about Creamy
-* Use email to verify the real identity of the Admin user (for password recovery and security purposes)
+* Support for different databases. Currently, only MySQL is supported. Other databases can be added by creating a subclass that implements the DbConnector interface.
 * Invoices module for customers
 * Log system
 * Backup module
