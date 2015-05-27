@@ -4,7 +4,7 @@ Creamy is a free, open source CRM for managing contacts & customers, lightweight
 
 Thanks to its [three-step installation process](https://github.com/DigitalLeaves/Creamy/wiki/Installation), you can have your Creamy CRM up and running in just minutes. Creamy has been developed with the user in mind, trying to keep its interface as simply, friendly and lightweight as possible. Anyway, there is a [short guide](https://github.com/DigitalLeaves/Creamy/wiki/Installation) to help you install Creamy.
 
-Creamy is open source, so you can download it for free, use it, modify it to suit your needs, share it, etc. You 
+Creamy is open source, so you can download it for free, use it, modify it to suit your needs, share it, etc. There are no limits, hidden features or lite versions. You can have as many customers as you want, as many users as you need, everything is available to you.
 
 ![](http://creamycrm.com/img/responsive.png)
 
