@@ -215,8 +215,7 @@ class DbHandler {
         // fetching user by name and password
         $this->dbConnector->where("name", $name);
         $userobj = $this->dbConnector->getOne(CRM_USERS_TABLE_NAME);
-		
-		error_log("User with name $name found: ".var_export($userobj, true));
+
 		if ($userobj) { // first match valid?
 			$password_hash = $userobj["password_hash"];
 			$status = $userobj["status"];
@@ -821,7 +820,7 @@ class DbHandler {
 			"email" => "varchar(255) DEFAULT NULL",
 			"avatar" => "varchar(255) DEFAULT NULL",
 			"type" => "text",
-			"webpage" => "varchar(255) DEFAULT NULL",
+			"website" => "varchar(255) DEFAULT NULL",
 			"company_name" => "varchar(255) DEFAULT NULL",
 			"notes" => "text",
 			"birthdate" => "datetime DEFAULT NULL",

@@ -142,9 +142,14 @@ class MysqliDb implements \creamy\DbConnector
         }
 
         // for subqueries we do not need database connection and redefine root instance
-        if (!is_object ($host))
-            $this->connect();
-
+        $connected = false;
+        if (!is_object ($host)) {
+            if ($this->connect() === true) { $connected = true; }
+		}
+		// check connection
+		error_log("Connected: $connected");
+		if ($connected === false) { throw new \Exception("Unable to connect to the database. Access denied or incorrect parameters."); }
+		
         $this->setPrefix();
         self::$_instance = $this;
     }
@@ -161,11 +166,15 @@ class MysqliDb implements \creamy\DbConnector
         if (empty ($this->host))
             die ('Mysql host is not set');
 
-        $this->_mysqli = new mysqli ($this->host, $this->username, $this->password, $this->db, $this->port)
-            or die('There was a problem connecting to the database');
-
-        if ($this->charset)
-            $this->_mysqli->set_charset ($this->charset);
+        try {
+	        @$this->_mysqli = new mysqli ($this->host, $this->username, $this->password, $this->db, $this->port);
+			if ($this->_mysqli->connect_errno) { return false; }
+			if ($this->charset) $this->_mysqli->set_charset ($this->charset);
+			return true;
+        } catch (\Exception $e) {
+	        return false;
+        }
+		return false;        
     }
     /**
      * A method of returning the static instance to allow access to the
@@ -482,7 +491,7 @@ class MysqliDb implements \creamy\DbConnector
         if ($this->isSubQuery)
             return false;
 
-        $this->_query = "DROP TABLE " . self::$_prefix . $tableName.($cascade ? " CASCADE" : "");
+        $this->_query = "DROP TABLE IF EXISTS " . self::$_prefix . $tableName.($cascade ? " CASCADE" : "");
 
         $stmt = $this->_buildQuery();
         if (empty($stmt)) { $this->reset(); return false; }

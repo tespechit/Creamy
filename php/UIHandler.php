@@ -1735,7 +1735,7 @@ error_reporting(E_ERROR | E_PARSE);
 				$response = $response.'<option value="'.$userobj["id"].'" '.$selectedUserCode.' >'.$userobj["name"].'</option>';
 			} else if ($includeSelf === true) { // assign to myself by default unless another $selectedUser has been specified.
 				$selfSelectedCode = isset($selectedUser) ? "" : 'selected="true"';
-				$response = $response.'<option value="'.$userobj["id"].'" '.$selfSelectedCode.'>myself</option>';
+				$response = $response.'<option value="'.$userobj["id"].'" '.$selfSelectedCode.'>'.$this->lh->translationFor("myself").'</option>';
 			}	
 		}
 		$response = $response.'</select>';
@@ -2068,7 +2068,7 @@ error_reporting(E_ERROR | E_PARSE);
 	public function actionButtonTextForNotificationType($type) {
 		if ($type == "contact") return $this->lh->translationFor("see_customer");
 		else if ($type == "message") return $this->lh->translationFor("read_message");
-		else if ($type == "event") return $this->lh->translationFor("see_event");
+		else if ($type == "event") return $this->lh->translationFor("see_details");
 		else return $this->lh->translationFor("see_more");
 	}
 	

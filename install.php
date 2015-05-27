@@ -23,6 +23,8 @@
 		THE SOFTWARE.
 	*/
 
+	error_reporting(E_ERROR | E_PARSE);
+	
 	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbInstaller.php');
 	require_once('./php/LanguageHandler.php');
@@ -42,7 +44,7 @@
 	
 	// set initial installation step (if found).
 	if (isset($_SESSION["installationStep"])) { $currentState = $_SESSION["installationStep"]; }
-	
+
 	if (file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
 		$currentState = "already_installed"; 
 	} elseif (isset($_POST["submit_step1"]) && $currentState == "step1") { // first step: get credentials for database access.
@@ -67,35 +69,50 @@
 			error_log("Creamy install: Trying to set locale to $locale");
 			$lh->setLanguageHandlerLocale($locale);
 
-			// setup settings table.
-			$randomStringGenerator = new \creamy\RandomStringGenerator();
-			$crmSecurityCode = $randomStringGenerator->generate(40);
-			$dbInstaller->setupSettingTable($timezone, $desiredLanguage, $desiredLanguage);
-
-			
-			// generate a new config file for Creamy, incluying db information & timezone.
-			$configContent = file_get_contents(CRM_INSTALL_SKEL_CONFIG_FILE);			
-			$customConfig = "
+			// delete current database tables.
+			$cleanResult = $dbInstaller->dropPreviousTables();
+			if ($cleanResult == true) {
+				// setup settings table.
+				$randomStringGenerator = new \creamy\RandomStringGenerator();
+				$crmSecurityCode = $randomStringGenerator->generate(40);
+				$settingsResult = $dbInstaller->setupSettingTable($timezone, $desiredLanguage, $desiredLanguage);
+	
+				if ($settingsResult === true) {
+					// generate a new config file for Creamy, incluying db information & timezone.
+					$configContent = file_get_contents(CRM_INSTALL_SKEL_CONFIG_FILE);			
+					$customConfig = "
 // database configuration
 define('DB_USERNAME', '$dbuser');
 define('DB_PASSWORD', '$dbpass');
 define('DB_HOST', '$dbhost');
 define('DB_NAME', '$dbname');
 define('DB_PORT', '3306');
-		
-".CRM_PHP_END_TAG;
 
-			$configContent = str_replace(CRM_PHP_END_TAG, $customConfig, $configContent);
-			file_put_contents(CRM_PHP_CONFIG_FILE, $configContent);
-			
-			// set session credentials and continue installation.
-			$_SESSION["dbhost"] = $dbhost;
-			$_SESSION["dbname"] = $dbname;
-			$_SESSION["dbuser"] = $dbuser;
-			$_SESSION["dbpass"] = $dbpass;
-			$error = "";
-			$currentState = "step2";			
-			$_SESSION["installationStep"] = "step2";
+// other configuration parameters			
+".CRM_PHP_END_TAG;
+		
+					$configContent = str_replace(CRM_PHP_END_TAG, $customConfig, $configContent);
+					file_put_contents(CRM_PHP_CONFIG_FILE, $configContent);
+					
+					// set session credentials and continue installation.
+					$_SESSION["dbhost"] = $dbhost;
+					$_SESSION["dbname"] = $dbname;
+					$_SESSION["dbuser"] = $dbuser;
+					$_SESSION["dbpass"] = $dbpass;
+					$error = "";
+					$currentState = "step2";			
+					$_SESSION["installationStep"] = "step2";				
+				} else {
+					$error = $dbInstaller->getLastErrorMessage();
+					$currentState = "step1";
+					$_SESSION["installationStep"] = "step1";
+				}
+
+			} else {
+				$error = $dbInstaller->getLastErrorMessage();
+				$currentState = "step1";
+				$_SESSION["installationStep"] = "step1";
+			}
 		} else {
 			$error = $dbInstaller->getLastErrorMessage();
 			$currentState = "step1";
@@ -134,7 +151,8 @@ define('DB_PORT', '3306');
 						$currentState = "step3";			
 						$_SESSION["installationStep"] = "step3";
 					} else {
-						$error = $lh->translationFor("error_setting_db_tables")." ". $dbInstaller->getLastErrorMessage() or $lh->translationFor("database_not_set");
+						$errorMsg = $dbInstaller->getLastErrorMessage();
+						$error = $lh->translationFor("error_setting_db_tables")." ". isset($errorMsg) ? $errorMsg : $lh->translationFor("database_not_set");
 						$currentState = "step2";
 						$_SESSION["installationStep"] = "step2";
 					}
@@ -174,15 +192,14 @@ define('DB_PORT', '3306');
 			if ($customersType == "default") { // default customers schema
 				array_push($customerNames, "customers");
 			} else if ($customersType == "custom") { // custom customers schema
-				$index = 1;
-				while (isset($_POST["customCustomerGroup".$index])) {
-					array_push($customerNames, $_POST["customCustomerGroup".$index]);
-					$index++;
+				foreach ($_POST as $key => $value) {
+					if (\creamy\CRMUtils::startsWith($key, "customCustomerGroup")) { array_push($customerNames, $value); }
 				}
 			}
 			
 			$dbInstaller = new DBInstaller($dbhost, $dbname, $dbuser, $dbpass);
 			// setup customers' tables
+
 			if ($dbInstaller->setupCustomerTables($customersType, $customerNames)) {
 				// enable customers statistic retrieval
 				if ($dbInstaller->setupCustomersStatistics($customersType, $customerNames)) {
@@ -193,18 +210,18 @@ define('DB_PORT', '3306');
 				}
 				$currentState = "final_step";
 				$_SESSION["installationStep"] = "final_step";
+				// create a new installed.txt file to register that we have correctly installed Creamy.
+				touch("./installed.txt");
 			} else {
 				$success = false;
 				$currentState = "step_3";
 				$_SESSION["installationStep"] = "step_3";
 			}
 		}
-	} elseif (isset($_POST["submit_final_step"]) && $currentState == "final_step") { // final step: congratulations!
-		// create a new installed.txt file to register that we have correctly installed Creamy.
-		touch("./installed.txt");
-		
-		// finally go to the index.
+	} elseif (isset($_POST["submit_final_step"]) && $currentState == "final_step") { // final step: congratulations!		
+		error_log("Creamy install: finished!");
 		session_unset();
+		// finally go to the index.
 		header("Location: ./index.php");
 		die();
 	} else {
@@ -296,7 +313,7 @@ define('DB_PORT', '3306');
 	                </div>       
 	            	<div name="error-message" style="color: red;">
 	            	<?php 
-	                	if (isset($error)) print ($error); 
+	                	if (isset($error)) print $error."<div class='clearfix'>"; 
 	            	?>
 	            	</div>
 	                <div class="row">
@@ -395,7 +412,7 @@ define('DB_PORT', '3306');
 				<form method="post">	
 	                <div class="row">
 						<div class="col-xs-3"></div>
-						<div class="col-xs-6"><button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></button></div>
+						<div class="col-xs-6"><a href="index.php" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></a></div>
 						<div class="col-xs-3"></div>
 					</div>
 	            </form>
@@ -441,16 +458,17 @@ define('DB_PORT', '3306');
 		        $(addRemove).after(removeButton);
 		        $("#customCustomerGroup" + next).attr('data-source',$(addto).attr('data-source'));
 		        $("#count").val(next);  
-		        
-	            $('.remove-me').click(function(e){
-	                e.preventDefault();
-	                var fieldNum = this.id.charAt(this.id.length-1);
-	                var fieldID = "#customCustomerGroup" + fieldNum;
-	                $(this).remove();
-	                $(fieldID).remove();
-	            });
+
+	         $('.remove-me').click(function(e){
+		        e.preventDefault();
+		        var fieldNum = this.id.charAt(this.id.length-1);
+		        var fieldID = "#customCustomerGroup" + fieldNum;
+		        $(this).remove();
+		        $(fieldID).remove();
 		    });
-		    
+
+		    });
+
 		});
 		</script>
     </body>

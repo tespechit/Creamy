@@ -46,11 +46,12 @@ class DBInstaller {
     public function __construct($dbhost, $dbname, $dbuser, $dbpass, $dbport = CRM_DEFAULT_DB_PORT, $dbConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL) {
 		$this->lh = \creamy\LanguageHandler::getInstance();
         try {
-	        $this->dbConnector = \creamy\DatabaseConnectorFactory::getDatabaseConnectorOfType($dbConnectorType);
+	        $dbConnectorFactory = \creamy\DatabaseConnectorFactory::getInstance();
+	        $this->dbConnector = $dbConnectorFactory->getDatabaseConnectorOfType($dbConnectorType, $dbhost, $dbname, $dbuser, $dbpass, $dbport);
 	        $this->state = CRM_INSTALL_STATE_SUCCESS;
         } catch (\Exception $e) {
             $this->state = CRM_INSTALL_STATE_ERROR;
-            $this->error = CRM_INSTALL_STATE_DATABASE_ERROR . ". Unable to instantiate database connector of type $dbConnectorType.";
+            $this->error = CRM_INSTALL_STATE_DATABASE_ERROR . ". Unable to instantiate database connector of type $dbConnectorType. Incorrect credentials or access denied.";
         }
     }
     
@@ -74,35 +75,42 @@ class DBInstaller {
 	 * @param $adminUserPassword String 
 	 */
     public function setupBasicDatabase($adminUserName, $adminUserPassword, $adminUserEmail) {
-	    // drop previous tables if any
-	    if ($this->dropPreviousTables()) { return false; }
-	    
 	    // create the basic tables
 	    if ($this->setupUsersTable($adminUserName, $adminUserPassword, $adminUserEmail) == false) { return false; }
+	    error_log("Creamy install: users table setup OK");
 	    if ($this->setupTasksTable() == false) { return false; }
+	    error_log("Creamy install: task table setup OK");
 	    if ($this->setupNotificationsTable() == false) { return false; }
+	    error_log("Creamy install: Notifications table setup OK");
 	    if ($this->setupMaritalStatusTable() == false) { return false; }
+	    error_log("Creamy install: Marital status table setup OK");
 	    if ($this->setupMessagesTables() == false) { return false; }
+	    error_log("Creamy install: Messages table setup OK");
 	    if ($this->setupEventsTable() == false) { return false; }
+	    error_log("Creamy install: Events table setup OK");
 	    if ($this->setupAttachmentsTables() == false) { return false; }
+	    error_log("Creamy install: Attachments table setup OK");
 	    
 	    return true;
     }
     
 	/* ----------------------- Table creation, deletion and population -------------------------- */
 
-	private function dropPreviousTables() {
+	public function dropPreviousTables() {
 		$tablesToDrop = array(CRM_CUSTOMER_TYPES_TABLE_NAME, CRM_MARITAL_STATUS_TABLE_NAME, 
 			CRM_MESSAGES_INBOX_TABLE_NAME, CRM_MESSAGES_OUTBOX_TABLE_NAME, CRM_MESSAGES_JUNK_TABLE_NAME, 
 			CRM_NOTIFICATIONS_TABLE_NAME, CRM_SETTINGS_TABLE_NAME, CRM_STATISTICS_TABLE_NAME, 
-			CRM_TASKS_TABLE_NAME, CRM_USERS_TABLE_NAME);
+			CRM_TASKS_TABLE_NAME, CRM_USERS_TABLE_NAME, CRM_ATTACHMENTS_TABLE_NAME);
 		
 		foreach ($tablesToDrop as $tablename) {
-			if (!$this->dbConnector->dropTable(CRM_USERS_TABLE_NAME, true)) { 
+			error_log("Creamy install: Dropping table $tablename");
+			if (!$this->dbConnector->dropTable($tablename, true)) { 
 				$this->error = "Creamy install: Failed to drop table $tablename"; 
 				return false; 
 			}
 		}
+	    error_log("Creamy install: Cleaned previous database");
+		return true;
 	}
 
 	private function setupUsersTable($initialUser, $initialPass, $initialEmail) {
@@ -200,6 +208,7 @@ class DBInstaller {
 		$data = array("setting" => CRM_SETTING_SECURITY_TOKEN, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => $securityToken);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
+		error_log("Creamy install: Settings database set.");
 		return true;
 	}
 	
@@ -250,12 +259,11 @@ class DBInstaller {
 			$this->error = "Creamy install: Failed to create table ".CRM_NOTIFICATIONS_TABLE_NAME."."; 
 			return false;
 		}
+		return true;
 	}
 
 	private function setupMaritalStatusTable() {
-		$fields = array(
-			"name" => "VARCHAR(255) NOT NULL"
-		);
+		$fields = array("name" => "VARCHAR(255) NOT NULL");
 		if (!$this->dbConnector->createTable(CRM_MARITAL_STATUS_TABLE_NAME, $fields, null)) {
 			$this->error = "Creamy install: Failed to create table ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
 			return false;
@@ -264,7 +272,7 @@ class DBInstaller {
 		$marital_statuses = array("single", "married", "divorced", "separated", "widow/er");
 		$i = 1;
 		foreach ($marital_statuses as $ms) {
-			$data = array($i => $ms);
+			$data = array("id" => $i, "name" => $ms);
 			if (!$this->dbConnector->insert(CRM_MARITAL_STATUS_TABLE_NAME, $data)) {
 				$this->error = "Creamy install: Failed to initialize ".CRM_MARITAL_STATUS_TABLE_NAME."."; 
 				return false;
@@ -399,7 +407,7 @@ class DBInstaller {
 		  "email" => "VARCHAR(255) DEFAULT NULL",
 		  "avatar" => "VARCHAR(255) DEFAULT NULL",
 		  "type" => "TEXT",
-		  "webpage" => "VARCHAR(255) DEFAULT NULL",
+		  "website" => "VARCHAR(255) DEFAULT NULL",
 		  "company_name" => "VARCHAR(255) DEFAULT NULL",
 		  "notes" => "TEXT",
 		  "birthdate" => "DATETIME DEFAULT NULL",

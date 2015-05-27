@@ -27,16 +27,24 @@
 require_once('./php/CRMDefaults.php');
 if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
 	header("location: ./install.php");
+	die();
+}
+
+// Try to get the authenticated user.
+require_once('./php/Session.php');
+try {
+	$user = \creamy\CreamyUser::currentUser();	
+} catch (\Exception $e) {
+	header("location: ./logout.php");
+	die();
 }
 
 // initialize session and DDBB handler
-require_once('./php/Session.php');
 include_once('./php/UIHandler.php');
 require_once('./php/LanguageHandler.php');
 require_once('./php/DbHandler.php');
 $ui = \creamy\UIHandler::getInstance();
 $lh = \creamy\LanguageHandler::getInstance();
-$user = \creamy\CreamyUser::currentUser();
 $colors = $ui->generateStatisticsColors();
 
 // calculate number of statistics and customers
