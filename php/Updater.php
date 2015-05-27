@@ -341,7 +341,7 @@ class Updater {
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// job scheduling frequency
-		$data = array("setting" => CRM_SETTING_JOB_SCHEDULING_MIN_FREQ, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_JOB_SCHEDULING_DAILY);
+		$data = array("setting" => CRM_SETTING_JOB_SCHEDULING_MIN_FREQ, "context" => CRM_SETTING_CONTEXT_CREAMY, "value" => CRM_JOB_SCHEDULING_HOURLY);
 		if (!$this->dbConnector->insert(CRM_SETTINGS_TABLE_NAME, $data)) return false;
 
 		// active modules (empty by default)

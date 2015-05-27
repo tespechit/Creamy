@@ -834,10 +834,7 @@ error_reporting(E_ERROR | E_PARSE);
 	    $cn = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_NAME);
 	    $cl = $this->db->getSettingValueForKey(CRM_SETTING_COMPANY_LOGO);
 	    if (isset($cl)) { $cl = $this->imageWithData($cl, "", null); }
-	    $cf = $this->db->getSettingValueForKey(CRM_SETTING_JOB_SCHEDULING_MIN_FREQ);
 	    $tOpts = array("black" => "black", "blue" => "blue", "green" => "green", "minimalist" => "minimalist", "purple" => "purple", "red" => "red", "yellow" => "yellow");
-	    $fOpts = array(CRM_JOB_SCHEDULING_HOURLY => "hourly", CRM_JOB_SCHEDULING_DAILY => "daily", 
-	    			   CRM_JOB_SCHEDULING_WEEKLY => "weekly", CRM_JOB_SCHEDULING_MONTHLY => "monthly");
 	    
 	    // translation.
 	    $em_text = $this->lh->translationFor("require_confirmation_email");
@@ -849,7 +846,6 @@ error_reporting(E_ERROR | E_PARSE);
 	    $bu_text = $this->lh->translationFor("base_url");
 	    $cn_text = $this->lh->translationFor("company_name");
 	    $cl_text = $this->lh->translationFor("custom_company_logo");
-	    $mf_text = $this->lh->translationFor("min_event_frequency");
 	    
 	    // form
 	    $form = '<form role="form" id="adminsettings" name="adminsettings" class="form" enctype="multipart/form-data">
@@ -857,7 +853,6 @@ error_reporting(E_ERROR | E_PARSE);
 	    	  <label>'.$this->lh->translationFor("messages").'</label>
 			  '.$this->checkboxInputWithLabel($em_text, "confirmationEmail", "confirmationEmail", $ce).'
 			  '.$this->checkboxInputWithLabel($ev_text, "eventEmail", "eventEmail", $cv).'
-			  '.$this->singleFormGroupWithSelect($mf_text, "jobScheduling", "jobScheduling", $fOpts, $cf, true).'
 			  '.$this->singleFormGroupWithInputGroup($this->singleFormInputElement("company_name", "company_name", "text", $cn_text, $cn, "building-o"), $cn_text).'
 			  '.$this->singleFormGroupWithFileUpload("company_logo", "company_logo", $cl, $cl_text, null).'
 			  '.$this->singleFormGroupWithSelect($es_text, "theme", "theme", $tOpts, $ct, false).'
