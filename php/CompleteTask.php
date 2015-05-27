@@ -27,6 +27,7 @@ require_once('DbHandler.php');
 require_once('LanguageHandler.php');
 require('Session.php');
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -43,12 +44,12 @@ if ($validated == 1) {
 	// check password	
 	$taskid = $_POST["complete-task-taskid"];
 	$progress = $_POST["complete-task-progress"];
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	
 	$result = $db->setTaskCompletionStatus($taskid, $progress, $userid);
 	if ($result === true) {
-		print "success";
-	} else { $lh->translateText("unable_modify_task"); };	
-} else { $lh->translateText("some_fields_missing"); }
-
+		ob_clean();
+		print CRM_DEFAULT_SUCCESS_RESPONSE;
+	} else { ob_clean(); $lh->translateText("unable_modify_task"); };	
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

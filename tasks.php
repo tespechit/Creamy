@@ -28,13 +28,10 @@
 	require_once('./php/LanguageHandler.php');
     require('./php/Session.php');
 
-	// DDBB & Language vars
+	// DDBB, User & Language vars
     $ui = \creamy\UIHandler::getInstance();
     $lh = \creamy\LanguageHandler::getInstance();
-    
-    // session vars
-	$userid = $_SESSION["userid"];
-	$userrole = $_SESSION["userrole"];
+	$user = \creamy\CreamyUser::currentUser();
 ?>
 <html>
     <head>
@@ -43,10 +40,13 @@
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+        <!-- iCheck -->
+        <link href="css/iCheck/minimal/blue.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -54,40 +54,24 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
-    </head>
-    <body class="skin-blue">
-        <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
-            <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
 
+		<!-- Javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <!-- iCheck -->
+        <script src="js/plugins/iCheck/icheck.min.js" type="text/javascript"></script>
+		<!-- Forms and actions -->
+		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
+
+    </head>
+    <?php print $ui->creamyBody(); ?>
+        <div class="wrapper">
+        <!-- header logo: style can be found in header.less -->
+		<?php print $ui->creamyHeader($user); ?>
+            <!-- Left side column. contains the logo and sidebar -->
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -106,19 +90,19 @@
                 <!-- Main content -->
                 <section class="content">
 	                
-				<?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
+				<?php if ($user->userHasBasicPermission()) { ?>
 
 				<!-- Unfinished tasks row -->
 				<div class="row">
                     <div class="col-xs-12">
-                        <div class="box">
+                        <div class="box box-default">
                             <div class="box-header">
                                 <i class="ion ion-clipboard"></i>
                                 <h3 class="box-title"><?php $lh->translateText("unfinished_tasks"); ?></h3>
                             </div><!-- /.box-header -->
                             <div class="box-body table-responsive" id="task-table-container">
 								<?php 
-									print $ui->getUnfinishedTasksAsTable($userid, $userrole); 
+									print $ui->getUnfinishedTasksAsTable($user->getUserId()); 
 								?>
                             </div><!-- /.box-body -->
 
@@ -128,7 +112,7 @@
        
                 <div class="row">
                     <div class="col-xs-12">
-						<div class="box collapsed-box">
+						<div class="box collapsed-box box-default">
                             <div class="box-header">
 	                            <div class="box-tools pull-right">
                                     <button class="btn btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
@@ -139,7 +123,7 @@
                             </div>
                             <div class="box-body table-responsive" id="task-table-container" style="display: none;">
 								<?php 
-									print $ui->getCompletedTasksAsTable($userid, $userrole); 
+									print $ui->getCompletedTasksAsTable($user->getUserId(), $user->getUserRole()); 
 								?>
                             </div><!-- /.box-body -->
                         </div>
@@ -148,13 +132,13 @@
                 </div>
                     
                 <!-- Only users with write permission can create new tasks -->
-                <?php if (userHasWritePermission($_SESSION["userrole"])) { ?>
+                <?php if ($user->userHasWritePermission()) { ?>
                 
                 <!-- .row -->
                 <div class="row">
                     <div class="col-xs-12">
 
-                        <div class="box box-primary">
+                        <div class="box box-default">
                             <div class="box-header">
                                 <h3 class="box-title"><?php $lh->translateText("new_task"); ?></h3>
                             </div><!-- /.box-header -->
@@ -166,7 +150,7 @@
                                         <input type="text required" class="form-control" id="taskDescription" name="taskDescription" placeholder="<?php $lh->translateText("task_description"); ?>">
                                     </div>
                                     <!-- assign task to other users only if current user has manager privileges -->
-									<?php if (userHasManagerPermission($userrole)) { ?>
+									<?php if ($user->userHasManagerPermission()) { ?>
                                     <div class="form-group">
                                         <label for="touserid"><?php $lh->translateText("assign_this_task_to"); ?></label>
 										<?php print $ui->generateSendToUserSelect($_SESSION["userid"], true, $lh->translationFor("assign_this_task_to")); ?>
@@ -193,9 +177,12 @@
 
                 </section><!-- /.content -->
 				
-				<?php } else { print $ui->getUnauthotizedAccessMessage(); } ?>
+				<?php } else { print $ui->getUnauthotizedAccessMessage(); } 
+				print $ui->getTasksActionFooter();
+				?>
            
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 
 	<!-- CHANGE TASK MODAL -->
@@ -218,8 +205,8 @@
 						<div id="changetaskresult" name="changetaskresult"></div>
                     </div>
                     <div class="modal-footer clearfix">
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
-                        <button type="submit" class="btn btn-primary pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
+                        <button type="button" class="btn btn-danger pull-right" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
+                        <button type="submit" class="btn btn-warning pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
                     </div>
                 </form>
             </div><!-- /.modal-content -->
@@ -232,18 +219,8 @@
 
 	<!-- END TASK DIALOGS -->
 
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
-        <!-- Bootstrap slider -->
-        <script src="js/plugins/bootstrap-slider/bootstrap-slider.js" type="text/javascript"></script>
-        <!-- iCheck -->
-        <script src="js/plugins/iCheck/icheck.min.js" type="text/javascript"></script>
-		<!-- Forms and actions -->
-		<script src="js/jquery.validate.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
-			$(document).ready(function() {
+		$(document).ready(function() {
 			/** 
 			 * Creates a new task.
 		 	 */
@@ -259,7 +236,7 @@
 						$("#createtask").serialize(), 
 							function(data){
 								//if message is sent
-								if (data == 'success') {
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
 									location.reload();
 								} else {
 									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_create_task"); ?>: '+ data);
@@ -280,7 +257,7 @@
 				if (r == true) {
 					var taskid = $(this).attr('href');
 					$.post("./php/DeleteTask.php", { "taskid": taskid } ,function(data){
-						if (data == "success") { location.reload(); }
+						if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 						else { alert ("<?php $lh->translateText("unable_delete_task"); ?>"); }
 					});
 				}
@@ -291,8 +268,9 @@
 			 */
 			$(".edit-task-action").click(function(e) {
 				// Set ID of the task to edit
+				e.preventDefault();
 		        var ele = $(this).parents("li").first();
-				var task_id = ele[0].id; // task ID is contained in the ID element of the li object.
+				var task_id = ele.attr("id"); // task ID is contained in the ID element of the li object.
 				$('#edit-task-taskid').val(task_id);
 				
 				// set the previous description of task.
@@ -312,7 +290,7 @@
 						$("#edit-task-form").serialize(), 
 							function(data){
 								//if message is sent
-								if (data == 'success') {
+								if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') {
 									location.reload();
 								} else {
 									$("#resultmessage").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_modify_task"); ?>: '+ data);
@@ -341,20 +319,21 @@
 		        ele.toggleClass("done");
 				$.post("./php/CompleteTask.php", {"complete-task-taskid": task_id, "complete-task-progress": "100" }, 
 				function(data){
-					if (data == "success") { location.reload(); }
+					if (data == "<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>") { location.reload(); }
 					else {
 						$("#changetaskresult").html(data);
 						$("#changetaskresult").fadeIn();
 					}
 				});
 		    });
-		
-		    $('input', this).on('ifUnchecked', function(event) {
-		        var ele = $(this).parents("li").first();
-		        ele.toggleClass("done");
+
+		    $('input').iCheck({
+		    	checkboxClass: 'icheckbox_minimal-blue',
+				radioClass: 'iradio_minimal-blue'
 		    });
-			
+		
 		});
+		
 		</script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>

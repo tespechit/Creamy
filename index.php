@@ -1,40 +1,57 @@
 <?php
-	/**
-		The MIT License (MIT)
-		
-		Copyright (c) 2015 Ignacio Nieto Carvajal
-		
-		Permission is hereby granted, free of charge, to any person obtaining a copy
-		of this software and associated documentation files (the "Software"), to deal
-		in the Software without restriction, including without limitation the rights
-		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-		copies of the Software, and to permit persons to whom the Software is
-		furnished to do so, subject to the following conditions:
-		
-		The above copyright notice and this permission notice shall be included in
-		all copies or substantial portions of the Software.
-		
-		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-		LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-		THE SOFTWARE.
-	*/
+/**
+	The MIT License (MIT)
 	
-	// check if Creamy has been installed.
-	require_once('./php/CRMDefaults.php');
-	if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
-		header("location: ./install.php");
-	}
+	Copyright (c) 2015 Ignacio Nieto Carvajal
 	
-	// initialize session and DDBB handler
-    require_once('./php/Session.php');
-	include_once('./php/UIHandler.php');
-	require_once('./php/LanguageHandler.php');
-	$ui = \creamy\UIHandler::getInstance();
-    $lh = \creamy\LanguageHandler::getInstance();
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+// check if Creamy has been installed.
+require_once('./php/CRMDefaults.php');
+if (!file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
+	header("location: ./install.php");
+	die();
+}
+
+// Try to get the authenticated user.
+require_once('./php/Session.php');
+try {
+	$user = \creamy\CreamyUser::currentUser();	
+} catch (\Exception $e) {
+	header("location: ./logout.php");
+	die();
+}
+
+// initialize session and DDBB handler
+include_once('./php/UIHandler.php');
+require_once('./php/LanguageHandler.php');
+require_once('./php/DbHandler.php');
+$ui = \creamy\UIHandler::getInstance();
+$lh = \creamy\LanguageHandler::getInstance();
+$colors = $ui->generateStatisticsColors();
+
+// calculate number of statistics and customers
+$db = new \creamy\DbHandler();
+$statsOk = $db->weHaveSomeValidStatistics();
+$custsOk = $db->weHaveAtLeastOneCustomerOrContact();
+
 ?>
 <html>
     <head>
@@ -43,14 +60,10 @@
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-        <!-- Ionicons -->
-        <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Morris chart -->
-        <link href="css/morris/morris.css" rel="stylesheet" type="text/css" />
-        <!-- bootstrap wysihtml5 - text editor -->
-        <link href="css/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
+
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -58,42 +71,27 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+
+		<!-- javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
+	    <!-- ChartJS 1.0.1 -->
+	    <script src="js/plugins/chartjs/Chart.min.js" type="text/javascript"></script>
+		
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
-        <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
-        <div class="wrapper row-offcanvas row-offcanvas-left">
+    <?php print $ui->creamyBody(); ?>
+        <div class="wrapper">
+	        <!-- header logo: style can be found in header.less -->
+			<?php print $ui->creamyHeader($user); ?>
+
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
-            <aside class="right-side">
+            <aside class="content-wrapper">
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <h1>
@@ -108,218 +106,197 @@
                 <!-- Main content -->
                 <section class="content">
 
-                    <!-- Small boxes (Stat box) -->
+					<!-- Update (if needed) -->
+                    <?php
+						require_once('./php/Updater.php');
+						$upd = \creamy\Updater::getInstance();
+						$currentVersion = $upd->getCurrentVersion();
+						if (!$upd->CRMIsUpToDate()) {
+					?>
                     <div class="row">
-                        <div class="col-xs-4">
-                            <!-- small box -->
-                            <div class="small-box bg-orange">
-                                <div class="inner">
-                                    <h3>
-                                        <?php print $ui->generateLabelForTodayNotifications($_SESSION["userid"]);  ?>
-                                    </h3>
-                                    <p>
-                                        <?php $lh->translateText("notifications"); ?>
-                                    </p>
+                        <section class="col-lg-12">
+                            <!-- version -->
+                            <div class="box box-danger">
+                                <div class="box-header">
+                                    <i class="fa fa-refresh"></i>
+                                    <h3 class="box-title"><?php print $lh->translationFor("version")." ".number_format($currentVersion, 1); ?></h3>
                                 </div>
-                                <div class="icon">
-                                    <i class="ion ion-clock"></i>
+                                <div class="box-body">
+									<?php
+									if ($upd->canUpdateFromVersion($currentVersion)) { // update needed
+										$contentText = $lh->translationFor("you_need_to_update");
+										print $ui->formWithContent(
+											"update_form", 						// form id
+											$contentText, 						// form content
+											$lh->translationFor("update"), 		// submit text
+											CRM_UI_STYLE_DEFAULT,				// submit style
+											CRM_UI_DEFAULT_RESULT_MESSAGE_TAG,	// resulting message tag
+											"update.php");						// form PHP action URL.
+									} else { // we cannot update?
+										$lh->translateText("crm_update_impossible");
+									}
+									?>
                                 </div>
-                                <a href="notifications.php" class="small-box-footer">
-                                    <?php $lh->translateText("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
-                                </a>
                             </div>
-                        </div><!-- ./col -->
-                        <div class="col-xs-4">
-                            <!-- small box -->
-                            <div class="small-box bg-aqua">
-                                <div class="inner">
-                                    <h3>
-                                        <?php print $ui->generateLabelForNewCustomers(); ?>
-                                    </h3>
-                                    <p>
-                                        <?php $lh->translateText("customers"); ?>
-                                    </p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-person-stalker"></i>
-                                </div>
-                                <a href="./customerslist.php?customer_type=clients_2" class="small-box-footer">
-                                    <?php $lh->translateText("see_more"); ?>  <i class="fa fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div><!-- ./col -->
-                        <div class="col-xs-4">
-                            <!-- small box -->
-                            <div class="small-box bg-green">
-                                <div class="inner">
-                                    <h3>
-                                        <?php print $ui->generateLabelForNewContacts(); ?>
-                                    </h3>
-                                    <p>
-                                        <?php $lh->translateText("contacts"); ?>
-                                    </p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-person-add"></i>
-                                </div>
-                                <a href="./customerslist.php?customer_type=clients_1&customer_name=Contactos" class="small-box-footer">
-                                    <?php $lh->translateText("see_all"); ?> <i class="fa fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div><!-- ./col -->
+                        </section>
+                    </div>   <!-- /.row -->
+					<?php } ?>
 
-                    </div><!-- /.row -->
+                    <!-- Status boxes -->
+					<div class="row">
+						<?php print $ui->dashboardInfoBoxes($user->getUserId()); ?>
+			        </div><!-- /.row -->                    
 
-                    <div class="row">
-                        <div class="col-xs-12">
-							<div class="box collapsed-box">
-	                            <div class="box-header">
-		                            <div class="box-tools pull-right">
-                                        <button class="btn btn-primary btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
-                                        <button class="btn btn-primary btn-sm" data-widget="remove"><i class="fa fa-times"></i></button>
-                                    </div>
-	                                <i class="fa fa-info"></i>
-	                                <h3 class="box-title"><?php $lh->translateText("getting_started"); ?></h3>
-	                            </div>
-                                <div class="box-body" style="display: none;">
-								<?php
-									$gettingStartedFile = str_replace(".html", "_".CRM_LOCALE.".html", CRM_GETTING_STARTED_FILE);
-									if (!file_exists($gettingStartedFile)) { $gettingStartedFile = CRM_GETTING_STARTED_FILE; } // fallback to default file
-									$gettingStartedContents = file_get_contents($gettingStartedFile);
-									print $gettingStartedContents;
-								?>
-	                            </div>
-	                        </div>
-
-                        </div>
-                    </div>
-                    
-                    <!-- Main row -->
+                     <!-- Statistics -->
                     <div class="row">
                         <!-- Left col -->
-                        <section class="col-lg-7 connectedSortable"> 
+                        <section class="col-md-7"> 
 	                    	<!-- Gráfica de clientes -->   
-	                        <div class="box box-info">
+	                        <div class="box box-default">
 	                            <div class="box-header">
 	                                <i class="fa fa-bar-chart-o"></i>
 	                                <h3 class="box-title"><?php $lh->translateText("customer_statistics"); ?></h3>
 	                            </div>
+                                <div class="box-body" id="graph-box"><div>
+	                            <?php if ($statsOk) { ?>
+									<canvas id="lineChart" height="250"></canvas>
+	                            <?php } else { 
+		                        	print $ui->calloutWarningMessage($lh->translationFor("no_statistics_yet"));
+		                        } ?>
+	                            </div></div>
+	                        </div>
+                        </section><!-- /.Left col -->
+						<!-- Left col -->
+                        <section class="col-md-5"> 
+	                    	<!-- Gráfica de clientes -->   
+	                        <div class="box box-default">
+	                            <div class="box-header">
+	                                <i class="fa fa-bar-chart-o"></i>
+	                                <h3 class="box-title"><?php $lh->translateText("current_customer_distribution"); ?></h3>
+	                            </div>
                                 <div class="box-body" id="graph-box">
-                                    <div class="chart" id="revenue-chart" style="position: relative; height: 375px;"></div>
+		                            <?php if ($custsOk) { ?>
+	                                <div class="row">
+										<div class="col-md-8">
+											<canvas id="pieChart" height="250"></canvas>
+		                            	</div>
+		                            	<div class="col-md-4 chart-legend" id="customers-chart-legend">
+		                            	</div>
+	                                </div>
+		                            <?php } else { 
+			                        	print $ui->calloutWarningMessage($lh->translationFor("no_customers_yet"));
+			                        	print $ui->simpleLinkButton("no_customers_add_customer", $lh->translationFor("create_new"), "customerslist.php?customer_type=clients_1");
+			                        } ?>
 	                            </div>
 	                        </div>
                         </section><!-- /.Left col -->
-                        
-                        <!-- right col (We are only adding the ID to make the widgets sortable)-->
-                        <section class="col-lg-5 connectedSortable"> 
-
-                            <!-- quick message widget -->
-                            <div class="box box-info">
-                                <div class="box-header">
-                                    <i class="fa fa-envelope"></i>
-                                    <h3 class="box-title"><?php $lh->translateText("messaging_system"); ?></h3>
-                                </div>
-                                <div class="box-body">
-                                    <form action="#" method="post" id="send-message-form" name="send-message-form">
-                                        <div class="form-group">
-											<?php print $ui->generateSendToUserSelect($_SESSION["userid"]); ?>
-                                        </div>
-                                        <div class="form-group">
-                                            <input type="text" class="form-control" id="subject" name="subject" placeholder="<?php $lh->translateText("subject"); ?>"/>
-                                        </div>
-                                        <div>
-                                            <textarea class="textarea" placeholder="<?php $lh->translateText("message"); ?>" id="message" name="message" style="width: 100%; height: 125px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
-                                        </div>
-                                        <input type="hidden" name="fromuserid" id="fromuserid" value="<?php print $_SESSION["userid"] ?>">
-                                        <div id="messagesendingresult" name="messagesendingresult"></div>
-								</div>
-                                <div class="box-footer clearfix">
-                                    <button type="submit" class="pull-right btn btn-default" id="sendEmail"><?php $lh->translateText("send"); ?> <i class="fa fa-send"></i></button>
-                                </div>
-                            </form>
-                            </div>
-                        </section><!-- right col -->
                     </div><!-- /.row (main row) -->
+
+					<?php print $ui->hooksForDashboard(); ?>
 
                 </section><!-- /.content -->
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
-
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
-        <!-- Morris.js charts -->
-        <script src="js/raphael-min.js"></script>
-        <script src="js/plugins/morris/morris.min.js" type="text/javascript"></script>
-        <!-- Bootstrap WYSIHTML5 -->
-        <script src="js/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js" type="text/javascript"></script>
-
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
+
+		<!-- Statistics -->
+		<?php if ($statsOk) { ?>
 		<script type="text/javascript">
-			$(document).ready(function() {
-
-			/** 
-			 * Sends a message
-		 	 */
-			$("#send-message-form").validate({
-				rules: {
-					subject: "required",
-					message: "required",
-					touserid: {
-					  	required: true,
-					  	min: 1,
-		        		number: true
-					}
-				},
-			    messages: {
-			        touserid: "You must choose a user to send the message to",
-				},
-				submitHandler: function() {
-					//submit the form
-						$("#messagesendingresult").html();
-						$("#messagesendingresult").hide();
-						$.post("./php/SendMessage.php", //post
-						$("#send-message-form").serialize(), 
-							function(data){
-								//if message is sent
-								if (data == 'success') {
-									$("#messagesendingresult").html('<div class="alert alert-success alert-dismissable"><i class="fa fa-check"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("success"); ?></b> <?php $lh->translateText("message_successfully_sent"); ?>');
-									$("#messagesendingresult").fadeIn(); //show confirmation message
-									$("#send-message-form")[0].reset();
 			
-								} else {
-									$("#messagesendingresult").html('<div class="alert alert-danger alert-dismissable"><i class="fa fa-ban"></i><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><b><?php $lh->translateText("oups"); ?></b> <?php $lh->translateText("unable_send_message"); ?>: '+ data);
-									$("#messagesendingresult").fadeIn(); //show confirmation message
-								}
-								//
-							});
-					return false; //don't let the form refresh the page...
-				}					
-			});
-			 
-		});
+			var lineChartData = {
+			  <?php print $ui->generateLineChartStatisticsData($colors); ?>
+	        };
+			
+		  var lineChartOptions = {
+          //Boolean - If we should show the scale at all
+          showScale: true,
+          //Boolean - Whether grid lines are shown across the chart
+          scaleShowGridLines: false,
+          //String - Colour of the grid lines
+          scaleGridLineColor: "rgba(0,0,0,.05)",
+          //Number - Width of the grid lines
+          scaleGridLineWidth: 1,
+          //Boolean - Whether to show horizontal lines (except X axis)
+          scaleShowHorizontalLines: true,
+		  // String - Template string for multiple tooltips
+		  multiTooltipTemplate: " <%= datasetLabel %> <%= value %>",
+		  //Boolean - Whether to show vertical lines (except Y axis)
+          scaleShowVerticalLines: true,
+          //Boolean - Whether the line is curved between points
+          bezierCurve: true,
+          //Number - Tension of the bezier curve between points
+          bezierCurveTension: 0.3,
+          //Boolean - Whether to show a dot for each point
+          pointDot: true,
+          //Number - Radius of each point dot in pixels
+          pointDotRadius: 4,
+          //Number - Pixel width of point dot stroke
+          pointDotStrokeWidth: 1,
+          //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
+          pointHitDetectionRadius: 20,
+          //Boolean - Whether to show a stroke for datasets
+          datasetStroke: true,
+          //Number - Pixel width of dataset stroke
+          datasetStrokeWidth: 2,
+          //Boolean - Whether to fill the dataset with a color
+          datasetFill: false,
+          //String - A legend template
+          legendTemplate: "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].lineColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
+          //Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
+          maintainAspectRatio: false,
+          //Boolean - whether to make the chart responsive to window resizing
+          responsive: true
+        };
+
+        //-------------
+        //- LINE CHART -
+        //--------------
+        var lineChartCanvas = $("#lineChart").get(0).getContext("2d");
+        var lineChart = new Chart(lineChartCanvas);
+        lineChart.Line(lineChartData, lineChartOptions);
 		</script>
+		<?php } ?>
+		<?php if ($custsOk) { ?>
+		<script type="text/javascript">
 
-        <script>
-        	// load data.
-            $(".textarea").wysihtml5({"image": false});
+        //-------------
+        //- PIE CHART -
+        //-------------
+        // Get context with jQuery - using jQuery's .get() method.
+        var pieChartCanvas = $("#pieChart").get(0).getContext("2d");
+        var PieData = [
+          <?php print $ui->generatePieChartStatisticsData($colors); ?>
+        ];
+        var pieOptions = {
+          //Boolean - Whether we should show a stroke on each segment
+          segmentShowStroke: true,
+          //String - The colour of each segment stroke
+          segmentStrokeColor: "#fff",
+          //Number - The width of each segment stroke
+          segmentStrokeWidth: 2,
+          //Number - The percentage of the chart that we cut out of the middle
+          percentageInnerCutout: 50, // This is 0 for Pie charts
+          //Number - Amount of animation steps
+          animationSteps: 100,
+          //String - Animation easing effect
+          animationEasing: "easeOutBounce",
+          //Boolean - Whether we animate the rotation of the Doughnut
+          animateRotate: true,
+          //Boolean - Whether we animate scaling the Doughnut from the centre
+          animateScale: false,
+          //Boolean - whether to make the chart responsive to window resizing
+          responsive: true,
+          // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
+          maintainAspectRatio: false,
+          //String - A legend template
+          legendTemplate: "<ul class=\"<%=name.toLowerCase()%>-legend\" style=\"list-style-type: none;\"><% for (var i=0; i<segments.length; i++){%><li><i class=\"fa fa-circle-o\" style=\"color:<%=segments[i].fillColor%>\"> </i><%if(segments[i].label){%>  <%=segments[i].label%><%}%></li><%}%></ul>"
+        };
+        var pieChart = new Chart(pieChartCanvas).Doughnut(PieData, pieOptions);
+		$('#customers-chart-legend').html(pieChart.generateLegend());
 
-            var area = new Morris.Area({
-        element: 'revenue-chart',
-        resize: true,
-        data: [
-			<?php print $ui->getStatisticsData(); ?>
-        ],
-        xkey: 'y',
-        ykeys: ['item1', 'item2'],
-        labels: ['<?php $lh->translateText("contacts"); ?>', '<?php $lh->translateText("customers"); ?>'],
-        lineColors: ['#a0d0e0', '#3c8dbc'],
-        hideHover: 'auto'
-    });
-        </script>
-
+		</script>
+		<?php } ?>
     </body>
 </html>

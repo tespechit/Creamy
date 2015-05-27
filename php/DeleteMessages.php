@@ -25,9 +25,11 @@
 
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -42,16 +44,16 @@ if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
 	// check password	
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	$messageids = $_POST["messageids"];
 	$folder = $_POST["folder"];
 
 	$result = $db->deleteMessages($userid, $messageids, $folder);
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_messages");
-	} else print "success";
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
 	
 	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

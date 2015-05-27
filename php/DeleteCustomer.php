@@ -24,6 +24,7 @@
 */
 
 require_once('LanguageHandler.php');
+require_once('CRMDefaults.php');
 require_once('DbHandler.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
@@ -40,16 +41,17 @@ if (!isset($_POST["customer_type"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// check customer id and type	
 	$customerid = $_POST["customerid"];
 	$customerType = $_POST["customer_type"];
 
+	// delete customer
 	$result = $db->deleteCustomer($customerid, $customerType);
+	// analyze result
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_customer");
-	} else print "success";
-	
-	return;
-} else { $lh->translateText("some_fields_missing"); }
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 
 ?>

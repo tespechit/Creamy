@@ -30,6 +30,7 @@
 
     $ui = \creamy\UIHandler::getInstance();
     $lh = \creamy\LanguageHandler::getInstance();
+	$user = \creamy\CreamyUser::currentUser();
 ?>
 <html>
     <head>
@@ -40,8 +41,9 @@
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
         <!-- Ionicons -->
         <link href="css/ionicons.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
+        <!-- Creamy style -->
         <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <?php print $ui->creamyThemeCSS(); ?>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -49,40 +51,20 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
+		
+		<!-- Javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <!-- Creamy App -->
+        <script src="js/app.min.js" type="text/javascript"></script>
     </head>
-    <body class="skin-blue">
+    <?php print $ui->creamyBody(); ?>
+        <div class="wrapper">
         <!-- header logo: style can be found in header.less -->
-        <header class="header">
-            <a href="./index.php" class="logo">
-	            <img src="img/logoWhite.png" width="32" height="32">
-                <!-- Add the class icon to your logo image or logo icon to add the margining -->
-                Creamy
-            </a>
-            <!-- Header Navbar: style can be found in header.less -->
-            <nav class="navbar navbar-static-top" role="navigation">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-                <div class="navbar-right">
-                    <ul class="nav navbar-nav">
-                    	<?php 
-                    		print $ui->getMessageNotifications($_SESSION["userid"], $_SESSION["userrole"]); 
-	                    	print $ui->getAlertNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTaskNotifications($_SESSION["userid"], $_SESSION["userrole"]);
-	                    	print $ui->getTopbarItems($_SESSION["userid"], $_SESSION["username"], $_SESSION["avatar"], $_SESSION["userrole"]);
-                    	?>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+		<?php print $ui->creamyHeader($user); ?>
 
-        <div class="wrapper row-offcanvas row-offcanvas-left">
             <!-- Left side column. contains the logo and sidebar -->
-			<?php print $ui->getSidebar($_SESSION["userid"], $_SESSION["username"], $_SESSION["userrole"], $_SESSION["avatar"]); ?>
+			<?php print $ui->getSidebar($user->getUserId(), $user->getUserName(), $user->getUserRole(), $user->getUserAvatar()); ?>
 
             <!-- Right side column. Contains the navbar and content of the page -->
             <aside class="right-side">
@@ -104,11 +86,11 @@
                 <!-- Main content -->
                 <section class="content">
 
-				<?php if (userHasBasicPermission($_SESSION["userrole"])) { ?>
+				<?php if ($user->userHasBasicPermission()) { ?>
                     <!-- row -->
                     <div class="row">
                         <div class="col-md-12">
-	                        <?php print $ui->getNotificationsAsTimeLine($_SESSION["userid"]); ?>
+	                        <?php print $ui->getNotificationsAsTimeLine($user->getUserId()); ?>
                         </div><!-- /.col -->
                     </div><!-- /.row -->
 
@@ -118,12 +100,9 @@
 
 
             </aside><!-- /.right-side -->
+            <?php print $ui->creamyFooter(); ?>
         </div><!-- ./wrapper -->
 
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <!-- AdminLTE App -->
-        <script src="js/AdminLTE/app.js" type="text/javascript"></script>
 		<!-- Modal Dialogs -->
 		<?php include_once "./php/ModalPasswordDialogs.php" ?>
 

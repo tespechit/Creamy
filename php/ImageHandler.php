@@ -24,7 +24,10 @@
 */
 
 namespace creamy;
+
 require_once('CRMDefaults.php');
+require_once('CRMUtils.php');
+require_once('RandomStringGenerator.php');
 
 /**
  * Class to handle all image manipulation.
@@ -64,63 +67,67 @@ class ImageHandler {
 		return $thumb;	
 	}
 	
-	public function generateProcessedImageFileFromSourceImage($imgSrc, $imageFileType) {
+	/**
+	 * Processes a image uploaded to the system and generates a processed thumbnail image
+	 * suitable for the user avatar. The newly generated file is stored in the avatars images dir
+	 * and the relative URL to the file is returned. This relative path can be accessed through URL
+	 * by appending the CRMUtils class method creamyBaseURL, and through disk by appending the 
+	 * CRMUtils class method creamyBaseDirectoryPath.
+	 * @param String $imgSrc image 	file source (i.e: the uploaded $_FILES[parameter][tmp_name][i] value.
+	 * @param String $imageFileType image file type. If empty, it will be set to .jpg.
+	 * @return a relative path for the generated image. i.e: img/avatars/q4q893pv57hqc9m.jpg or NULL if an error happened.
+	 */
+	public function generateAvatarFileAndReturnURL($imgSrc, $imageFileType = null) {
 		// generate a random image name file (and make sure it's not in use.
 		if (empty($imageFileType)) $imageFileType = AVATAR_IMAGE_FILENAME_EXTENSION;
-		$filename = $this->randomNameForAvatarImage(AVATAR_IMAGE_FILENAME_LENGTH, $imageFileType);
-		while (file_exists(AVATAR_IMAGE_FILEDIR.$filename)) {
-			$filename = $this->randomNameForAvatarImage(AVATAR_IMAGE_FILENAME_LENGTH);
+		$rnd = new \creamy\RandomStringGenerator();
+		$filename = $rnd->generate(AVATAR_IMAGE_FILENAME_LENGTH).".".$imageFileType;
+		
+		// get the filepath and check if the file already exists.
+		$basedir = \creamy\CRMUtils::creamyBaseDirectoryPath();
+		while (file_exists($basedir.AVATAR_IMAGE_FILEDIR.$filename)) {
+			$filename = $rnd->generate(AVATAR_IMAGE_FILENAME_LENGTH).".".$imageFileType;
 		}
 		// touch file (to lock it from other processes trying to write that same filename).
-		touch(AVATAR_IMAGE_FILEDIR.$filename);
+		touch($basedir.AVATAR_IMAGE_FILEDIR.$filename);
 		
 		// process source image, generating a square image.
 		$thumb = $this->generateThumbnailForImage($imgSrc, $imageFileType);
 		// if successful, write the image to the generated path and return it.
 		if ($thumb) {
-			imagejpeg($thumb, AVATAR_IMAGE_FILEDIR.$filename);
-			return $this->realPathForImagePath(AVATAR_IMAGE_FILEDIR.$filename);
-		}
-		return NULL;
-	}
-
-	private function randomNameForAvatarImage($length, $imageFileType = AVATAR_IMAGE_FILENAME_EXTENSION) {
-	    $key = '';
-	    $keys = array_merge(range(0, 9), range('a', 'z'));
-	
-	    for ($i = 0; $i < $length; $i++) {
-	        $key .= $keys[array_rand($keys)];
-	    }
-	
-	    return AVATAR_IMAGE_FILENAME_PREFIX.$key.".".$imageFileType;
+			if (imagejpeg($thumb, $basedir.AVATAR_IMAGE_FILEDIR.$filename)) { imagedestroy($thumb); return AVATAR_IMAGE_FILEDIR.$filename; }
+			else { imagedestroy($thumb); return null; }
+		} else { return NULL; }
 	}
 	
-	private function realPathForImagePath($imagePath) {
-		if ($this->startsWith($imagePath, "../")) {
-			return str_replace("../", "./", $imagePath);
-		}
-	}
+	/**
+	 * Processes a image uploaded to the system to become the custom logo for the company,
+	 * to be shown in the header. Any previous file will be deleted. The file will be stored
+	 * in the default location img/customCompanyLogo.jpg
+	 * @param String $imgSrc image 	file source (i.e: the uploaded $_FILES[parameter][tmp_name][i] value.
+	 * @param String $imageFileType image file type. If empty, it will be set to .jpg.
+	 * @return a relative path for the generated image. i.e: img/customCompanyLogo.jpg or NULL if an error happened.
+	 */
+	public function generateCustomCompanyLogoAndReturnURL($imgSrc, $imageFileType = null) {
+		$basedir = \creamy\CRMUtils::creamyBaseDirectoryPath();
+		$filename = CRM_DEFAULT_COMPANY_LOGO;	
+		if ($imageFileType == "jpg" || $imageFileType == "jpeg") $myImage = imagecreatefromjpeg($imgSrc);
+		else if ($imageFileType == "png") $myImage = imagecreatefrompng($imgSrc);
+		else if ($imageFileType == "gif") $myImage = imagecreatefromgif($imgSrc);
+		error_log("image file type = $imageFileType, my image = $myImage, path = ".$basedir.$filename);
 		
-	private function imagePathForRealPath($realPath) {
-		if ($this->startsWith($realPath, "./")) {
-			return str_replace("./", "../", $realPath);
-		}
+		if (imagepng($myImage, $basedir.$filename)) { imagedestroy($myImage); return $filename; }
+		else { imagedestroy($myImage); return null; }
 	}
 	
-	private function startsWith($haystack, $needle)
-	{
-	     $length = strlen($needle);
-	     return (substr($haystack, 0, $length) === $needle);
-	}
 	
 	public function removeUserAvatar($avatarpath) {
-		$imagePath = $this->imagePathForRealPath($avatarpath);
-		if (!$this->startsWith($imagePath, AVATAR_IMAGE_DEFAULT_FILEDIR)) { // don't remove default avatars.
-			return unlink($imagePath);
+		$basedir = \creamy\CRMUtils::creamyBaseDirectoryPath();
+		if (!\creamy\CRMUtils::startsWith($basedir.$avatarpath, AVATAR_IMAGE_DEFAULT_FILEDIR)) { // don't remove default avatars.
+			return unlink($basedir.$avatarpath);
 		}
 		else return true;
 	}
 
 }
-
 ?>

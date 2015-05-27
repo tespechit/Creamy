@@ -96,21 +96,22 @@ if ($validated == 1) {
 	$avatar = NULL;
 	if (!empty($avatarOrigin)) {
 		$imageHandler = new \creamy\ImageHandler();
-		$avatar = $imageHandler->generateProcessedImageFileFromSourceImage($avatarOrigin, $imageFileType);
+		$avatar = $imageHandler->generateAvatarFileAndReturnURL($avatarOrigin, $imageFileType);
 		if (empty($avatar)) {
+			ob_clean(); 
 			$lh->translateText("unable_generate_user_image");
 			exit;
 		}
 	}
-	
+	// create user
 	$role = CRM_DEFAULTS_USER_ROLE_GUEST; if (isset($_POST["role"])) { $role = $_POST["role"]; } 	
 	$result = $db->createUser($name, $password1, $email, $phone, $role, $avatar);
-	if ($result === USER_CREATED_SUCCESSFULLY) { print "success"; }
-	else if ($result === USER_ALREADY_EXISTED) { $lh->translateText("user_already_exists"); } 
-	else if ($result === USER_CREATE_FAILED) { $lh->translateText("unable_create_user"); } 
-	exit;
+	// analyze result
+	if ($result === USER_CREATED_SUCCESSFULLY) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else if ($result === USER_ALREADY_EXISTED) { ob_clean(); $lh->translateText("user_already_exists"); } 
+	else if ($result === USER_CREATE_FAILED)   { ob_clean(); $lh->translateText("unable_create_user"); } 
 } else {
+	ob_clean(); 
 	print $reason;
 }
-
 ?>

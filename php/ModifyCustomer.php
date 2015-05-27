@@ -22,11 +22,15 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+
+// dependencies
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
-
+// variables
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -43,7 +47,7 @@ if (!isset($_POST["customerid"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// get name (mandatory)
+	// get name (mandatory), customer id and customer type
 	$name = $_POST["name"];
 	$name = stripslashes($name);
 	$name = $db->escape_string($name);
@@ -53,9 +57,7 @@ if ($validated == 1) {
 	$customerType = $_POST["customer_type"];
 	$customerType = stripslashes($customerType);
 	$customerType = $db->escape_string($customerType);
-	$createdByUser = $_SESSION["userid"];
-	
-	// get optional values
+	$createdByUser = $user->getUserId();
 	
 	// email
 	$email = NULL; if (isset($_POST["email"])) { 
@@ -116,6 +118,13 @@ if ($validated == 1) {
 		$country = $db->escape_string($country);
 	}
 	
+	// website
+	$website = NULL; if (isset($_POST["website"])) { 
+		$website = $_POST["website"]; 
+		$website = stripslashes($website);
+		$website = $db->escape_string($website);
+	}	
+	
 	// birthdate
 	$birthdate = NULL; if (isset($_POST["birthdate"])) { 
 		$birthdate = $_POST["birthdate"]; 
@@ -158,10 +167,10 @@ if ($validated == 1) {
 		$donotsendemail = 1;
 	}
 
-	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("unable_modify_customer"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+	// modify customer
+	$result = $db->modifyCustomer($customerType, $customerid, $name, $email, $phone, $mobile, $id_number, $address, $city, $state, $zipcode, $country, $birthdate, $maritalstatus, $productType, $donotsendemail, $createdByUser, $gender, $notes, $website);
+	// return result
+	if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+	else { ob_clean(); $lh->translateText("unable_modify_customer"); } 
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

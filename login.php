@@ -22,6 +22,7 @@
 		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 		THE SOFTWARE.
 	*/
+	error_reporting(E_ERROR | E_PARSE);
 
 	require_once('./php/CRMDefaults.php');
 	// check installation before login.
@@ -36,10 +37,10 @@
 	session_start(); // Starting Session
 	$lh = \creamy\LanguageHandler::getInstance();
 	
-	$error=''; // Variable To Store Error Message
+	$error = ''; // Variable To Store Error Message
 	if (isset($_POST['submit'])) {
 		if (empty($_POST['username']) || empty($_POST['password'])) {
-			$_SESSION["errorMessage"] = $lh->translationFor("insert_valid_login_password");
+			$error = $lh->translationFor("insert_valid_login_password");
 		} else {
 			$db = new \creamy\DbHandler();
 
@@ -52,11 +53,19 @@
 			$password = stripslashes($password);
 			$username = $db->escape_string($username);
 			$password = $db->escape_string($password);
-			
+
 			// Check password and redirect accordingly
-			$result = $db->checkLogin($username, $password);
+			$result = null;
+			if(filter_var($username, FILTER_VALIDATE_EMAIL)) {
+		        // valid email address
+				$result = $db->checkLoginByEmail($username, $password);
+		    }
+		    else {
+		        // not an email. User name?
+				$result = $db->checkLoginByName($username, $password);
+		    }
 			if ($result == NULL) { // login failed
-				$_SESSION["errorMessage"] = $lh->translationFor("invalid_login_password");
+				$error = $lh->translationFor("invalid_login_password");
 			} else {
 				$_SESSION["userid"] = $result["id"]; 
 				$_SESSION["username"] = $result["name"]; 
@@ -87,55 +96,51 @@
           <script src="js/html5shiv.js"></script>
           <script src="js/respond.min.js"></script>
         <![endif]-->
-    </head>
-    <body>
-        <div class="form-box form-box-login" id="login-box">
-			<div class="margin text-center">
-				<img src="img/logo.png" width="64" height="64">
-			</div>
-            <div class="header"><?php $lh->translateText("welcome_to_creamy"); ?></div>
-            <form action="" method="post">
-                <div class="body bg-gray">
-                    <div class="form-group">
-                        <input type="text" name="username" class="form-control" placeholder="<?php $lh->translateText("name"); ?>"/>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="password" class="form-control" placeholder="<?php $lh->translateText("password"); ?>"/>
-                    </div>          
-                	<div name="error-message" style="color: red;">
-                	<?php
-                		if (isset($_SESSION["errorMessage"])) {
-	                		print ($_SESSION["errorMessage"]);
-                		}
-                	?>
-                	</div>
-                </div>
-                <div class="footer text-center">                                                               
-                    <button type="submit" name="submit" id="sumbit" class="btn bg-light-blue btn-block"><?php $lh->translateText("access"); ?></button>  
-                    
-                    <p><?php $lh->translateText("forgotten_password"); ?> <a href="lostpassword.php"><?php $lh->translateText("click_here"); ?>.</a></p>
-                </div>
-                <?php unset($_SESSION['errorMessage']); ?>
-            </form>
-            <div class="margin text-center">
-                <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
-                <br/>
-                <button class="btn bg-red btn-circle" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
-                <button class="btn bg-light-blue btn-circle" onclick="window.location.href='https://github.com/DigitalLeaves/Creamy'"><i class="fa fa-github"></i></button>
-                <button class="btn bg-aqua btn-circle" onclick="window.location.href='https://twitter.com/creamythecrm'"><i class="fa fa-twitter"></i></button>
-            </div>
-   			<!--
-            <div class="margin text-center">
-                <span>Sign in using social networks</span>
-                <br/>
-                <button class="btn bg-light-blue btn-circle"><i class="fa fa-facebook"></i></button>
-                <button class="btn bg-aqua btn-circle"><i class="fa fa-twitter"></i></button>
-                <button class="btn bg-red btn-circle"><i class="fa fa-google-plus"></i></button>
-
-            </div>
-            -->
-    	</div>
     <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js" type="text/javascript"></script>
-    </body>
+    </head>
+  <body class="login-page">
+    <div class="login-box" id="login-box">
+	  <div class="margin text-center">
+		<img src="img/logo.png" width="64" height="64">
+	  </div>
+      <div class="login-logo">
+        <?php $lh->translateText("welcome_to_creamy"); ?>
+      </div><!-- /.login-logo -->
+      <div class="login-box-body">
+        <p class="login-box-msg"><?php $lh->translateText("sign_in"); ?></p>
+        <form action="" method="post">
+          <div class="form-group has-feedback">
+            <input type="text" class="form-control" name="username" placeholder="<?php $lh->translateText("username_or_email"); ?>"/>
+            <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+          </div>
+          <div class="form-group has-feedback">
+            <input type="password" name="password" class="form-control" placeholder="<?php $lh->translateText("password"); ?>"/>
+            <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+          </div>
+	    	<div name="error-message" style="color: red;">
+	    	<?php
+	    		if (isset($error)) { print ("<p>".$error."</p>"); }
+	    	?>
+	    	</div>
+          <div class="row">
+            <div class="col-xs-3"></div>
+            <div class="col-xs-6">
+              <button type="submit" name="submit" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("access"); ?></button>
+            </div><!-- /.col -->
+            <div class="col-xs-3"></div>
+          </div>
+        </form>
+		<p class="text-center"><?php $lh->translateText("forgotten_password"); ?> <a href="lostpassword.php"><?php $lh->translateText("click_here"); ?>.</a></p>
+      </div><!-- /.login-box-body -->
+    </div><!-- /.login-box -->
+    <div class="margin text-center">
+        <span><?php $lh->translateText("never_heard_of_creamy"); ?></span>
+        <br/>
+        <button class="btn bg-red btn-flat" onclick="window.location.href='http://creamycrm.com'"><i class="fa fa-globe"></i></button>
+        <button class="btn bg-light-blue btn-flat" onclick="window.location.href='https://github.com/DigitalLeaves/Creamy'"><i class="fa fa-github"></i></button>
+        <button class="btn bg-aqua btn-flat" onclick="window.location.href='https://twitter.com/creamythecrm'"><i class="fa fa-twitter"></i></button>
+    </div>
+	<?php unset($error); ?>
+  </body>
 </html>

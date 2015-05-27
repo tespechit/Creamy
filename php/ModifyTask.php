@@ -22,11 +22,13 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -40,15 +42,17 @@ if (!isset($_POST["edit-task-description"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// get data for task description.	
 	$taskid = $_POST["edit-task-taskid"];
 	$description = $_POST["edit-task-description"];
-	$userid = $_SESSION["userid"];
+	$userid = $user->getUserId();
 	
+	// edit task description.
 	$result = $db->editTaskDescription($taskid, $description, $userid);
+	// analyze results
 	if ($result === true) {
-		print "success";
-	} else { $lh->translateText("unable_modify_task"); };	
-} else { $lh->translateText("some_fields_missing"); }
-
+		ob_clean(); 
+		print CRM_DEFAULT_SUCCESS_RESPONSE;
+	} else { ob_clean(); $lh->translateText("unable_modify_task"); };	
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

@@ -24,6 +24,7 @@
 */
 
 require_once('DbHandler.php');
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 $lh = \creamy\LanguageHandler::getInstance();
 
@@ -51,14 +52,12 @@ if ($validated == 1) {
 	$password1 = $_POST["new_password_1"];
 	$password2 = $_POST["new_password_2"];
 	if ($password1 !== $password2) {
+		ob_clean();
 		$lh->translateText("passwords_dont_match");
-		exit;
+	} else { // everything's ok, now try to set the new password.
+		$result = $db->changePassword($userid, $oldpassword, $password1, $password2);
+		if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+		else { ob_clean(); $lh->translateText("unable_change_password"); } 
 	}
-	
-	$result = $db->changePassword($userid, $oldpassword, $password1, $password2);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("unable_change_password"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

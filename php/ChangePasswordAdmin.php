@@ -28,19 +28,13 @@ require_once('LanguageHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check admin privileges.
-$privileges = 0;
-if (isset($_SESSION["userrole"])) {
-	if ($_SESSION["userrole"] == CRM_DEFAULTS_USER_ROLE_ADMIN) {
-		$privileges = 1;
-	}
-}
-if ($privileges == 0) {
+if (!$user->userHasAdminPermission()) {
 	$lh->translateText("not_permission_edit_user_information");
 	exit;
 }
-
 
 // check required fields
 $validated = 1;
@@ -55,21 +49,17 @@ if (!isset($_POST["new_password_2"])) {
 }
 
 if ($validated == 1) {
-
 	// check password	
 	$userid = $_POST["usertochangepasswordid"];
 	$password1 = $_POST["new_password_1"];
 	$password2 = $_POST["new_password_2"];
 	if ($password1 !== $password2) {
 		$lh->translateText("passwords_dont_match");
-		exit;
+	} else {
+		$db = new \creamy\DbHandler();
+		$result = $db->changePasswordAdmin($userid, $password1);
+		if ($result === true) { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+		else { ob_clean(); $lh->translateText("error_changing_password"); } 
 	}
-	
-	$db = new \creamy\DbHandler();
-	$result = $db->changePasswordAdmin($userid, $password1);
-	if ($result === true) { print "success"; }
-	else { $lh->translateText("error_changing_password"); } 
-	
-} else { $lh->translateText("some_fields_missing"); }
-
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

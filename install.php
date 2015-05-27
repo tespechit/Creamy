@@ -23,11 +23,16 @@
 		THE SOFTWARE.
 	*/
 
+	error_reporting(E_ERROR | E_PARSE);
+	
 	require_once('./php/CRMDefaults.php');
 	require_once('./php/DbInstaller.php');
 	require_once('./php/LanguageHandler.php');
 	require_once('./php/RandomStringGenerator.php');
+	require_once('./php/CRMUtils.php');
 	
+	define('CRM_INSTALL_SKEL_CONFIG_FILE', 'skel/Config.php');
+
 	// language handler
 	$locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 	$lh = \creamy\LanguageHandler::getInstance($locale);
@@ -39,7 +44,7 @@
 	
 	// set initial installation step (if found).
 	if (isset($_SESSION["installationStep"])) { $currentState = $_SESSION["installationStep"]; }
-	
+
 	if (file_exists(CRM_INSTALLED_FILE)) { // check if already installed 
 		$currentState = "already_installed"; 
 	} elseif (isset($_POST["submit_step1"]) && $currentState == "step1") { // first step: get credentials for database access.
@@ -63,38 +68,51 @@
 			// update LanguageHandler locale
 			error_log("Creamy install: Trying to set locale to $locale");
 			$lh->setLanguageHandlerLocale($locale);
-			
-			// generate a new config file for Creamy, incluying db information & timezone.
-			$configContent = file_get_contents(CRM_SKEL_CONFIG_FILE);			
-			$randomStringGenerator = new \creamy\RandomStringGenerator();
-			$crmSecurityCode = $randomStringGenerator->generate(40);
-			$customConfig = "
+
+			// delete current database tables.
+			$cleanResult = $dbInstaller->dropPreviousTables();
+			if ($cleanResult == true) {
+				// setup settings table.
+				$randomStringGenerator = new \creamy\RandomStringGenerator();
+				$crmSecurityCode = $randomStringGenerator->generate(40);
+				$settingsResult = $dbInstaller->setupSettingTable($timezone, $desiredLanguage, $desiredLanguage);
+	
+				if ($settingsResult === true) {
+					// generate a new config file for Creamy, incluying db information & timezone.
+					$configContent = file_get_contents(CRM_INSTALL_SKEL_CONFIG_FILE);			
+					$customConfig = "
 // database configuration
 define('DB_USERNAME', '$dbuser');
 define('DB_PASSWORD', '$dbpass');
 define('DB_HOST', '$dbhost');
 define('DB_NAME', '$dbname');
 define('DB_PORT', '3306');
-		
-// General configuration
-define('CRM_TIMEZONE', '$timezone');
-define('CRM_LOCALE', '$desiredLanguage');
-define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 
+// other configuration parameters			
 ".CRM_PHP_END_TAG;
+		
+					$configContent = str_replace(CRM_PHP_END_TAG, $customConfig, $configContent);
+					file_put_contents(CRM_PHP_CONFIG_FILE, $configContent);
+					
+					// set session credentials and continue installation.
+					$_SESSION["dbhost"] = $dbhost;
+					$_SESSION["dbname"] = $dbname;
+					$_SESSION["dbuser"] = $dbuser;
+					$_SESSION["dbpass"] = $dbpass;
+					$error = "";
+					$currentState = "step2";			
+					$_SESSION["installationStep"] = "step2";				
+				} else {
+					$error = $dbInstaller->getLastErrorMessage();
+					$currentState = "step1";
+					$_SESSION["installationStep"] = "step1";
+				}
 
-			$configContent = str_replace(CRM_PHP_END_TAG, $customConfig, $configContent);
-			file_put_contents(CRM_PHP_CONFIG_FILE, $configContent);
-			
-			// set session credentials and continue installation.
-			$_SESSION["dbhost"] = $dbhost;
-			$_SESSION["dbname"] = $dbname;
-			$_SESSION["dbuser"] = $dbuser;
-			$_SESSION["dbpass"] = $dbpass;
-			$error = "";
-			$currentState = "step2";			
-			$_SESSION["installationStep"] = "step2";
-			$dbInstaller->closeDatabaseConnection();
+			} else {
+				$error = $dbInstaller->getLastErrorMessage();
+				$currentState = "step1";
+				$_SESSION["installationStep"] = "step1";
+			}
 		} else {
 			$error = $dbInstaller->getLastErrorMessage();
 			$currentState = "step1";
@@ -133,11 +151,11 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 						$currentState = "step3";			
 						$_SESSION["installationStep"] = "step3";
 					} else {
-						$error = $lh->translationFor("error_setting_db_tables")." ". $dbInstaller->getLastErrorMessage() or $lh->translationFor("database_not_set");
+						$errorMsg = $dbInstaller->getLastErrorMessage();
+						$error = $lh->translationFor("error_setting_db_tables")." ". isset($errorMsg) ? $errorMsg : $lh->translationFor("database_not_set");
 						$currentState = "step2";
 						$_SESSION["installationStep"] = "step2";
 					}
-					$dbInstaller->closeDatabaseConnection();
 					
 					// store the admin email.
 					$configContent = file_get_contents(CRM_PHP_CONFIG_FILE);					
@@ -174,49 +192,42 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 			if ($customersType == "default") { // default customers schema
 				array_push($customerNames, "customers");
 			} else if ($customersType == "custom") { // custom customers schema
-				$index = 1;
-				while (isset($_POST["customCustomerGroup".$index])) {
-					array_push($customerNames, $_POST["customCustomerGroup".$index]);
-					$index++;
+				foreach ($_POST as $key => $value) {
+					if (\creamy\CRMUtils::startsWith($key, "customCustomerGroup")) { array_push($customerNames, $value); }
 				}
 			}
 			
 			$dbInstaller = new DBInstaller($dbhost, $dbname, $dbuser, $dbpass);
 			// setup customers' tables
+
 			if ($dbInstaller->setupCustomerTables($customersType, $customerNames)) {
 				// enable customers statistic retrieval
 				if ($dbInstaller->setupCustomersStatistics($customersType, $customerNames)) {
-					// create the notifications triggers.
-					if ($dbInstaller->setupCommonTriggers($customersType, $customerNames)) {
-						$success = true;
-					} else {
-						$success = false;
-						$error = $lh->translationFor("unable_create_triggers");
-					}
+					$success = true;
 				} else { 
 					$success = false;
 					$error = $lh->translationFor("unable_set_statistics").": ".$dbInstaller->error;
 				}
 				$currentState = "final_step";
 				$_SESSION["installationStep"] = "final_step";
+				// create a new installed.txt file to register that we have correctly installed Creamy.
+				touch("./installed.txt");
 			} else {
 				$success = false;
 				$currentState = "step_3";
 				$_SESSION["installationStep"] = "step_3";
 			}
-			$dbInstaller->closeDatabaseConnection();
 		}
-	} elseif (isset($_POST["submit_final_step"]) && $currentState == "final_step") { // final step: congratulations!
-		// create a new installed.txt file to register that we have correctly installed Creamy.
-		touch("./installed.txt");
-		
-		// finally go to the index.
+	} elseif (isset($_POST["submit_final_step"]) && $currentState == "final_step") { // final step: congratulations!		
+		error_log("Creamy install: finished!");
 		session_unset();
+		// finally go to the index.
 		header("Location: ./index.php");
 		die();
 	} else {
 		session_unset();
 	}
+
 ?>
 <html class="lockscreen">
     <head>
@@ -225,122 +236,135 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-        <!-- Theme style -->
-        <link href="./css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <!-- Creamy style -->
+        <link href="css/creamycrm.css" rel="stylesheet" type="text/css" />
+        <link href="css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
+        
+        <!-- Javascript -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="js/plugins/timezone/jstz-1.0.4.min.js" type="text/javascript"></script>
     </head>
-    <body>
-        <div class="form-box form-box-install" id="login-box">
+    
+    <body class="login-page">
+        <div class="login-box install-box" id="login-box">
 			<div class="margin text-center">
 				<img src="img/logo.png" width="64" height="64">
 			</div>
 	<?php if ($currentState == "already_installed") { ?>
-            <div class="header"><strong>Creamy</strong> <?php $lh->translateText("is_already_installed"); ?></div>
-            <div class="body bg-gray">
-	            <h3><?php $lh->translateText("oups"); ?></h3>
-	            <?php $lh->translateText("another_installation_creamy"); ?>
+			<div class="login-logo"><strong>Creamy</strong> <?php $lh->translateText("is_already_installed"); ?></div>
+            <div class="login-box-body">
+				<h3 class="login-box-msg"><?php $lh->translateText("oups"); ?></h3>
+	            <p class="login-box-msg"><?php $lh->translateText("another_installation_creamy"); ?></p>
+		          <div class="row">
+		            <div class="col-xs-3"></div>
+		            <div class="col-xs-6">
+		              <button type="submit" onclick="window.location.href='index.php';" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("back_to_creamy"); ?></button>
+		            </div><!-- /.col -->
+		            <div class="col-xs-3"></div>
+		          </div>
 			</div>
-            <div class="footer text-center">                                                               
-                <button type="submit" onclick="window.location.href='index.php';" class="btn bg-light-blue btn-block"><?php $lh->translateText("back_to_creamy"); ?></button>  
-            </div>
 	<?php } elseif ($currentState == "step1") { ?>
-            <div class="header"><?php $lh->translateText("installation_step_1_title"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("installation_step_1_title"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("welcome"); ?></h3>
 	            <p><?php $lh->translateText("installation_process_steps"); ?></p>
 	            <h3><?php $lh->translateText("database"); ?></h3>
 	            <p><?php $lh->translateText("your_crm_needs_a_database"); ?></p>
-	            <p style="color: red; margin-bottom: -20px;"><?php $lh->translateText("installation_warning"); ?></p>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
-                    <div class="form-group">
-                        <input type="text" name="dbhost" class="form-control" placeholder="<?php $lh->translateText("database_host"); ?>"/>
-                        <input type="text" name="dbname" class="form-control" placeholder="<?php $lh->translateText("database_name"); ?>"/>
-                        <input type="text" name="dbuser" class="form-control" placeholder="<?php $lh->translateText("database_user"); ?>"/>
-                        <input type="password" name="dbpass" class="form-control" placeholder="<?php $lh->translateText("database_password"); ?>"/>
-                   	</div>
+	            <p style="color: red; "><?php $lh->translateText("installation_warning"); ?></p>
+	            <form method="post">				
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbhost" placeholder="<?php $lh->translateText("database_host"); ?>"/>
+						<span class="glyphicon glyphicon-cloud form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbname" placeholder="<?php $lh->translateText("database_name"); ?>"/>
+						<span class="glyphicon glyphicon-credit-card form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="dbuser" placeholder="<?php $lh->translateText("database_user"); ?>"/>
+						<span class="glyphicon glyphicon-user form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="dbpass" placeholder="<?php $lh->translateText("database_password"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>
 					<div class="form-group">
 						<p><?php $lh->translateText("detected_timezone"); ?></p>
-                        <?php
+	                    <?php
 		                    // Timezones
-		                    $utc = new DateTimeZone('UTC');
-							$dt = new DateTime('now', $utc);
-							
+		                    $tzs = \creamy\CRMUtils::getTimezonesAsArray();
 							print '<select name="userTimeZone" id="userTimeZone" class="form-control">';
-							foreach(DateTimeZone::listIdentifiers() as $tz) {
-							    $current_tz = new DateTimeZone($tz);
-							    $offset =  $current_tz->getOffset($dt);
-							    $transition =  $current_tz->getTransitions($dt->getTimestamp(), $dt->getTimestamp());
-							    $abbr = $transition[0]['abbr'];
-							
-								$formatted = sprintf('%+03d:%02u', floor($offset / 3600), floor(abs($offset) % 3600 / 60));
-							    print '<option value="' .$tz. '">' .$tz. ' [' .$abbr. ' '. $formatted. ']</option>';
-							}
+							foreach($tzs as $key => $value) { print '<option value="'.$key.'">'.$value.'</option>'; }
 							print '</select>';
 	                    ?>
-                    </div>
-                    <div class="form-group">
+	                </div>
+	                <div class="form-group">
 						<p><?php $lh->translateText("choose_language"); ?></p>
 						<select name="desiredLanguage" id="desiredLanguage" class="form-control">
 							<?php
-							$files = scandir(dirname(__FILE__)."/lang");
-							foreach ($files as $file) {
-								if (!is_dir($file)) {
-									$localeCodeForFile = str_replace("_", "-", $file);
-									$languageForLocale = utf8_decode(Locale::getDisplayLanguage($localeCodeForFile));
-									$selectedByDefault = "";
-									if ($file == $locale) { $selectedByDefault = "selected"; }
-									print('<option value="'.$file.'" '.$selectedByDefault.'> '.$file.' ('.$languageForLocale.')</option>');
-								}
+							$locales = \creamy\LanguageHandler::getAvailableLanguages();
+							foreach ($locales as $key => $value) {
+								$selectedByDefault = ($key == $locale) ? "selected" : "";
+								print('<option value="'.$key.'" '.$selectedByDefault.'> '.$value.'</option>');
 							}
 							?>
 						</select>
-                    </div>       
-                	<div name="error-message" style="color: red;">
-                	<?php 
-	                	if (isset($error)) print ($error); 
-                	?>
-                	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step1" id="submit_step1" class="btn bg-light-blue btn-block"><?php $lh->translateText("start"); ?></button>  
-                </div>
-            </form>
-        
-	<?php } elseif ($currentState == "step2") { ?>
-            <div class="header"><?php $lh->translateText("installation_step_2_title") ?></div>
-            <div class="body bg-gray">
-	            <h3><?php $lh->translateText("awesome"); ?></h3>
-	            <?php $lh->translateText("database_access_checked") ?>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
-                    <div class="form-group">
-                        <input type="text" name="adminName" class="form-control" placeholder="<?php $lh->translateText("admin_user_name") ?>"/>
-                        <input type="password" name="adminPassword" class="form-control" placeholder="<?php $lh->translateText("admin_user_password") ?>"/>
-                        <input type="password" name="adminPasswordCheck" class="form-control" placeholder="<?php $lh->translateText("admin_user_password_again") ?>"/>
-                        <input type="text" name="adminEmail" class="form-control" placeholder="<?php $lh->translateText("admin_user_email") ?>"/>
-                    </div>          
-                	<div name="error-message" style="color: red;">
-                	<?php 
-	                	if (isset($error)) print ($error); 
-                	?>
-                	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step2" id="submit_step2" class="btn bg-light-blue btn-block"><?php $lh->translateText("create_user") ?></button>  
-                </div>
-            </form>
+	                </div>       
+	            	<div name="error-message" style="color: red;">
+	            	<?php 
+	                	if (isset($error)) print $error."<div class='clearfix'>"; 
+	            	?>
+	            	</div>
+	                <div class="row">
+						<div class="col-xs-4"></div>
+						<div class="col-xs-4"><button type="submit" name="submit_step1" id="submit_step1" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("start"); ?></button></div>
+						<div class="col-xs-4"></div>
+					</div>
+	            </form>
+        </div>
 
+	<?php } elseif ($currentState == "step2") { ?>
+			<div class="login-logo"><?php $lh->translateText("installation_step_2_title"); ?></div>
+            <div class="login-box-body">
+	            <h3><?php $lh->translateText("awesome"); ?></h3>
+	            <p><?php $lh->translateText("database_access_checked"); ?></p>
+	            <form method="post">				
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="adminName" placeholder="<?php $lh->translateText("admin_user_name"); ?>"/>
+						<span class="glyphicon glyphicon-user form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="text" class="form-control" name="adminEmail" placeholder="<?php $lh->translateText("admin_user_email"); ?>"/>
+						<span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="adminPassword" placeholder="<?php $lh->translateText("admin_user_password"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>
+					<div class="form-group has-feedback">
+						<input type="password" class="form-control" name="adminPasswordCheck" placeholder="<?php $lh->translateText("admin_user_password_again"); ?>"/>
+						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+					</div>        
+                	<div name="error-message" style="color: red;">
+                	<?php 
+	                	if (isset($error)) print ($error); 
+                	?>
+                	</div>
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><button type="submit" name="submit_step2" id="submit_step2" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("create_user"); ?></button></div>
+						<div class="col-xs-3"></div>
+					</div>
+	            </form>
+            </div>
           
     <?php } elseif ($currentState == "step3") { ?>  
-            <div class="header"><?php $lh->translateText("installation_step_3_title"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("installation_step_3_title"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("perfect"); ?></h3>
-	            <?php $lh->translateText("lets_define_customers"); ?>
-            </div>
-            <form method="post">				
-                <div class="body bg-gray">
+	            <p><?php $lh->translateText("lets_define_customers"); ?></p>
+	            <form method="post">				
 	                <input type="hidden" name="count" value="1" />
                     <div class="form-group">
                         <input type="radio" name="setup_customers" value="default" checked/> <?php $lh->translateText("contacts_and_clients_ok"); ?>
@@ -362,15 +386,16 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 	                	if (isset($error)) print ($error); 
                 	?>
                 	</div>
-                </div>
-                <div class="footer">                                                               
-                    <button type="submit" name="submit_step3" id="submit_step3" class="btn bg-light-blue btn-block"><?php $lh->translateText("create"); ?></button>  
-                </div>
-            </form>
-
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><button type="submit" name="submit_step3" id="submit_step3" class="btn btn-primary btn-block btn-flat"><?php $lh->translateText("create"); ?></button></div>
+						<div class="col-xs-3"></div>
+					</div>
+	            </form>
+            </div>
     <?php } elseif ($currentState == "final_step") { ?>  
-            <div class="header"><?php $lh->translateText("finished"); ?></div>
-            <div class="body bg-gray">
+			<div class="login-logo"><?php $lh->translateText("finished"); ?></div>
+            <div class="login-box-body">
 	            <h3><?php $lh->translateText("everythings_ready"); ?></h3>
 	            <p><?php $lh->translateText("ready_to_start_creamy"); ?></p>
 	        	<div name="error-message" style="color: red;">
@@ -378,10 +403,18 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		            	if (isset($error)) print ($error); 
 		        	?>
 	        	</div>
-				<form method="post">				
-	                <div class="body bg-gray">
-	                    <button type="submit" name="submit_final_step" id="submit_final_step" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></button>  
-	                </div>
+	            <h3><?php $lh->translateText("enable_creamy_events"); ?></h3>
+				<p><?php $lh->translateText("creamy_events_description"); ?></p>
+				<pre><?php require_once('php/CRMUtils.php'); ?>
+# Creamy event job scheduling
+0 * * * *	php "<?php print \creamy\CRMUtils::creamyBaseDirectoryPath(true)."job-scheduler.php"; ?>" &>/dev/null</pre>
+				<p><?php $lh->translateText("dont_know_cronjob"); ?></p><br>
+				<form method="post">	
+	                <div class="row">
+						<div class="col-xs-3"></div>
+						<div class="col-xs-6"><a href="index.php" class="btn bg-light-blue btn-block"><?php $lh->translateText("start_using_creamy"); ?></a></div>
+						<div class="col-xs-3"></div>
+					</div>
 	            </form>
             </div>
         	
@@ -394,9 +427,6 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
                 <button class="btn bg-aqua btn-circle" onclick="window.location.href='https://twitter.com/creamythecrm'"><i class="fa fa-twitter"></i></button>
             </div>
         </div>    
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="js/jstz-1.0.4.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
 		$(document).ready(function(){
 			// detect timezone
@@ -428,16 +458,17 @@ define('CRM_SECURITY_TOKEN', '$crmSecurityCode');
 		        $(addRemove).after(removeButton);
 		        $("#customCustomerGroup" + next).attr('data-source',$(addto).attr('data-source'));
 		        $("#count").val(next);  
-		        
-	            $('.remove-me').click(function(e){
-	                e.preventDefault();
-	                var fieldNum = this.id.charAt(this.id.length-1);
-	                var fieldID = "#customCustomerGroup" + fieldNum;
-	                $(this).remove();
-	                $(fieldID).remove();
-	            });
+
+	         $('.remove-me').click(function(e){
+		        e.preventDefault();
+		        var fieldNum = this.id.charAt(this.id.length-1);
+		        var fieldID = "#customCustomerGroup" + fieldNum;
+		        $(this).remove();
+		        $(fieldID).remove();
 		    });
-		    
+
+		    });
+
 		});
 		</script>
     </body>

@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 
@@ -37,15 +38,22 @@ if (!isset($_POST["userid"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// sanity checks	
 	$userid = $_POST["userid"];
+	$currentMainAdminData = $db->getMainAdminUserData(); // check that we are not deleting the main admin user.
+	if (is_array($currentMainAdminData) && (array_key_exists("id", $currentMainAdminData))) {
+		if ($userid == $currentMainAdminData["id"]) {
+			// can't delete the main admin user.
+			print $lh->translateText("unable_delete_main_admin");
+			return;
+		}
+	}
 
+	// delete user
 	$result = $db->deleteUser($userid);
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_user");
-	} else print "success";
-	
-	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

@@ -23,6 +23,7 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 
@@ -37,15 +38,14 @@ if (!isset($_POST["taskid"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
+	// check taskid	
 	$taskid = $_POST["taskid"];
-
+	// delete task
 	$result = $db->deleteTask($taskid);
+	// analyze result
 	if ($result === false) {
+		ob_clean(); 
 		$lh->translateText("unable_delete_task");
-	} else print "success";
-	
-	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

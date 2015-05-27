@@ -23,11 +23,13 @@
 	THE SOFTWARE.
 */
 
+require_once('CRMDefaults.php');
 require_once('LanguageHandler.php');
 require_once('DbHandler.php');
 require('Session.php');
 
 $lh = \creamy\LanguageHandler::getInstance();
+$user = \creamy\CreamyUser::currentUser();
 
 // check required fields
 $validated = 1;
@@ -44,18 +46,16 @@ if (!isset($_POST["favorite"])) {
 if ($validated == 1) {
 	$db = new \creamy\DbHandler();
 
-	// check password	
-	$userid = $_SESSION["userid"];
+	// collect data	
+	$userid = $user->getUserId();
 	$messageids = $_POST["messageids"];
 	$folder = $_POST["folder"];
 	$favorite = $_POST["favorite"];
-
+	// mark messages as favorite
 	$result = $db->markMessagesAsFavorite($userid, $messageids, $folder, $favorite);
 	if ($result === false) {
+		ob_clean();
 		$lh->translateText("unable_set_favorites");
-	} else print "success";
-	
-	return;
-} else { $lh->translateText("some_fields_missing"); }
-
+	} else { ob_clean(); print CRM_DEFAULT_SUCCESS_RESPONSE; }
+} else { ob_clean(); $lh->translateText("some_fields_missing"); }
 ?>

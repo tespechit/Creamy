@@ -5,7 +5,7 @@ $.extend( true, $.fn.dataTable.defaults, {
 		"t"+
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>",
 	"oLanguage": {
-		"sLengthMenu": "Show _MENU_  entries at a time"
+		"sLengthMenu": "_MENU_ records per page"
 	}
 } );
 
