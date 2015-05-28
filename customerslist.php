@@ -173,6 +173,7 @@
 	                "bPaginate": true,
 					"bServerSide": true,
 					"sAjaxSource": "./php/CustomerListJSON.php",
+					"aoColumnDefs": [ { "bSortable": false, "bVisible": true, "aTargets": [ -1 ] } ],
 					"fnServerParams": function (aoData) { // custom param: customer_type
 			            aoData.push({
 			                "name": "customer_type",
