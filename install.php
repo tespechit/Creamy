@@ -407,7 +407,7 @@ define('DB_PORT', '3306');
 				<p><?php $lh->translateText("creamy_events_description"); ?></p>
 				<pre><?php require_once('php/CRMUtils.php'); ?>
 # Creamy event job scheduling
-0 * * * *	php "<?php print \creamy\CRMUtils::creamyBaseDirectoryPath(true)."job-scheduler.php"; ?>" &>/dev/null</pre>
+0 * * * * php "<?php print \creamy\CRMUtils::creamyBaseDirectoryPath(true)."job-scheduler.php"; ?>" &>/dev/null</pre>
 				<p><?php $lh->translateText("dont_know_cronjob"); ?></p><br>
 				<form method="post">	
 	                <div class="row">
