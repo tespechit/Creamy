@@ -1703,9 +1703,11 @@ class DbHandler {
 	 * 
 	 */	
 	public function getLastCustomerStatistics($limit = 6) {
-		$this->dbConnector->orderBy("timestamp", "asc");
-		return $this->dbConnector->get(CRM_STATISTICS_TABLE_NAME, $limit);
-	}
+        $this->dbConnector->orderBy("timestamp", "desc");
+        $result = $this->dbConnector->get(CRM_STATISTICS_TABLE_NAME, $limit);
+        if (isset($result)) { return array_reverse($result); }
+        else return array();
+   	}
 	
 	/** Modules */
 	
