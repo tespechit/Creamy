@@ -1685,7 +1685,7 @@ error_reporting(E_ERROR | E_PARSE);
 		$dateAsDMY = "";
         if (isset($customerobj["birthdate"])) { 
             $time = strtotime($customerobj["birthdate"]);
-            $dateAsDMY = date('d/m/Y', $time); 
+            $dateAsDMY = date('m/d/Y', $time); 
         }
 		$md = $this->maskedDateInputElement("birthdate", "birthdate", "dd/mm/yyyy", $dateAsDMY, "calendar", true);
 		$birth_f = $this->singleFormGroupWithInputGroup($md, $this->lh->translationFor("birthdate"));
