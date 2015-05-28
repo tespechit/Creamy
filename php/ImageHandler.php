@@ -126,7 +126,7 @@ class ImageHandler {
 	
 	public function removeUserAvatar($avatarpath) {
 		$basedir = \creamy\CRMUtils::creamyBaseDirectoryPath();
-		if (!\creamy\CRMUtils::startsWith($basedir.$avatarpath, AVATAR_IMAGE_DEFAULT_FILEDIR)) { // don't remove default avatars.
+		if (strpos($basedir.$avatarpath, CRM_DEFAULTS_USER_AVATAR_IMAGE_NAME) === false) { // don't remove default avatars.
 			return unlink($basedir.$avatarpath);
 		}
 		else return true;

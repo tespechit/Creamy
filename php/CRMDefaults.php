@@ -86,7 +86,8 @@ define ('CRM_DEFAULTS_USER_ROLE_READER', 3);
 define ('CRM_DEFAULTS_USER_ROLE_GUEST', 4);
 define ('CRM_DEFAULTS_USER_DISABLED', 0);
 define ('CRM_DEFAULTS_USER_ENABLED', 1);
-define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/defaultAvatar.png');
+define ('CRM_DEFAULTS_USER_AVATAR_IMAGE_NAME', 'defaultAvatar.png');
+define ('CRM_DEFAULTS_USER_AVATAR', './img/avatars/default/'.CRM_DEFAULTS_USER_AVATAR_IMAGE_NAME);
 
 // User interface
 define ('CRM_UI_STYLE_DEFAULT', 'default');

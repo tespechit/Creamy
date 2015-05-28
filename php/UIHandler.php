@@ -1981,7 +1981,8 @@ error_reporting(E_ERROR | E_PARSE);
 		$result = "<div id='external-events'>";
 		$events = $this->db->getUnassignedEventsForUser($userid);
 		foreach ($events as $event) {
-			$result .= "<div event-id='".$event["id"]."' class='external-event bg-".$this->creamyColorForHexValue($event["color"])."'>".$event["title"]."</div>";
+			$urlCode = empty($event["url"]) ? '' : ' event-url="'.$event["url"].'" ';
+			$result .= "<div event-id='".$event["id"]."' class='external-event bg-".$this->creamyColorForHexValue($event["color"])."' $urlCode>".$event["title"]."</div>";
 		}
 		$result .= "</div>";
 		return $result;

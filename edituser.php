@@ -112,7 +112,7 @@
 							// name
 							$name_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("name", "name", "text", $lh->translationFor("name"), $userobj["name"], "user", true));
 							// email
-							$email_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("email", "email", "text", $lh->translationFor("email"), $userobj["email"], "envelope", true, true));
+							$email_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("email", "email", "text", $lh->translationFor("email"), $userobj["email"], "envelope", true));
 							// phone 
 							$phone_text = $lh->translationFor("phone").' ('.$lh->translationFor("optional").')';
 							$phone_f = $ui->singleFormGroupWithInputGroup($ui->singleFormInputElement("phone", "phone", "text", $phone_text, $userobj["phone"], "phone"));

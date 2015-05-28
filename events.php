@@ -234,6 +234,7 @@ if (isset($_GET["customerid"]) && isset($_GET["customer_type"])) {
 	            // retrieve the dropped element's stored Event Object
 	            var originalEventObject = $(this).data('eventObject');
 	            var eventId = $(this).attr("event-id");
+                var eventUrl = $(this).attr("event-url");
 				var endDate = date + 3600000; // 1 hour in milliseconds
 				var jsObject = $(this);
 	
@@ -247,6 +248,7 @@ if (isset($_GET["customerid"]) && isset($_GET["customer_type"])) {
 			            // we need to copy it, so that multiple events don't have a reference to the same object
 			            var copiedEventObject = $.extend({}, originalEventObject);
 			            copiedEventObject.id = eventId;
+						copiedEventObject.url = eventUrl;
 			
 			            // assign it the date that was reported
 			            copiedEventObject.start = date;

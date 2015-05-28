@@ -134,20 +134,22 @@ class DbHandler {
 	 * return boolean true if user was successfully modified, false otherwise.
 	 */
 	public function modifyUser($modifyid, $name, $phone, $role, $avatar) {
-		// prepare query depending on parameters.
-		$this->dbConnector->where("id", $modifyid);
 		if (!empty($avatar)) { // If we are modifying the user's avatar, make sure to delete the old one.
 			// get user data and remove previous avatar.
 			$userdata = $this->getDataForUser($modifyid);
 			$ih = new \creamy\ImageHandler();
-			$ih->removeUserAvatar($userdata["avatar"]);
-			
+			if (!empty($userdata["avatar"]) && strpos($userdata["avatar"], CRM_DEFAULTS_USER_AVATAR_IMAGE_NAME) === false) {
+				$ih->removeUserAvatar($userdata["avatar"]);
+			}
+
 			// update with new avatar
 			$data = Array("name" => $name, "phone" => $phone, "avatar" => $avatar, "role" => $role);
 		} else { // no avatar change required, just update the values.
 			$data = Array("name" => $name, "phone" => $phone, "role" => $role);
 		}
 
+		// prepare query depending on parameters.
+		$this->dbConnector->where("id", $modifyid);
 		// execute and return results
 		return ( $this->dbConnector->update(CRM_USERS_TABLE_NAME, $data) );
 
