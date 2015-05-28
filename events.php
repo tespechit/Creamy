@@ -78,6 +78,13 @@ if (isset($_GET["customerid"]) && isset($_GET["customer_type"])) {
 	    <!-- fullCalendar 2.2.5 -->
 	    <script src="js/plugins/fullcalendar/moment.min.js" type="text/javascript"></script>
 	    <script src="js/plugins/fullcalendar/fullcalendar.min.js" type="text/javascript"></script>
+	    <?php
+		// try to get the primary language from the LanguageHandler
+		$primary = $lh->getPrimaryLanguage();
+		if (!empty($primary)) {
+			echo '<script src="js/plugins/fullcalendar/lang/'.$primary.'.js" type="text/javascript"></script>';
+		}
+	    ?>
         <!-- Creamy App -->
         <script src="js/app.min.js" type="text/javascript"></script>
     </head>

@@ -194,6 +194,11 @@ define('CRM_LANGUAGE_BASE_DIR', DIRECTORY_SEPARATOR.'lang'.DIRECTORY_SEPARATOR);
 	public function getDisplayLanguage() { return \Locale::getDisplayLanguage($this->locale); }
 
 	/**
+	 * Returns the primary language code the LanguageHandler locale.
+	 */
+	public function getPrimaryLanguage() { return \Locale::getPrimaryLanguage($this->locale); }
+
+	/**
 	 * Gets the date format for the current locale, using "dd" for days, "mm" for months, "yyyy"
 	 * for years, and "/" as separator (i.e: dd/mm/yyyy or yyyy/mm/dd).
 	 */		
