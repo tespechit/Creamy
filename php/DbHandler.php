@@ -1512,6 +1512,11 @@ class DbHandler {
 		if ($id) { return $id; } else return 0;
 	}
 
+	public function deleteEvent($eventid) {
+		$this->dbConnector->where("id", $eventid);
+		return $this->dbConnector->delete(CRM_EVENTS_TABLE_NAME);
+	}
+
 	public function getUnassignedEventsForUser($userid) {
 		$this->dbConnector->where("user_id", $userid);
 		$this->dbConnector->where("start_date IS NULL");

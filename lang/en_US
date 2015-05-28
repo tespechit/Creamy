@@ -374,6 +374,10 @@ no_statistics_yet = "It seems we don't have any statistical data yet. Statistics
 you_need_to_update = "It seems that the current version of Creamy you are using has not been updated to work properly. <strong>Please, update Creamy right now</strong> so you can get the most out of it. It's just a matter of seconds..."
 see_details = "See details"
 myself = "myself"
+delete_events = "Delete events"
+drop_here_delete = "Delete an event by dragging it FROM THE CALENDAR and dropping it here"
+unable_delete_event = "There was an error while deleting the event. please, try again later or contact the administrator."
+
 
 
 

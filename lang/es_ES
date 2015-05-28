@@ -374,3 +374,6 @@ no_statistics_yet = "Parece que no disponemos de datos estadísticos sobre tus c
 you_need_to_update = "Parece que la versión actual de Creamy que estás usando no ha sido actualizada para funcionar correctamente. <strong>Por favor, actualiza Creamy ahora mismo</strong> para sacarle el máximo partido, será cuestión de segundos..."
 see_details = "Ver detalles"
 myself = "mi mismo"
+delete_events = "Borrar eventos"
+drop_here_delete = "Puedes borrar un evento arrastrándolo DESDE EL CALENDARIO hasta aquí."
+unable_delete_event = "Se produjo un error borrando el evento. Por favor, inténtelo más tarde o contacte con el autor."

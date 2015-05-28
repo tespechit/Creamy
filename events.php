@@ -146,6 +146,17 @@ if (isset($_GET["customerid"]) && isset($_GET["customer_type"])) {
 		                </div>
 		              </div>
 		              
+					<!-- Delete events -->
+		              <div class="box box-default" id="delete-event-trash">
+		                <div class="box-header with-border">
+		                  <h4 class="box-title"><?php $lh->translateText("delete_events"); ?></h4>
+		                </div>
+		                <div class="box-body">
+		                  <!-- delete events -->
+								<p><i class="fa fa-trash"> </i> <?php $lh->translateText("drop_here_delete"); ?></p>
+		                </div><!-- /.box-body -->
+		              </div><!-- /. box -->
+
 		            </div><!-- /.col -->
 		            <div class="col-md-8">
 		              <div class="box box-default">
@@ -273,6 +284,28 @@ if (isset($_GET["customerid"]) && isset($_GET["customer_type"])) {
 	          },
 	          eventDrop: function (event, delta, revertFunc, jsEvent, ui, view) { // drag/move an event.
 			  	changeEventOrRevert(event, revertFunc);
+	          },
+			  eventDragStop: function (event, jsEvent) {
+	  				var trashEl = jQuery('#delete-event-trash');
+    				var ofs = trashEl.offset();
+    				var x1 = ofs.left;
+					var x2 = ofs.left + trashEl.outerWidth(true);
+    				var y1 = ofs.top;
+    				var y2 = ofs.top + trashEl.outerHeight(true);
+
+					// dropped to trash?
+    				if (jsEvent.pageX >= x1 && jsEvent.pageX<= x2 && jsEvent.pageY>= y1 && jsEvent.pageY <= y2) {
+    					 // try to delete the event.
+						 $.post("./php/DeleteEvent.php", //post
+						 {"eventid": event.id}, 
+						 function(data) { // result is new event id or 0 if something went wrong.
+							  if (data == '<?php print CRM_DEFAULT_SUCCESS_RESPONSE; ?>') { // success
+		         				$('#calendar').fullCalendar('removeEvents', event.id);
+							  } else { // error
+									<?php print $ui->showCustomErrorMessageAlertJS($lh->translationFor("unable_modify_event")); ?>
+							  }
+						  });
+    				}
 	          }
 	        });
 	        
