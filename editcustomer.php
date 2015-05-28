@@ -113,9 +113,9 @@ if (isset($_GET["customerid"])) { $customerid = $_GET["customerid"]; }
 
 						// buttons at bottom (only for writing+ permissions)
 						$buttons = "";
-						if ($user->userHasAdminPermission()) {
+						if ($user->userHasWritePermission()) {
 							$buttons = $ui->buttonWithLink("modifyCustomerDeleteButton", $customerid, $lh->translationFor("delete"), "button", "times", CRM_UI_STYLE_DANGER);
-							$buttons .= $ui->buttonWithLink("modifyCustomerOkButton", "", $lh->translationFor("modify"), "submit", "check-circle", CRM_UI_STYLE_DEFAULT, "pull-right");
+							$buttons .= $ui->buttonWithLink("modifyCustomerOkButton", "", $lh->translationFor("save"), "submit", "check", CRM_UI_STYLE_DEFAULT, "pull-right");
 							$buttons = $ui->singleFormGroupWrapper($buttons);
 						}
 						// form fields

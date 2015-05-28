@@ -481,7 +481,7 @@ error_reporting(E_ERROR | E_PARSE);
     /** Global buttons */
     
     public function buttonWithLink($id, $link, $title, $type = "button", $icon = null, $style = CRM_UI_STYLE_DEFAULT, $additionalClasses = null) {
-	    $iconCode = isset($icon) ? '<i class="fa fa-times"></i>' : '';
+	    $iconCode = isset($icon) ? '<i class="fa fa-'.$icon.'"></i>' : '';
 	    return '<button type="'.$type.'" class="btn btn-'.$style.' '.$additionalClasses.'" id="'.$id.'" href="'.$link.'">'.$iconCode.' '.$title.'</button>';
     }
     
