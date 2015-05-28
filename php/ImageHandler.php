@@ -116,6 +116,9 @@ class ImageHandler {
 		else if ($imageFileType == "gif") $myImage = imagecreatefromgif($imgSrc);
 		error_log("image file type = $imageFileType, my image = $myImage, path = ".$basedir.$filename);
 		
+		imagealphablending($myImage, false);
+		imagesavealpha($myImage, true);
+		
 		if (imagepng($myImage, $basedir.$filename)) { imagedestroy($myImage); return $filename; }
 		else { imagedestroy($myImage); return null; }
 	}
