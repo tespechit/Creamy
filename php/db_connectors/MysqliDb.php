@@ -147,7 +147,6 @@ class MysqliDb implements \creamy\DbConnector
             if ($this->connect() === true) { $connected = true; }
 		}
 		// check connection
-		error_log("Connected: $connected");
 		if ($connected === false) { throw new \Exception("Unable to connect to the database. Access denied or incorrect parameters."); }
 		
         $this->setPrefix();
@@ -948,9 +947,9 @@ class MysqliDb implements \creamy\DbConnector
         }
 
         // avoid out of memory bug in php 5.2 and 5.3
-        // https://github.com/joshcam/PHP-MySQLi-Database-Class/pull/119
-        if (version_compare (phpversion(), '5.4', '<'))
-             $stmt->store_result();
+        //if (version_compare (phpversion(), '5.4', '<'))
+        // NOTE: Always store results, because it seems that memory bug in php 5.2 and 5.3 has re-surfaced
+        $stmt->store_result();
 
         call_user_func_array(array($stmt, 'bind_result'), $parameters);
 
