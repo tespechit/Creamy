@@ -205,8 +205,8 @@
 						<div id="changetaskresult" name="changetaskresult"></div>
                     </div>
                     <div class="modal-footer clearfix">
-                        <button type="button" class="btn btn-danger pull-right" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
-                        <button type="submit" class="btn btn-warning pull-left" id="changetaskOkButton"><i class="fa fa-check-circle"></i> <?php $lh->translateText("modify_task"); ?></button>
+                        <button type="button" class="btn btn-danger pull-left" data-dismiss="modal" id="changetaskCancelButton"><i class="fa fa-times"></i> <?php $lh->translateText("cancel"); ?></button>
+                        <button type="submit" class="btn btn-primary pull-right" id="changetaskOkButton"><i class="fa fa-check"></i> <?php $lh->translateText("modify_task"); ?></button>
                     </div>
                 </form>
             </div><!-- /.modal-content -->
