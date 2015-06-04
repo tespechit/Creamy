@@ -251,7 +251,7 @@ class MessageOfTheDay extends Module {
 		$successText = $this->ui()->calloutInfoMessage($this->lh()->translationFor("quote_set"));
 		$js = $this->ui()->formPostJS(
 			"quote_form", 													// name of the form.
-			$this->customActionModulePageURL(), 								// page to send the Ajax POST request
+			$this->customActionModulePageURL(), 							// page to send the Ajax POST request
 			$this->ui()->fadingInMessageJS($successText, "quote_result"),	// on success message
 			$this->ui()->fadingInMessageJS($failureText, "quote_result"),	// on failure message
 			$this->ui()->fadingOutMessageJS(false, "quote_result"));		// preamble JS: clean result message.

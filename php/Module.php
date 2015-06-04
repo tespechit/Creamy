@@ -292,14 +292,6 @@ abstract class Module implements ModuleMetadata {
 	 */
 	public function needsSidebarDisplay() { return false; }
 	
-	/** 
-	 * Returns true if the module's settings view that can be accessed by means of the sidebar, 
-	 * The default value is false, modules must override this function to return true if they want to be displayed in the settings section. 
-	 * For more information visit the module creation guidelines: 
-	 * @return true if the module needs to set a sidebar access for its settings view, false otherwise.
-	 */
-	public function needsSettingsDisplay() { return false; }
-		
 	/**
 	 * Returns the content to be included in the main page. Every module must
 	 * implement this function to add the content to be shown. In order to build

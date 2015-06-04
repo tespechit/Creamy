@@ -2195,7 +2195,8 @@ error_reporting(E_ERROR | E_PARSE);
 	 * @return String a HTML representation of the notification.
 	 */
 	public function getNotificationsAsTimeLine($userid) {
-		setlocale(LC_ALL, CRM_LOCALE);
+		$locale = $this->lh->getLanguageHandlerLocale();
+		if (isset($locale)) { setlocale(LC_ALL, $locale); }
 		$todayAsDate = strftime("%x");
 		$todayAsText = $this->lh->translationFor(CRM_NOTIFICATION_PERIOD_TODAY)." ($todayAsDate)";
 		
