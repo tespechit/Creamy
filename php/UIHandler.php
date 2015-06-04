@@ -160,6 +160,20 @@ error_reporting(E_ERROR | E_PARSE);
 			<span class="info-box-number">'.$subtitle.'</span></div></div></div>';
     }
     
+    public function boxWithSpinner($header_title, $body_content, $footer_content = NULL, $icon = NULL, $overlayId = "loading-overlay") {
+	    $footerDiv = empty($footer_content) ? "" : '<div class="box-footer">'.$footer_content.'</div>';
+	    $iconItem = (empty($icon)) ? "" : '<i class="fa fa-'.$icon.'"></i>';
+	    return '<div class="box box-primary">
+			<div class="box-header">'.$iconItem.'
+		        <h3 class="box-title">'.$header_title.'</h3>
+		    </div>
+			<div class="box-body">'.$body_content.'</div>
+			'.$footerDiv.'
+			'.$this->spinnerOverlay($overlayId).'
+		</div>';
+    }
+
+    
     public function spinnerOverlay($overlayId = "loading-overlay") { 
 	    return '<div id="'.$overlayId.'" class="overlay"><i class="fa fa-spinner fa-spin"></i></div>'; 
 	}
