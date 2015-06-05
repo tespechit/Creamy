@@ -101,7 +101,7 @@ abstract class Module implements ModuleMetadata {
 	 * Convenience method that returns the Database Connector to be used by module's subclasses.
 	 * @return the module instance of DbConnector.
 	 */
-	public function db() {
+	public function db($dbConnectorType = CRM_DB_CONNECTOR_TYPE_MYSQL) {
 		if (!isset($this->dbConnector)) {
 			$this->dbConnector = \creamy\DatabaseConnectorFactory::getInstance()->getDatabaseConnectorOfType($dbConnectorType);
 		}
