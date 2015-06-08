@@ -134,6 +134,27 @@ error_reporting(E_ERROR | E_PARSE);
 				</div>';
     }
     
+    public function collapsableBoxWithContent($header_title, $body_content, $footer_content = NULL, $icon = NULL, $style = CRM_UI_STYLE_DEFAULT, $body_id = NULL, $initiallyCollapsed = true) {
+	   	// if icon is present, generate an icon item.
+	    $iconItem = (empty($icon)) ? "" : '<i class="fa fa-'.$icon.'"></i>';
+	    $bodyIdCode = (empty($body_id)) ? "" : 'id="'.$body_id.'"';
+	    $boxStyleCode = empty($style) ? "" : " box-$style";
+	    $collapsedCode = $initiallyCollapsed ? " collapsed-box" : "";
+	    $footerDiv = empty($footer_content) ? "" : '<div class="box-footer">'.$footer_content.'</div>';
+	    
+	    return '<div class="box'.$boxStyleCode.$collapsedCode.'">
+					<div class="box-header">'.$iconItem.'
+                        <div class="box-tools pull-right">
+                            <button class="btn btn-sm" data-widget="collapse"><i class="fa fa-plus"></i></button>
+                            <button class="btn btn-sm" data-widget="remove"><i class="fa fa-times"></i></button>
+                        </div>
+				        <h3 class="box-title">'.$header_title.'</h3>
+				    </div>
+					<div class="box-body" '.$bodyIdCode.'>'.$body_content.'</div>
+					'.$footerDiv.'
+				</div>'; 
+    }
+        
     public function responsibleTableBox($header_title, $table_content, $icon = NULL, $style = CRM_UI_STYLE_DEFAULT, $body_id = NULL) {
 	    return $this->boxWithContent($header_title, $table_content, NULL, $icon, $style, $body_id, "table-responsive");
     }
