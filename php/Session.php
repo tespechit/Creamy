@@ -25,7 +25,17 @@
 
 namespace creamy;
 
-session_start();// Starting Session
+// Start session if not already started.
+if (version_compare(phpversion(), '5.4.0', '<')) {
+     if(session_id() == '') {
+        session_start();
+     }
+ }
+ else {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+}
 
 if (!isset($_SESSION["username"])) {
 	header('Location: login.php'); // Redirecting To Login Page

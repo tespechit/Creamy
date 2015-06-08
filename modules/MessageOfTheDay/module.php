@@ -177,7 +177,7 @@ class MessageOfTheDay extends Module {
 	
 	// hooks
 	
-	public function dashboardHook() {
+	public function dashboardHook($wantsFullRow = true) {
 		// check if today we must show a custom quote.
 		$customDate = $this->valueForModuleSetting("custom_quote_day");
 		$customQuote = $this->valueForModuleSetting("custom_quote");
