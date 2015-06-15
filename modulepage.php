@@ -54,7 +54,7 @@ if (isset($_GET["module_name"])) {
 if ($error) {
 	$title = $lh->translationFor("modules");
 	$subtitle = $lh->translationFor("module_management");
-	$content = $ui->boxWithMessage($lh->translationFor("error_loading_module"));
+	$content = $ui->boxWithMessage($lh->translationFor("error"), $lh->translationFor("error_loading_module"));
 }
 
 
