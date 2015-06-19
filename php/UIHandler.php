@@ -1680,7 +1680,7 @@ error_reporting(E_ERROR | E_PARSE);
 
 		// zip code and country
 		$ph = $this->lh->translationFor("zipcode");
-		$vl = isset($customerobj["zipcode"]) ? $customerobj["zip_code"] : null;
+		$vl = isset($customerobj["zip_code"]) ? $customerobj["zip_code"] : null;
 		$zip_f = $this->singleInputGroupWithContent($this->singleFormInputElement("zipcode", "zipcode", "text", $ph, $vl, "map-marker"));
 		$ph = $this->lh->translationFor("country");
 		$vl = isset($customerobj["country"]) ? $customerobj["country"] : null;
