@@ -1655,7 +1655,7 @@ error_reporting(E_ERROR | E_PARSE);
 
 		// mobile phone
 		$ph = $this->lh->translationFor("mobile_phone");
-		$vl = isset($customerobj["mobile_phone"]) ? $customerobj["mobile"] : null;
+		$vl = isset($customerobj["mobile"]) ? $customerobj["mobile"] : null;
 		$mobile_f = $this->singleFormGroupWithInputGroup($this->singleFormInputElement("mobile", "mobile", "text", $ph, $vl, "mobile"));
 
 		// email
