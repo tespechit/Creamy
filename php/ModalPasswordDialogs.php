@@ -30,17 +30,7 @@ if (!isset($ui)) { $ui = \creamy\UIHandler::getInstance(); }
 require_once('Session.php');
 $user = \creamy\CreamyUser::currentUser();
 ?>
-<!-- CHANGE PASSWORD MODAL -->
-<script type="text/javascript">
-	// check if validation plugin has already been included.
-	if ($.fn.validate === undefined) { // validate js not included already.
-		var fileref=document.createElement('script');
-	    fileref.setAttribute("type","text/javascript");
-	    fileref.setAttribute("src", "js/jquery.validate.min.js");
-	    document.getElementsByTagName("head")[0].appendChild(fileref);
-	}
-</script>
-
+<script src="js/jquery.validate.min.js" type="text/javascript"></script>
 <script>
 $(document).ready(function() {
 	/**

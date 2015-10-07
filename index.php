@@ -76,6 +76,7 @@ $custsOk = $db->weHaveAtLeastOneCustomerOrContact();
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js" type="text/javascript"></script>
         <script src="js/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="js/jquery.validate.min.js" type="text/javascript"></script>
 	    <!-- ChartJS 1.0.1 -->
 	    <script src="js/plugins/chartjs/Chart.min.js" type="text/javascript"></script>
 		
